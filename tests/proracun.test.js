@@ -318,6 +318,31 @@ test('nepoznat fajl ne izaziva grešku', function () {
   });
 });
 
+console.log('Podeli (QR)');
+var Pd = require(path.join(__dirname, '..', 'js', 'podeli.js'));
+
+test('QR za link: verzija 3 (29×29), nivo M, ispravni pozicioni kvadrati', function () {
+  tacno(Pd.LINK === 'https://bagaljivko.github.io/ZORAN/', 'link');
+  var m = Pd.matrica(Pd.LINK);
+  tacno(m.n === 29, 'broj modula: ' + m.n);
+  [[0, 0], [0, m.n - 7], [m.n - 7, 0]].forEach(function (o) {
+    for (var i = 0; i < 7; i++) {
+      tacno(m.tamno(o[0], o[1] + i) && m.tamno(o[0] + 6, o[1] + i), 'okvir pozicionog kvadrata');
+      tacno(m.tamno(o[0] + i, o[1]) && m.tamno(o[0] + i, o[1] + 6), 'okvir pozicionog kvadrata');
+    }
+    tacno(!m.tamno(o[0] + 1, o[1] + 1) && m.tamno(o[0] + 3, o[1] + 3), 'unutrašnjost pozicionog kvadrata');
+  });
+});
+
+test('QR SVG: tiha zona od 4 modula, boje mastila i papira, bez NaN', function () {
+  var s = Pd.svg(Pd.LINK);
+  tacno(/viewBox="0 0 37 37"/.test(s), 'viewBox 29 + 2·4');
+  tacno(s.indexOf('#2B2117') > 0 && s.indexOf('#EDE2C6') > 0, 'boje');
+  tacno(s.indexOf('NaN') < 0);
+  var xs = (s.match(/M(\d+) (\d+)/g) || []).map(function (t) { return t.slice(1).split(' ').map(Number); });
+  tacno(xs.length > 0 && xs.every(function (p) { return p[0] >= 4 && p[1] >= 4 && p[0] < 33 && p[1] < 33; }), 'moduli unutar tihe zone');
+});
+
 Promise.all(cekanje).then(function () {
   console.log('\nUkupno: ' + (prosli + pali) + ', prošlo: ' + prosli + ', palo: ' + pali);
   process.exit(pali ? 1 : 0);

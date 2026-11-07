@@ -70,13 +70,14 @@ a { color: var(--mastilo); }
 .naslovna.skriveno { opacity: 0; pointer-events: none; }
 .korica {
   width: min(88vw, 520px);
-  padding: 9vh 6vw;
+  padding: 9vh clamp(1rem, 5vw, 3rem);
   border: 1px solid var(--mastilo);
   outline: 1px solid var(--mastilo); outline-offset: 6px;
   text-align: center;
 }
-.naslov-veliki { font-size: clamp(4rem, 18vw, 7.5rem); line-height: 1; letter-spacing: 0.04em; font-weight: 400; }
-.akronim { font-style: italic; font-size: clamp(1.05rem, 4.4vw, 1.4rem); margin-top: 0.9rem; line-height: 1.35; }
+.naslov-veliki { font-size: clamp(3rem, 15vw, 6rem); line-height: 1; letter-spacing: 0.08em; margin-right: -0.08em; font-weight: 400; white-space: nowrap; }
+.akronim { font-style: italic; font-size: clamp(1.15rem, 5vw, 1.5rem); margin-top: 1rem; line-height: 1.4; }
+.red-akronima { display: block; white-space: nowrap; }
 .akronim b { font-weight: 600; font-style: italic; font-size: 1.12em; }
 .tanka-linija { width: 64px; height: 0; border-top: 1px solid var(--mastilo); margin: 1.4rem auto 0.7rem; }
 .verzija-tekst { font-family: var(--mono); font-size: 0.82rem; color: var(--mastilo-blago); letter-spacing: 0.04em; }
@@ -255,7 +256,8 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
 
 /* ---------- Podešavanja ---------- */
 .o-aplikaciji { text-align: center; border: 1px solid var(--mastilo); outline: 1px solid var(--mastilo); outline-offset: 4px; padding: 1.4rem 1rem 1rem; margin: 0.8rem 4px 1.2rem; }
-.o-aplikaciji .naslov-veliki { font-size: 3.4rem; }
+.o-aplikaciji { cursor: pointer; }
+.o-aplikaciji .naslov-veliki { font-size: 3.2rem; }
 .o-aplikaciji .akronim { font-size: 1.1rem; }
 .izbor { margin: 0.6rem 0 0.9rem; }
 .izbor .natpis-izbora { display: block; margin-bottom: 0.3rem; }
@@ -310,4 +312,73 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
 @media print {
   .donja-traka, .gornja-traka, .kopiraj, .dugmad, .alati-crteza { display: none !important; }
   .ekran { display: block !important; }
+}
+
+/* ---------- Ponašanje kao aplikacija ---------- */
+html { touch-action: manipulation; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
+body { touch-action: pan-x pan-y; overscroll-behavior-y: none; }
+/* dok se kuca, donja traka se sklanja da ne prekrije polje iznad tastature */
+@media (max-width: 1099px) and (pointer: coarse) {
+  html.kucanje .donja-traka { display: none; }
+}
+@media (min-width: 700px) and (max-width: 1099px) {
+  main { max-width: 760px; }
+}
+
+/* ---------- Prozor za deljenje ---------- */
+.prozor {
+  padding: 0; margin: auto;
+  width: min(calc(100vw - 32px), 440px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  color: var(--mastilo);
+  background: var(--papir);
+  border: 3px double var(--mastilo);
+  border-radius: 0;
+}
+.prozor:not([open]) { display: none; }
+.prozor[open] { position: fixed; inset: 0; z-index: 200; }
+.prozor::backdrop { background: rgba(43, 33, 23, 0.45); }
+html.prozor-otvoren { overflow: hidden; }
+.prozor-sadrzaj { padding: 1rem 1.1rem 0.6rem; text-align: center; }
+.prozor h2 { margin-top: 0; }
+.qr-slika { margin: 0.4rem auto 0.2rem; }
+.qr-okvir { width: 248px; height: 248px; margin: 0 auto; border: 1px solid var(--mastilo); }
+.qr-okvir svg { width: 100%; height: 100%; display: block; }
+.link-deljenja { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; margin: 0.5rem 0; }
+.poruka-deljenja { color: var(--akcenat); font-style: italic; min-height: 1.5em; margin: 0.2rem 0 0.4rem; }
+.dugmad-prozor { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.dugmad-prozor button { width: 100%; padding: 0.3rem 0.5rem; line-height: 1.15; }
+.dugmad-prozor #dugme-posalji { grid-column: 1 / -1; }
+.qr-okvir { width: 232px; height: 232px; }
+@media (max-height: 700px) { .qr-okvir { width: 222px; height: 222px; } .prozor h2 { font-size: 1.2rem; } }
+
+/* Kolofon na dnu Tablice, kao u starim knjigama */
+.kolofon { text-align: center; font-size: 0.9rem; color: var(--mastilo-blago); margin: 1.4rem 0 0.4rem; padding-top: 0.6rem; border-top: 1px solid var(--linija); }
+.kolofon b { font-weight: 600; color: var(--mastilo); }
+
+/* ---------- Animacija naslova: ZORAN otkriva šta znači ---------- */
+.naslovni-blok .slovo, .naslovni-blok .rec { display: inline-block; position: relative; }
+.naslovni-blok .rep { display: inline-block; }
+.naslovni-blok .slovo::after {
+  content: ''; position: absolute; left: 14%; right: 22%; bottom: -0.04em;
+  border-top: 2px solid var(--mastilo); transform: scaleX(0); opacity: 0;
+}
+.animiraj .slovo { opacity: 0; animation: zoran-slovo 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: calc(var(--i) * 80ms); }
+.animiraj .slovo::after { animation: zoran-crta 0.9s ease-out forwards; animation-delay: calc(700ms + var(--i) * 220ms); }
+.animiraj .rec b { opacity: 0; animation: zoran-pad 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) forwards; animation-delay: calc(700ms + var(--i) * 220ms); }
+.animiraj .rep { clip-path: inset(0 100% 0 0); animation: zoran-rep 0.5s ease-out forwards; animation-delay: calc(820ms + var(--i) * 220ms); }
+.animiraj .tanka-linija { transform: scaleX(0); animation: zoran-linija 0.5s ease-out 1.95s forwards; }
+.animiraj .verzija-tekst, .animiraj .ornament { opacity: 0; animation: zoran-pojava 0.5s ease-out forwards; }
+.animiraj .ornament { animation-delay: 0.1s; }
+.animiraj .verzija-tekst { animation-delay: 2.15s; }
+@keyframes zoran-slovo { from { opacity: 0; transform: translateY(0.18em); } to { opacity: 1; transform: none; } }
+@keyframes zoran-crta { 0% { transform: scaleX(0); opacity: 1; } 35% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes zoran-pad { from { opacity: 0; transform: translateY(-0.9em); } to { opacity: 1; transform: none; } }
+@keyframes zoran-rep { to { clip-path: inset(0 0 0 0); } }
+@keyframes zoran-linija { to { transform: scaleX(1); } }
+@keyframes zoran-pojava { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .animiraj .slovo, .animiraj .rec b, .animiraj .rep, .animiraj .tanka-linija, .animiraj .verzija-tekst, .animiraj .ornament { animation: none; opacity: 1; transform: none; clip-path: none; }
+  .animiraj .slovo::after { animation: none; }
 }

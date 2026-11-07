@@ -13,7 +13,7 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Tablica** — svi rezultati, uz kopiranje svake vrednosti i „Kopiraj sve“.
 - **Savetnik** — za zadato osno rastojanje računa Σx, raspodelu po DIN 3992 i predlaže bolje kombinacije modula (DIN 780) i broja zuba.
 - **Uvoz** — čita parametre i sliku pregleda iz SolidWorks `.SLDPRT` fajla, lokalno.
-- **Podešavanja** — mm ili inč, zarez ili tačka, 2–4 decimale, provera nove verzije i dijagnostika.
+- **Podešavanja** — mm ili inč, zarez ili tačka, 2–4 decimale, provera nove verzije, dijagnostika i **Podeli Zorana** (QR kod, sistemski meni za deljenje, kopiranje linka).
 
 ## Instalacija na telefon
 
@@ -29,6 +29,8 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 **Windows i Mac** — Zoran radi u bilo kom savremenom pregledaču; u Chrome-u i Edge-u može da se instalira i preko ikonice u adresnoj traci.
 
 Nova verzija: **Podešavanja › Proveri novu verziju › Osveži**.
+
+Deljenje: **Podešavanja › Podeli Zorana › Podeli** — QR kod za skeniranje kamerom, a na telefonu i sistemski meni (Viber, WhatsApp, poruke, mejl…).
 
 ## Kako radi uvoz `.SLDPRT`
 
@@ -49,4 +51,9 @@ U `tests/primeri/primer-ole.sldprt` je mali veštački OLE fajl za probu uvoza.
 - `js/proracun.js` — proračun i savetnik (čiste funkcije), `js/crtez.js` — SVG crtež, `js/sldprt.js` — čitanje `.SLDPRT`, `js/app.js` — interfejs.
 - Testovi: `node tests/proracun.test.js` (bez biblioteka).
 - Pri svakoj promeni povećaj `CACHE_VERSION` u `sw.js` i `APP_VERSION` u `js/app.js`.
-- Fontovi EB Garamond i IBM Plex Mono su u `fonts/` (SIL Open Font License, licence u istom folderu).
+- Radni postupak i spisak provera pre svakog PR-a: [`CLAUDE.md`](CLAUDE.md).
+
+## Licence spoljnih delova
+
+- Fontovi **EB Garamond** i **IBM Plex Mono** su u `fonts/` — SIL Open Font License 1.1 (licence u istom folderu).
+- **qrcode-generator** 2.0.4 (Kazuhiko Arase) je u `js/vendor/qrcode-generator.js` — MIT licenca, tekst u [`js/vendor/LICENSE-qrcode-generator.txt`](js/vendor/LICENSE-qrcode-generator.txt). QR kod se pravi lokalno, bez interneta. „QR Code“ je registrovani žig kompanije DENSO WAVE INCORPORATED.

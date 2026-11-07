@@ -2,7 +2,7 @@
 <html lang="sr-Latn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Zoran — kalkulator zupčanika</title>
 <meta name="description" content="Zoran — besplatan kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima. Zet Obično Računa Apsolutno Nepogrešivo.">
 <meta name="theme-color" content="#EDE2C6">
@@ -20,10 +20,10 @@
 
 <!-- Naslovni ekran: korica starog udžbenika -->
 <div id="naslovna" class="naslovna" aria-hidden="true">
-  <div class="korica">
+  <div class="korica naslovni-blok animiraj">
     <div class="ornament">kalkulator zupčanika</div>
-    <div class="naslov-veliki">Zoran</div>
-    <div class="akronim"><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</div>
+    <div class="naslov-veliki" aria-label="ZORAN"><span class="slovo" style="--i:0" aria-hidden="true">Z</span><span class="slovo" style="--i:1" aria-hidden="true">O</span><span class="slovo" style="--i:2" aria-hidden="true">R</span><span class="slovo" style="--i:3" aria-hidden="true">A</span><span class="slovo" style="--i:4" aria-hidden="true">N</span></div>
+    <div class="akronim" aria-label="Zet Obično Računa Apsolutno Nepogrešivo"><span class="red-akronima" aria-hidden="true"><span class="rec" style="--i:0"><b>Z</b><span class="rep">et</span></span> <span class="rec" style="--i:1"><b>O</b><span class="rep">bično</span></span> <span class="rec" style="--i:2"><b>R</b><span class="rep">ačuna</span></span></span> <span class="red-akronima" aria-hidden="true"><span class="rec" style="--i:3"><b>A</b><span class="rep">psolutno</span></span> <span class="rec" style="--i:4"><b>N</b><span class="rep">epogrešivo</span></span></span></div>
     <div class="tanka-linija"></div>
     <div class="verzija-tekst" data-verzija>verzija</div>
   </div>
@@ -144,6 +144,7 @@
       </div>
       <div class="upozorenja" id="upozorenja-tablica"></div>
       <div id="tablica-puna"></div>
+      <p class="kolofon">Izračunao Zoran — <i><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</i>.</p>
     </div>
   </section>
 
@@ -211,9 +212,9 @@
     <h2><span class="par">§ 6.</span>Podešavanja</h2>
 
     <h3>O aplikaciji</h3>
-    <div class="o-aplikaciji">
-      <div class="naslov-veliki">Zoran</div>
-      <div class="akronim"><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</div>
+    <div class="o-aplikaciji naslovni-blok" id="o-aplikaciji" title="Dodirni za ponovo">
+      <div class="naslov-veliki" aria-label="ZORAN"><span class="slovo" style="--i:0" aria-hidden="true">Z</span><span class="slovo" style="--i:1" aria-hidden="true">O</span><span class="slovo" style="--i:2" aria-hidden="true">R</span><span class="slovo" style="--i:3" aria-hidden="true">A</span><span class="slovo" style="--i:4" aria-hidden="true">N</span></div>
+      <div class="akronim" aria-label="Zet Obično Računa Apsolutno Nepogrešivo"><span class="red-akronima" aria-hidden="true"><span class="rec" style="--i:0"><b>Z</b><span class="rep">et</span></span> <span class="rec" style="--i:1"><b>O</b><span class="rep">bično</span></span> <span class="rec" style="--i:2"><b>R</b><span class="rep">ačuna</span></span></span> <span class="red-akronima" aria-hidden="true"><span class="rec" style="--i:3"><b>A</b><span class="rep">psolutno</span></span> <span class="rec" style="--i:4"><b>N</b><span class="rep">epogrešivo</span></span></span></div>
       <div class="tanka-linija"></div>
       <div class="verzija-tekst"><span data-verzija>verzija</span> · keš <span data-verzija-kesa>—</span></div>
       <p class="sitno">Besplatan kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima.</p>
@@ -223,6 +224,12 @@
       <button type="button" class="pecat" id="dugme-osvezi" hidden>Osveži</button>
     </div>
     <p id="stanje-verzije" aria-live="polite"></p>
+
+    <h3>Podeli Zorana</h3>
+    <p>Pošalji Zorana kolegi — telefonom, porukom ili QR kodom.</p>
+    <div class="dugmad">
+      <button type="button" class="pecat" id="dugme-podeli" aria-haspopup="dialog">Podeli</button>
+    </div>
 
     <h3>Prikaz brojeva</h3>
     <div class="izbor">
@@ -290,11 +297,31 @@
   </button>
 </nav>
 
+<!-- Prozor za deljenje -->
+<dialog id="prozor-podeli" class="prozor" aria-labelledby="naslov-podeli">
+  <div class="prozor-sadrzaj">
+    <h2 id="naslov-podeli">Podeli Zorana</h2>
+    <figure class="qr-slika">
+      <div class="qr-okvir" id="qr-okvir"></div>
+      <figcaption>Skeniraj kamerom telefona</figcaption>
+    </figure>
+    <p class="link-deljenja" id="link-deljenja">https://bagaljivko.github.io/ZORAN/</p>
+    <p class="poruka-deljenja" id="poruka-deljenja" aria-live="polite"></p>
+    <div class="dugmad dugmad-prozor">
+      <button type="button" class="pecat" id="dugme-posalji" hidden>Pošalji u aplikaciju</button>
+      <button type="button" class="dugme" id="dugme-kopiraj-link">Kopiraj link</button>
+      <button type="button" class="dugme" id="dugme-zatvori-podeli">Zatvori</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="sr-only" id="obavestenje" aria-live="polite"></div>
 
 <script src="./js/proracun.js"></script>
 <script src="./js/crtez.js"></script>
 <script src="./js/sldprt.js"></script>
+<script src="./js/vendor/qrcode-generator.js"></script>
+<script src="./js/podeli.js"></script>
 <script src="./js/app.js"></script>
 </body>
 </html>
