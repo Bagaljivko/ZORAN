@@ -1,0 +1,66 @@
+# Zoran — radni postupak (CLAUDE.md)
+
+Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zadatka i drži ga se.**
+
+- Repo: https://github.com/Bagaljivko/ZORAN — radi isključivo u ovom repou.
+- Live: https://bagaljivko.github.io/ZORAN/ (GitHub Pages iz grane `main`, aplikacija živi na `/ZORAN/`).
+- Ceo tekst u aplikaciji je na srpskom (latinica).
+
+## Kako je projekat organizovan
+
+- Čist HTML, CSS i JavaScript, bez build koraka i bez frameworka.
+- `index.html` — svi ekrani (Proračun, Tablica, Savetnik, Uvoz, Podešavanja).
+- `css/zoran.css` — stil „Stari priručnik“.
+- `js/proracun.js` — proračun i savetnik (čiste funkcije, rade i u Node-u).
+- `js/crtez.js` — SVG crtež zahvata. `js/sldprt.js` — čitanje `.SLDPRT`.
+- `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
+- `js/app.js` — interfejs; ovde je `APP_VERSION`.
+- `sw.js` — service worker; ovde je `CACHE_VERSION` i spisak fajlova za keš.
+- `tests/proracun.test.js` — testovi (`node tests/proracun.test.js`, bez biblioteka).
+- `tools/` — SolidWorks makro i uputstvo.
+
+## Pre svake izmene
+
+1. Povuci najnoviji `main` i napravi novu granu.
+2. Pročitaj README i ovaj fajl, i pogledaj kako je postojeći kod organizovan.
+3. Napiši kratak plan: šta menjaš, koje fajlove, šta može da se pokvari.
+
+## Provera posle svake izmene (sve mora da prođe pre PR-a)
+
+### Proračun
+- [ ] `node tests/proracun.test.js` prolazi. Za podrazumevane ulaze a ≈ 250 mm.
+- [ ] Nijedna formula se ne menja bez novog testa koji to pokriva.
+
+### Uređaji (emulacija u Chromium-u, plus provera za Safari/WebKit ako je dostupan)
+- [ ] iPhone (390×844, Safari): sve radi, bez horizontalnog skrolovanja, tastatura ne prekriva polje u koje se kuca, donja traka nije ispod „home“ linije (safe-area-inset).
+- [ ] Android (Pixel 7, Chrome): isto kao iPhone.
+- [ ] Tablet (iPad, 820×1180): raspored je čitljiv.
+- [ ] Desktop 1440 px (Chrome, Edge, Safari na Mac-u): tri kolone, sve radi mišem i tastaturom.
+- [ ] Dvostruki dodir i „pinch“ ne zumiraju aplikaciju (radi kao prava aplikacija), a fontovi su najmanje 16 px u poljima da iPhone ne zumira sam.
+- [ ] U konzoli nema grešaka ni upozorenja.
+
+### PWA i ažuriranje
+- [ ] `CACHE_VERSION` u `sw.js` i broj verzije aplikacije (`APP_VERSION` u `js/app.js`) su povećani.
+- [ ] Svaki novi fajl je dodat u keš u `sw.js`.
+- [ ] Offline: posle prvog otvaranja i isključene mreže aplikacija se učitava sa svim ekranima.
+- [ ] „Proveri novu verziju“ prikazuje „Nova verzija je spremna“, a „Osveži“ učitava novu verziju.
+- [ ] Sve putanje su relativne (`./`), jer aplikacija živi na `/ZORAN/`.
+- [ ] Sačuvani podaci korisnika (localStorage) ostaju posle ažuriranja.
+
+### Izgled i pristupačnost
+- [ ] Stil „Stari priručnik“ je očuvan (papir #EDE2C6, mastilo #2B2117, akcenat #8A2B1A).
+- [ ] Kontrast teksta je najmanje 4,5:1, dodirne površine su najmanje 44×44 px.
+- [ ] Svaka nova vrednost ima ikonicu za kopiranje.
+- [ ] Sav novi tekst je na srpskom.
+
+## Isporuka
+
+- Otvori PR ka `main`. U opisu PR-a navedi ceo spisak sa [x] za ono što je prošlo, i napiši šta NIJE provereno (na primer: „nije testirano na pravom iPhone-u“).
+- Ako nešto sa spiska ne prolazi, popravi to pre PR-a ili jasno napiši zašto nije urađeno.
+
+## Saveti za proveru
+
+- Lokalni server koji oponaša GitHub Pages putanju: iz roditeljskog foldera repoa pokreni `python3 -m http.server 8765` i otvori `http://127.0.0.1:8765/ZORAN/`.
+- Playwright/Chromium: uređaji `iPhone 13` (390×844), `Pixel 7`, `iPad (gen 7)` ili ručno 820×1180, i 1440×900. Horizontalni skrol: `document.documentElement.scrollWidth <= innerWidth`.
+- Offline: `context.setOffline(true)` pa `page.reload()`.
+- Ažuriranje: privremeno promeni `CACHE_VERSION`, pritisni „Proveri novu verziju“, pa „Osveži“; posle vrati vrednost.

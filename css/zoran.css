@@ -311,3 +311,46 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
   .donja-traka, .gornja-traka, .kopiraj, .dugmad, .alati-crteza { display: none !important; }
   .ekran { display: block !important; }
 }
+
+/* ---------- Ponašanje kao aplikacija ---------- */
+html { touch-action: manipulation; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
+body { touch-action: pan-x pan-y; overscroll-behavior-y: none; }
+/* dok se kuca, donja traka se sklanja da ne prekrije polje iznad tastature */
+@media (max-width: 1099px) and (pointer: coarse) {
+  html.kucanje .donja-traka { display: none; }
+}
+@media (min-width: 700px) and (max-width: 1099px) {
+  main { max-width: 760px; }
+}
+
+/* ---------- Prozor za deljenje ---------- */
+.prozor {
+  padding: 0; margin: auto;
+  width: min(calc(100vw - 32px), 440px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  color: var(--mastilo);
+  background: var(--papir);
+  border: 3px double var(--mastilo);
+  border-radius: 0;
+}
+.prozor:not([open]) { display: none; }
+.prozor[open] { position: fixed; inset: 0; z-index: 200; }
+.prozor::backdrop { background: rgba(43, 33, 23, 0.45); }
+html.prozor-otvoren { overflow: hidden; }
+.prozor-sadrzaj { padding: 1rem 1.1rem 0.6rem; text-align: center; }
+.prozor h2 { margin-top: 0; }
+.qr-slika { margin: 0.4rem auto 0.2rem; }
+.qr-okvir { width: 248px; height: 248px; margin: 0 auto; border: 1px solid var(--mastilo); }
+.qr-okvir svg { width: 100%; height: 100%; display: block; }
+.link-deljenja { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; margin: 0.5rem 0; }
+.poruka-deljenja { color: var(--akcenat); font-style: italic; min-height: 1.5em; margin: 0.2rem 0 0.4rem; }
+.dugmad-prozor { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.dugmad-prozor button { width: 100%; padding: 0.3rem 0.5rem; line-height: 1.15; }
+.dugmad-prozor #dugme-posalji { grid-column: 1 / -1; }
+.qr-okvir { width: 232px; height: 232px; }
+@media (max-height: 700px) { .qr-okvir { width: 222px; height: 222px; } .prozor h2 { font-size: 1.2rem; } }
+
+/* Kolofon na dnu Tablice, kao u starim knjigama */
+.kolofon { text-align: center; font-size: 0.9rem; color: var(--mastilo-blago); margin: 1.4rem 0 0.4rem; padding-top: 0.6rem; border-top: 1px solid var(--linija); }
+.kolofon b { font-weight: 600; color: var(--mastilo); }

@@ -2,7 +2,7 @@
 <html lang="sr-Latn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Zoran — kalkulator zupčanika</title>
 <meta name="description" content="Zoran — besplatan kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima. Zet Obično Računa Apsolutno Nepogrešivo.">
 <meta name="theme-color" content="#EDE2C6">
@@ -144,6 +144,7 @@
       </div>
       <div class="upozorenja" id="upozorenja-tablica"></div>
       <div id="tablica-puna"></div>
+      <p class="kolofon">Izračunao Zoran — <i><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</i>.</p>
     </div>
   </section>
 
@@ -224,6 +225,12 @@
     </div>
     <p id="stanje-verzije" aria-live="polite"></p>
 
+    <h3>Podeli Zorana</h3>
+    <p>Pošalji Zorana kolegi — telefonom, porukom ili QR kodom.</p>
+    <div class="dugmad">
+      <button type="button" class="pecat" id="dugme-podeli" aria-haspopup="dialog">Podeli</button>
+    </div>
+
     <h3>Prikaz brojeva</h3>
     <div class="izbor">
       <span class="natpis-izbora">Jedinice dužine</span>
@@ -290,11 +297,31 @@
   </button>
 </nav>
 
+<!-- Prozor za deljenje -->
+<dialog id="prozor-podeli" class="prozor" aria-labelledby="naslov-podeli">
+  <div class="prozor-sadrzaj">
+    <h2 id="naslov-podeli">Podeli Zorana</h2>
+    <figure class="qr-slika">
+      <div class="qr-okvir" id="qr-okvir"></div>
+      <figcaption>Skeniraj kamerom telefona</figcaption>
+    </figure>
+    <p class="link-deljenja" id="link-deljenja">https://bagaljivko.github.io/ZORAN/</p>
+    <p class="poruka-deljenja" id="poruka-deljenja" aria-live="polite"></p>
+    <div class="dugmad dugmad-prozor">
+      <button type="button" class="pecat" id="dugme-posalji" hidden>Pošalji u aplikaciju</button>
+      <button type="button" class="dugme" id="dugme-kopiraj-link">Kopiraj link</button>
+      <button type="button" class="dugme" id="dugme-zatvori-podeli">Zatvori</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="sr-only" id="obavestenje" aria-live="polite"></div>
 
 <script src="./js/proracun.js"></script>
 <script src="./js/crtez.js"></script>
 <script src="./js/sldprt.js"></script>
+<script src="./js/vendor/qrcode-generator.js"></script>
+<script src="./js/podeli.js"></script>
 <script src="./js/app.js"></script>
 </body>
 </html>
