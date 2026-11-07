@@ -1,0 +1,4 @@
+*.bas -text
+*.woff2 binary
+*.png binary
+*.sldprt binary

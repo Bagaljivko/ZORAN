@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zoran — kalkulator zupčanika</title>
+<meta name="description" content="Zoran — besplatan kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima. Zet Obično Računa Apsolutno Nepogrešivo.">
+<meta name="theme-color" content="#EDE2C6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Zoran">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="preload" href="./fonts/eb-garamond-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="./css/zoran.css">
+</head>
+<body>
+
+<!-- Naslovni ekran: korica starog udžbenika -->
+<div id="naslovna" class="naslovna" aria-hidden="true">
+  <div class="korica">
+    <div class="ornament">kalkulator zupčanika</div>
+    <div class="naslov-veliki">Zoran</div>
+    <div class="akronim"><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</div>
+    <div class="tanka-linija"></div>
+    <div class="verzija-tekst" data-verzija>verzija</div>
+  </div>
+</div>
+
+<header class="tekuce-zaglavlje">
+  <span class="levo">Mašinski elementi</span>
+  <nav class="gornja-traka" aria-label="Glavna navigacija">
+    <button type="button" data-idi="proracun">Proračun</button>
+    <button type="button" data-idi="savetnik">Savetnik</button>
+    <button type="button" data-idi="uvoz">Uvoz</button>
+    <button type="button" data-idi="podesavanja">Podešavanja</button>
+  </nav>
+  <span class="desno" id="naziv-ekrana">Proračun</span>
+</header>
+
+<main id="sadrzaj">
+
+  <!-- ===================== PRORAČUN ===================== -->
+  <section id="ekran-proracun" class="ekran" aria-label="Proračun">
+    <div class="kol kol-ulaz">
+      <h2><span class="par">§ 1.</span>Ulazni podaci</h2>
+      <form id="forma-proracun" autocomplete="off" novalidate onsubmit="return false">
+        <fieldset>
+          <legend>Mali zupčanik</legend>
+          <div class="polje">
+            <label for="u-z1">Broj zuba <i>z</i>₁</label>
+            <input id="u-z1" name="z1" inputmode="numeric" enterkeyhint="next" aria-describedby="p-z1">
+            <div class="poruka" id="p-z1" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="u-pom1">Pomeranje profila <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="u-pom1" name="pom1" inputmode="decimal" enterkeyhint="next" aria-describedby="h-pom1 p-pom1">
+            <div class="pomoc" id="h-pom1"></div>
+            <div class="poruka" id="p-pom1" role="alert"></div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Veliki zupčanik</legend>
+          <div class="polje">
+            <label for="u-z2">Broj zuba <i>z</i>₂</label>
+            <input id="u-z2" name="z2" inputmode="numeric" enterkeyhint="next" aria-describedby="p-z2">
+            <div class="poruka" id="p-z2" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="u-pom2">Pomeranje profila <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="u-pom2" name="pom2" inputmode="decimal" enterkeyhint="next" aria-describedby="h-pom2 p-pom2">
+            <div class="pomoc" id="h-pom2"></div>
+            <div class="poruka" id="p-pom2" role="alert"></div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Zajedničko</legend>
+          <div class="polje">
+            <label for="u-mn">Modul <i>m</i>ₙ <span class="jed">[mm]</span></label>
+            <input id="u-mn" name="mn" inputmode="decimal" enterkeyhint="next" aria-describedby="p-mn">
+            <div class="poruka" id="p-mn" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="u-beta">Ugao nagiba <i>β</i> <span class="jed">[°]</span></label>
+            <input id="u-beta" name="beta" inputmode="decimal" enterkeyhint="next" aria-describedby="p-beta">
+            <div class="poruka" id="p-beta" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="u-alfaN">Ugao profila <i>α</i>ₙ <span class="jed">[°]</span></label>
+            <input id="u-alfaN" name="alfaN" inputmode="decimal" enterkeyhint="next" aria-describedby="p-alfaN">
+            <div class="poruka" id="p-alfaN" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="u-b">Širina <i>b</i> <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="u-b" name="b" inputmode="decimal" enterkeyhint="done" aria-describedby="p-b">
+            <div class="poruka" id="p-b" role="alert"></div>
+          </div>
+        </fieldset>
+      </form>
+      <p class="sitno" data-napomena-inc hidden>Modul i uglovi su uvek u mm i stepenima; u inčima su pomeranje, širina i dužine u rezultatima.</p>
+      <div class="upozorenja" id="upozorenja-proracun" aria-live="polite"></div>
+      <div class="napomena" id="napomena-proracun" aria-live="polite"></div>
+      <div class="dugmad">
+        <button type="button" class="dugme" id="dugme-podrazumevano">Vrati podrazumevano</button>
+      </div>
+    </div>
+
+    <div class="kol kol-crtez">
+      <h2 class="samo-sirok"><span class="par">§ 2.</span>Crtež zahvata</h2>
+      <div class="alati-crteza">
+        <div class="prekidac" role="radiogroup" aria-label="Prikaz crteža">
+          <label><input type="radio" name="prikaz" value="ceo" checked><span>Ceo par</span></label>
+          <label><input type="radio" name="prikaz" value="pregled"><span>Pregled</span></label>
+          <label><input type="radio" name="prikaz" value="zona"><span>Zona zahvata</span></label>
+        </div>
+        <button type="button" class="pecat" id="dugme-animacija" aria-pressed="false">Pokreni</button>
+      </div>
+      <figure>
+        <div class="crtez-okvir" id="crtez"></div>
+        <figcaption id="potpis-crteza"></figcaption>
+      </figure>
+      <div class="legenda" aria-label="Legenda crteža">
+        <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="0.9" stroke-dasharray="14 4 2 4"/></svg>kotrljajne kružnice</span>
+        <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="0.9" stroke-dasharray="1.5 3.5" stroke-linecap="round"/></svg>osnovne kružnice</span>
+        <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="0.8"/></svg>zahvatna linija <i>T</i>₁<i>T</i>₂</span>
+        <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="3"/></svg>aktivni deo <i>AE</i></span>
+      </div>
+      <div class="samo-telefon">
+        <h3>Glavni rezultati</h3>
+        <div class="tablica" id="tablica-kratka"></div>
+        <div class="dugmad"><button type="button" class="dugme" data-idi="tablica">Svi rezultati — Tablica</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TABLICA ===================== -->
+  <section id="ekran-tablica" class="ekran" aria-label="Tablica">
+    <div class="kol kol-tablica">
+      <h2><span class="par">§ 3.</span>Tablica rezultata</h2>
+      <div class="dugmad">
+        <button type="button" class="pecat kopiraj-sve" id="dugme-kopiraj-sve">Kopiraj sve</button>
+      </div>
+      <div class="upozorenja" id="upozorenja-tablica"></div>
+      <div id="tablica-puna"></div>
+    </div>
+  </section>
+
+  <!-- ===================== SAVETNIK ===================== -->
+  <section id="ekran-savetnik" class="ekran uzak" aria-label="Savetnik">
+    <h2><span class="par">§ 4.</span>Savetnik za pomeranje profila</h2>
+    <p>Zadaj željeno osno rastojanje, a Zoran predlaže pomeranje profila i bolje kombinacije modula i broja zuba.</p>
+    <form id="forma-savetnik" autocomplete="off" novalidate onsubmit="return false">
+      <fieldset>
+        <legend>Zadato</legend>
+        <div class="polje">
+          <label for="s-a">Osno rastojanje <i>a</i> <span class="jed" data-jed-duzina>[mm]</span></label>
+          <input id="s-a" name="a" inputmode="decimal"><div class="poruka" id="sp-a" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-z1">Broj zuba <i>z</i>₁</label>
+          <input id="s-z1" name="z1" inputmode="numeric"><div class="poruka" id="sp-z1" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-z2">Broj zuba <i>z</i>₂</label>
+          <input id="s-z2" name="z2" inputmode="numeric"><div class="poruka" id="sp-z2" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-mn">Modul <i>m</i>ₙ <span class="jed">[mm]</span></label>
+          <input id="s-mn" name="mn" inputmode="decimal"><div class="poruka" id="sp-mn" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-beta">Ugao nagiba <i>β</i> <span class="jed">[°]</span></label>
+          <input id="s-beta" name="beta" inputmode="decimal"><div class="poruka" id="sp-beta" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-alfaN">Ugao profila <i>α</i>ₙ <span class="jed">[°]</span></label>
+          <input id="s-alfaN" name="alfaN" inputmode="decimal"><div class="poruka" id="sp-alfaN" role="alert"></div>
+        </div>
+        <div class="polje">
+          <label for="s-tol">Dozvoljeno odstupanje prenosnog odnosa <span class="jed">[± %]</span></label>
+          <input id="s-tol" name="tol" inputmode="decimal"><div class="poruka" id="sp-tol" role="alert"></div>
+        </div>
+      </fieldset>
+      <div class="dugmad"><button type="button" class="dugme" id="dugme-preuzmi">Preuzmi iz proračuna</button></div>
+    </form>
+    <div id="savetnik-rezultat" aria-live="polite"></div>
+    <p class="sitno">Raspodela pomeranja prema DIN 3992. Moduli po DIN 780.</p>
+  </section>
+
+  <!-- ===================== UVOZ ===================== -->
+  <section id="ekran-uvoz" class="ekran uzak" aria-label="Uvoz">
+    <h2><span class="par">§ 5.</span>Uvoz iz SolidWorks-a (.SLDPRT)</h2>
+    <p>Izaberi deo zupčanika. Fajl se čita <em>samo na ovom uređaju</em> — ništa se ne šalje na internet.</p>
+    <div class="dugmad">
+      <label class="pecat izbor-fajla">Izaberi .SLDPRT fajl
+        <input type="file" id="uvoz-fajl" accept=".sldprt,.SLDPRT,.prtdot,application/octet-stream">
+      </label>
+    </div>
+    <div id="uvoz-stanje" class="napomena" aria-live="polite"></div>
+    <div id="uvoz-rezultat"></div>
+    <h3>Kako fajl dobija podatke</h3>
+    <p class="sitno">Najpouzdanije je da svojstva upiše makro <code>tools/zoran-svojstva.bas</code> (u repozitorijumu): pokreni ga u SolidWorks-u nad otvorenim delom i sačuvaj deo. Zoran traži svojstva
+      <code>ZORAN_Modul</code>, <code>ZORAN_BrojZuba</code>, <code>ZORAN_UgaoNagiba</code>, <code>ZORAN_UgaoProfila</code>, <code>ZORAN_Sirina</code> i <code>ZORAN_PomeranjeProfila</code>,
+      a prepoznaje i uobičajena imena kao što su <i>Modul</i>, <i>Broj zuba</i>, <i>Module</i>, <i>Number of teeth</i>.</p>
+  </section>
+
+  <!-- ===================== PODEŠAVANJA ===================== -->
+  <section id="ekran-podesavanja" class="ekran uzak" aria-label="Podešavanja">
+    <h2><span class="par">§ 6.</span>Podešavanja</h2>
+
+    <h3>O aplikaciji</h3>
+    <div class="o-aplikaciji">
+      <div class="naslov-veliki">Zoran</div>
+      <div class="akronim"><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</div>
+      <div class="tanka-linija"></div>
+      <div class="verzija-tekst"><span data-verzija>verzija</span> · keš <span data-verzija-kesa>—</span></div>
+      <p class="sitno">Besplatan kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima.</p>
+    </div>
+    <div class="dugmad">
+      <button type="button" class="pecat" id="dugme-proveri">Proveri novu verziju</button>
+      <button type="button" class="pecat" id="dugme-osvezi" hidden>Osveži</button>
+    </div>
+    <p id="stanje-verzije" aria-live="polite"></p>
+
+    <h3>Prikaz brojeva</h3>
+    <div class="izbor">
+      <span class="natpis-izbora">Jedinice dužine</span>
+      <div class="prekidac" role="radiogroup" aria-label="Jedinice">
+        <label><input type="radio" name="jedinice" value="mm"><span>mm</span></label>
+        <label><input type="radio" name="jedinice" value="in"><span>inč</span></label>
+      </div>
+    </div>
+    <div class="izbor">
+      <span class="natpis-izbora">Decimalni znak</span>
+      <div class="prekidac" role="radiogroup" aria-label="Decimalni znak">
+        <label><input type="radio" name="znak" value=","><span>zarez (6,500)</span></label>
+        <label><input type="radio" name="znak" value="."><span>tačka (6.500)</span></label>
+      </div>
+    </div>
+    <div class="izbor">
+      <span class="natpis-izbora">Broj decimala</span>
+      <div class="prekidac" role="radiogroup" aria-label="Broj decimala">
+        <label><input type="radio" name="decimale" value="2"><span>2</span></label>
+        <label><input type="radio" name="decimale" value="3"><span>3</span></label>
+        <label><input type="radio" name="decimale" value="4"><span>4</span></label>
+      </div>
+    </div>
+
+    <h3>Dijagnostika</h3>
+    <div class="tablica dijagnostika" id="dijagnostika"></div>
+    <div class="dugmad">
+      <button type="button" class="dugme" id="dugme-kopiraj-dijag">Kopiraj dijagnostiku</button>
+      <button type="button" class="dugme" id="dugme-obrisi">Obriši keš i ponovo učitaj</button>
+    </div>
+    <div class="potvrda" id="potvrda-brisanja" hidden>
+      <p>Obrisaće se sačuvane datoteke aplikacije (keš) i stranica će se ponovo učitati. Tvoja podešavanja i poslednji unos ostaju. Da li si siguran?</p>
+      <div class="dugmad">
+        <button type="button" class="pecat" id="dugme-obrisi-da">Da, obriši</button>
+        <button type="button" class="dugme" id="dugme-obrisi-ne">Odustani</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="broj-strane" id="broj-strane">— 1 —</footer>
+
+<nav class="donja-traka" aria-label="Glavna navigacija">
+  <button type="button" data-idi="proracun">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="3"/><path d="M11.6 3.2h2.8l.5 2.5 1.9.8 2.1-1.4 2 2-1.4 2.1.8 1.9 2.5.5v2.8l-2.5.5-.8 1.9 1.4 2.1-2 2-2.1-1.4-1.9.8-.5 2.5h-2.8l-.5-2.5-1.9-.8-2.1 1.4-2-2 1.4-2.1-.8-1.9-2.5-.5v-2.8l2.5-.5.8-1.9-1.4-2.1 2-2 2.1 1.4 1.9-.8z"/></svg>
+    <span>Proračun</span>
+  </button>
+  <button type="button" data-idi="tablica">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><rect x="4.5" y="3.5" width="17" height="19"/><path d="M7.5 8h6M7.5 12h6M7.5 16h6M16 8h2.5M16 12h2.5M16 16h2.5"/></svg>
+    <span>Tablica</span>
+  </button>
+  <button type="button" data-idi="savetnik">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 7c-2.5-1.8-5.5-2.3-9-2v15c3.5-.3 6.5.2 9 2 2.5-1.8 5.5-2.3 9-2V5c-3.5-.3-6.5.2-9 2zM13 7v15"/></svg>
+    <span>Savetnik</span>
+  </button>
+  <button type="button" data-idi="uvoz">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3.5v12M8.5 11l4.5 4.5 4.5-4.5M4.5 15.5v6h17v-6"/></svg>
+    <span>Uvoz</span>
+  </button>
+  <button type="button" data-idi="podesavanja">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 7h18M4 13h18M4 19h18"/><circle cx="9" cy="7" r="2"/><circle cx="17" cy="13" r="2"/><circle cx="11" cy="19" r="2"/></svg>
+    <span>Podešavanja</span>
+  </button>
+</nav>
+
+<div class="sr-only" id="obavestenje" aria-live="polite"></div>
+
+<script src="./js/proracun.js"></script>
+<script src="./js/crtez.js"></script>
+<script src="./js/sldprt.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
