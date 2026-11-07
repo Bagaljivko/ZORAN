@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.1.0';
+  var APP_VERSION = '1.2.0';
   var P = window.Proracun, C = window.Crtez, S = window.Sldprt;
   var DEG = P.DEG;
   var MM_PO_INCU = 25.4;
@@ -939,7 +939,16 @@
   naslovna.addEventListener('pointerdown', skloniNaslovnu);
   naslovna.addEventListener('click', skloniNaslovnu);
   document.addEventListener('keydown', skloniNaslovnu, { once: true });
-  setTimeout(skloniNaslovnu, 1500);
+  // Animacija otkrivanja traje ≈ 2,6 s; dodir je preskače. Bez animacije (smanjeno kretanje) korica stoji 1,5 s.
+  var bezKretanja = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(skloniNaslovnu, bezKretanja ? 1500 : 2900);
+  // U Podešavanjima: dodir na naslov ponovo pušta animaciju
+  var oApl = $('#o-aplikaciji');
+  oApl.addEventListener('click', function () {
+    oApl.classList.remove('animiraj');
+    void oApl.offsetWidth; // ponovo pokreni CSS animaciju
+    oApl.classList.add('animiraj');
+  });
 
   // ------------------------------------------------------------------
   // Pokretanje
