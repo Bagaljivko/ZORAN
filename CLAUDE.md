@@ -57,6 +57,8 @@ Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zada
 
 - Otvori PR ka `main`. U opisu PR-a navedi ceo spisak sa [x] za ono što je prošlo, i napiši šta NIJE provereno (na primer: „nije testirano na pravom iPhone-u“).
 - Ako nešto sa spiska ne prolazi, popravi to pre PR-a ili jasno napiši zašto nije urađeno.
+- **Spajanje u `main` (stalna dozvola vlasnika repoa):** kada sve provere iz ovog fajla prođu, sam spoji PR u `main` (merge commit) i obriši radnu granu, bez čekanja na posebno odobrenje. Ako bilo koja provera ne prolazi, ili nešto nije moglo da se proveri a važno je za tu izmenu, **ne spajaj** — ostavi PR otvoren i napiši šta nedostaje.
+- Posle spajanja proveri da je `main` ažuran, a sledeći zadatak počni od svežeg `main`-a (vidi „Pre svake izmene“).
 
 ## Saveti za proveru
 
