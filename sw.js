@@ -1,7 +1,7 @@
 /* Zoran — service worker. Povećaj CACHE_VERSION pri svakoj promeni aplikacije. */
 'use strict';
 
-const CACHE_VERSION = 'zoran-v3';
+const CACHE_VERSION = 'zoran-v4';
 
 // Sve putanje su relativne u odnosu na sw.js (radi i na https://bagaljivko.github.io/ZORAN/)
 const FAJLOVI = [

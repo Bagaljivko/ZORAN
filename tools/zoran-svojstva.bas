@@ -7,7 +7,7 @@ Attribute VB_Name = "ZoranSvojstva"
 '    ZORAN_BrojZuba          broj zuba z
 '    ZORAN_UgaoNagiba        ugao nagiba beta [°]
 '    ZORAN_UgaoProfila       ugao profila alfa n [°]
-'    ZORAN_Sirina            širina b [mm]
+'    ZORAN_Sirina            širina zahvata b [mm]
 '    ZORAN_PomeranjeProfila  pomeranje profila x·mn [mm]
 '
 '  Upotreba: otvori deo zupèanika, Tools > Macro > Run, izaberi ovaj fajl,
@@ -43,7 +43,7 @@ Sub main()
 
     Dim imena As Variant, opisi As Variant, podrazumevano As Variant
     imena = Array("ZORAN_Modul", "ZORAN_BrojZuba", "ZORAN_UgaoNagiba", "ZORAN_UgaoProfila", "ZORAN_Sirina", "ZORAN_PomeranjeProfila")
-    opisi = Array("Modul mn [mm]", "Broj zuba z", "Ugao nagiba beta [°] (0 za prave zube)", "Ugao profila alfa n [°]", "Širina b [mm]", "Pomeranje profila x·mn [mm] (može biti negativno)")
+    opisi = Array("Modul mn [mm]", "Broj zuba z", "Ugao nagiba beta [°] (0 za prave zube)", "Ugao profila alfa n [°]", "Širina zahvata b [mm]", "Pomeranje profila x·mn [mm] (može biti negativno)")
     podrazumevano = Array("6.5", "16", "9", "20", "88", "0")
 
     Dim i As Integer, postojece As String, unos As String, upisano As String

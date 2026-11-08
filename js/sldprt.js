@@ -29,7 +29,7 @@
     { kljuc: 'z', naziv: 'Broj zuba z', imena: ['ZORAN_BrojZuba', 'BrojZuba', 'Broj zuba', 'Number of teeth', 'NumberOfTeeth', 'Teeth', 'z'] },
     { kljuc: 'beta', naziv: 'Ugao nagiba β [°]', imena: ['ZORAN_UgaoNagiba', 'UgaoNagiba', 'Ugao nagiba', 'Helix angle', 'HelixAngle', 'beta'] },
     { kljuc: 'alfaN', naziv: 'Ugao profila αₙ [°]', imena: ['ZORAN_UgaoProfila', 'UgaoProfila', 'Ugao profila', 'Pressure angle', 'PressureAngle', 'alpha', 'alfa'] },
-    { kljuc: 'b', naziv: 'Širina b [mm]', imena: ['ZORAN_Sirina', 'Sirina', 'Širina', 'Face width', 'FaceWidth', 'Width', 'b'] },
+    { kljuc: 'b', naziv: 'Širina zahvata b [mm]', imena: ['ZORAN_Sirina', 'Sirina zahvata', 'Širina zahvata', 'Sirina', 'Širina', 'Face width', 'FaceWidth', 'Width', 'b'] },
     { kljuc: 'pom', naziv: 'Pomeranje profila [mm]', imena: ['ZORAN_PomeranjeProfila', 'PomeranjeProfila', 'Pomeranje profila', 'Profile shift', 'ProfileShift'] }
   ];
 

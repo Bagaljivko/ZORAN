@@ -60,7 +60,7 @@
     mn: { min: 0.05, max: 100, naziv: 'Modul mₙ' },
     beta: { min: 0, max: 45, maxOtvoren: true, naziv: 'Ugao nagiba β' },
     alfaN: { min: 10, max: 35, naziv: 'Ugao profila αₙ' },
-    b: { min: 0, minOtvoren: true, max: 10000, naziv: 'Širina b' },
+    b: { min: 0, minOtvoren: true, max: 10000, naziv: 'Širina zahvata b' },
     pom1: { naziv: 'Pomeranje profila (mali)' },
     pom2: { naziv: 'Pomeranje profila (veliki)' }
   };
