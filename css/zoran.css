@@ -76,8 +76,13 @@ a { color: var(--mastilo); }
   text-align: center;
 }
 .naslov-veliki { font-size: clamp(3rem, 15vw, 6rem); line-height: 1; letter-spacing: 0.08em; margin-right: -0.08em; font-weight: 400; white-space: nowrap; }
-.akronim { font-style: italic; font-size: clamp(1.15rem, 5vw, 1.5rem); margin-top: 1rem; line-height: 1.4; }
-.red-akronima { display: block; white-space: nowrap; }
+.akronim { font-style: italic; font-size: clamp(0.85rem, 3.9vw, 1.5rem); margin-top: 1rem; line-height: 1.4; white-space: nowrap; }
+.red-akronima { display: inline; }
+/* Akronim uvek u jednom redu: veličina slova prati širinu okvira (16,3 em širine + rezerva) */
+.naslovni-blok { container-type: inline-size; }
+@supports (font-size: 1cqi) {
+  .naslovni-blok .akronim { font-size: min(1.5rem, calc(100cqi / 17.4)); }
+}
 .akronim b { font-weight: 600; font-style: italic; font-size: 1.12em; }
 .tanka-linija { width: 64px; height: 0; border-top: 1px solid var(--mastilo); margin: 1.4rem auto 0.7rem; }
 .verzija-tekst { font-family: var(--mono); font-size: 0.82rem; color: var(--mastilo-blago); letter-spacing: 0.04em; }
@@ -258,7 +263,6 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
 .o-aplikaciji { text-align: center; border: 1px solid var(--mastilo); outline: 1px solid var(--mastilo); outline-offset: 4px; padding: 1.4rem 1rem 1rem; margin: 0.8rem 4px 1.2rem; }
 .o-aplikaciji { cursor: pointer; }
 .o-aplikaciji .naslov-veliki { font-size: 3.2rem; }
-.o-aplikaciji .akronim { font-size: 1.1rem; }
 .izbor { margin: 0.6rem 0 0.9rem; }
 .izbor .natpis-izbora { display: block; margin-bottom: 0.3rem; }
 .dijagnostika .red { min-height: 34px; }
