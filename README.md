@@ -13,6 +13,11 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Tablica** — svi rezultati, uz kopiranje svake vrednosti i „Kopiraj sve“.
 - **Savetnik** — za zadato osno rastojanje računa Σx, raspodelu po DIN 3992 i predlaže bolje kombinacije modula (DIN 780) i broja zuba.
 - **Uvoz** — čita parametre i sliku pregleda iz SolidWorks `.SLDPRT` fajla, lokalno.
+- **Kontrolne mere za radionicu** — mera preko zuba W (preko k zuba) i mera preko kuglica M_d, za oba zupčanika.
+- **Sile u zahvatu** — za upisani obrtni moment T₁: obimna, radijalna, aksijalna i normalna sila.
+- **Napomene za konstrukciju** — lovački zub (sa predlogom z₂), b/d₁ > 1,2, β > 30°, izvodljivost merenja.
+- **Varijante, štampa i link** — poređenje do 6 varijanti, štampa/PDF kao strana priručnika, link koji otvara isti proračun.
+- **Šta je novo** — detaljan opis svake verzije sa slikama (`novosti.html`); posle ažuriranja aplikacija sama ponudi link.
 - **Podešavanja** — mm ili inč, zarez ili tačka, 2–4 decimale, provera nove verzije, dijagnostika i **Podeli Zorana** (QR kod, sistemski meni za deljenje, kopiranje linka).
 
 ## Instalacija na telefon

@@ -1,12 +1,24 @@
 /* Zoran — service worker. Povećaj CACHE_VERSION pri svakoj promeni aplikacije. */
 'use strict';
 
-const CACHE_VERSION = 'zoran-v7';
+const CACHE_VERSION = 'zoran-v8';
 
 // Sve putanje su relativne u odnosu na sw.js (radi i na https://bagaljivko.github.io/ZORAN/)
 const FAJLOVI = [
   './',
   './index.html',
+  './novosti.html',
+  './novosti/v100-pregled.jpg',
+  './novosti/v120-naslovna.jpg',
+  './novosti/v120-podeli.jpg',
+  './novosti/v130-pomeranje.jpg',
+  './novosti/v130-unos.jpg',
+  './novosti/v140-prodiranje.jpg',
+  './novosti/v150-kontrolne-mere.jpg',
+  './novosti/v150-napomene.jpg',
+  './novosti/v150-sile.jpg',
+  './novosti/v150-stampa.jpg',
+  './novosti/v150-varijante.jpg',
   './manifest.json',
   './css/zoran.css',
   './js/proracun.js',
@@ -67,11 +79,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Navigacija: index.html iz keša (radi offline), uz osvežavanje kad ima mreže
+  // Navigacija: tražena stranica iz keša (index.html, novosti.html…), inače index.html; radi i offline
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match('./index.html', { ignoreSearch: true }).then((kes) => kes || fetch(req))
-        .catch(() => caches.match('./index.html'))
+      caches.match(req, { ignoreSearch: true })
+        .then((kes) => kes || fetch(req).catch(() => caches.match('./index.html', { ignoreSearch: true })))
     );
     return;
   }
