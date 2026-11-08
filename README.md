@@ -8,7 +8,7 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 
 ## Šta zna
 
-- **Proračun** — za z₁, z₂, pomeranja profila (u mm), mₙ, β, αₙ i b računa odmah, dok kucaš: osno rastojanje, prečnike (d, d_b, d_w, dₐ, d_f), debljine zuba, skraćenje temena, stepene sprezanja εα, εβ, εγ i upozorava na podsecanje, zašiljen vrh i εα < 1,1.
+- **Proračun** — unosiš z₁, z₂, mₙ, β, αₙ, širinu ozubljenja b i **osno rastojanje a koje zadaješ**; Zoran iz njega računa pomeranje profila (Σx, raspodela po DIN 3992), prikazuje ga ispod crteža i proverava da zaokružena pomeranja daju zadato a. Računa odmah, dok kucaš: prečnike (d, d_b, d_w, dₐ, d_f), debljine zuba, skraćenje temena, stepene sprezanja εα, εβ, εγ i upozorava na podsecanje, zašiljen vrh i εα < 1,1.
 - **Crtež zahvata** — pravi evolventni profili, kotrljajne i osnovne kružnice, zahvatna linija T₁T₂ i aktivni deo AE; prikazi „Ceo par“, „Pregled“ i „Zona zahvata“, uz animaciju na dugme „Pokreni“.
 - **Tablica** — svi rezultati, uz kopiranje svake vrednosti i „Kopiraj sve“.
 - **Savetnik** — za zadato osno rastojanje računa Σx, raspodelu po DIN 3992 i predlaže bolje kombinacije modula (DIN 780) i broja zuba.

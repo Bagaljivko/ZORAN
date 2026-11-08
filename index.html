@@ -48,31 +48,16 @@
       <h2><span class="par">§ 1.</span>Ulazni podaci</h2>
       <form id="forma-proracun" autocomplete="off" novalidate onsubmit="return false">
         <fieldset>
-          <legend>Mali zupčanik</legend>
+          <legend>Zupčanici</legend>
           <div class="polje">
-            <label for="u-z1">Broj zuba <i>z</i>₁</label>
+            <label for="u-z1">Broj zuba malog <i>z</i>₁</label>
             <input id="u-z1" name="z1" inputmode="numeric" enterkeyhint="next" aria-describedby="p-z1">
             <div class="poruka" id="p-z1" role="alert"></div>
           </div>
           <div class="polje">
-            <label for="u-pom1">Pomeranje profila <span class="jed" data-jed-duzina>[mm]</span></label>
-            <input id="u-pom1" name="pom1" inputmode="decimal" enterkeyhint="next" aria-describedby="h-pom1 p-pom1">
-            <div class="pomoc" id="h-pom1"></div>
-            <div class="poruka" id="p-pom1" role="alert"></div>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>Veliki zupčanik</legend>
-          <div class="polje">
-            <label for="u-z2">Broj zuba <i>z</i>₂</label>
+            <label for="u-z2">Broj zuba velikog <i>z</i>₂</label>
             <input id="u-z2" name="z2" inputmode="numeric" enterkeyhint="next" aria-describedby="p-z2">
             <div class="poruka" id="p-z2" role="alert"></div>
-          </div>
-          <div class="polje">
-            <label for="u-pom2">Pomeranje profila <span class="jed" data-jed-duzina>[mm]</span></label>
-            <input id="u-pom2" name="pom2" inputmode="decimal" enterkeyhint="next" aria-describedby="h-pom2 p-pom2">
-            <div class="pomoc" id="h-pom2"></div>
-            <div class="poruka" id="p-pom2" role="alert"></div>
           </div>
         </fieldset>
         <fieldset>
@@ -93,13 +78,22 @@
             <div class="poruka" id="p-alfaN" role="alert"></div>
           </div>
           <div class="polje">
-            <label for="u-b">Širina zahvata <i>b</i> <span class="jed" data-jed-duzina>[mm]</span></label>
-            <input id="u-b" name="b" inputmode="decimal" enterkeyhint="done" aria-describedby="p-b">
+            <label for="u-b">Širina ozubljenja <i>b</i> <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="u-b" name="b" inputmode="decimal" enterkeyhint="next" aria-describedby="p-b">
             <div class="poruka" id="p-b" role="alert"></div>
           </div>
         </fieldset>
+        <fieldset>
+          <legend>Zadato osno rastojanje</legend>
+          <div class="polje">
+            <label for="u-a">Osno rastojanje <i>a</i> <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="u-a" name="a" inputmode="decimal" enterkeyhint="done" aria-describedby="h-a p-a">
+            <div class="pomoc pomoc-tekst" id="h-a">Iz njega se računa pomeranje profila.</div>
+            <div class="poruka" id="p-a" role="alert"></div>
+          </div>
+        </fieldset>
       </form>
-      <p class="sitno" data-napomena-inc hidden>Modul i uglovi su uvek u mm i stepenima; u inčima su pomeranje, širina i dužine u rezultatima.</p>
+      <p class="sitno" data-napomena-inc hidden>Modul i uglovi su uvek u mm i stepenima; u inčima su širina, osno rastojanje, pomeranje i dužine u rezultatima.</p>
       <div class="upozorenja" id="upozorenja-proracun" aria-live="polite"></div>
       <div class="napomena" id="napomena-proracun" aria-live="polite"></div>
       <div class="dugmad">
@@ -127,6 +121,14 @@
         <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="0.8"/></svg>zahvatna linija <i>T</i>₁<i>T</i>₂</span>
         <span><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="3"/></svg>aktivni deo <i>AE</i></span>
       </div>
+      <section class="pomeranje-profila" aria-labelledby="naslov-pomeranja">
+        <h3 id="naslov-pomeranja">Pomeranje profila — izračunato</h3>
+        <div class="tablica" id="tablica-pomeranje"></div>
+        <h3>Provera osnog rastojanja</h3>
+        <div class="tablica" id="tablica-provera"></div>
+        <p class="provera-status" id="provera-status" aria-live="polite"></p>
+        <p class="sitno">Zbir Σ<i>x</i> sledi iz zadatog osnog rastojanja, a raspodela na <i>x</i>₁ i <i>x</i>₂ je prema DIN 3992. Provera ponovo računa osno rastojanje iz pomeranja zaokruženih na prikazani broj decimala.</p>
+      </section>
       <div class="samo-telefon">
         <h3>Glavni rezultati</h3>
         <div class="tablica" id="tablica-kratka"></div>

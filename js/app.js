@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.2.1';
+  var APP_VERSION = '1.3.0';
   var P = window.Proracun, C = window.Crtez, S = window.Sldprt;
   var DEG = P.DEG;
   var MM_PO_INCU = 25.4;
@@ -160,8 +160,8 @@
   // ------------------------------------------------------------------
   // Proračun: unos
   // ------------------------------------------------------------------
-  var POLJA = ['z1', 'pom1', 'z2', 'pom2', 'mn', 'beta', 'alfaN', 'b'];
-  var DUZINSKA = { pom1: true, pom2: true, b: true };
+  var POLJA = ['z1', 'z2', 'mn', 'beta', 'alfaN', 'b', 'a'];
+  var DUZINSKA = { b: true, a: true };
   var poslednjiRez = null;   // poslednji ispravan rezultat
   var trenutniRez = null;    // rezultat za trenutni unos (može biti neispravan)
 
@@ -188,7 +188,7 @@
 
   function preracunaj() {
     var u = procitajUnos();
-    var r = P.proracunaj(u);
+    var r = P.proracunajIzRastojanja(u);
     trenutniRez = r;
     // poruke po poljima
     POLJA.forEach(function (k) {
@@ -198,12 +198,6 @@
     r.greske.forEach(function (g) {
       var p = $('#p-' + g.polje);
       if (p) { p.textContent = g.poruka; $('#u-' + g.polje).setAttribute('aria-invalid', 'true'); }
-    });
-    // x = pomeranje / mₙ
-    ['1', '2'].forEach(function (i) {
-      var pom = u['pom' + i];
-      $('#h-pom' + i).innerHTML = isFinite(pom) && isFinite(u.mn) && u.mn > 0
-        ? '<i>x</i>' + (i === '1' ? '₁' : '₂') + ' = ' + esc(fmt(pom / u.mn, 4)) : '';
     });
     if (r.ok) poslednjiRez = r;
     sacuvajUnos();
@@ -226,6 +220,39 @@
     }
   }
 
+  /** Ispod crteža: izračunato pomeranje profila i provera osnog rastojanja. */
+  function prikaziPomeranje(rez) {
+    var t = $('#tablica-pomeranje'), tp = $('#tablica-provera'), st = $('#provera-status');
+    t.innerHTML = ''; tp.innerHTML = ''; st.textContent = ''; st.classList.remove('odstupa');
+    if (!rez || !rez.raspodela) return;
+    var rs = rez.raspodela, J = jedDuz(), u = rez.ulaz;
+    [
+      { naziv: 'Zbir koeficijenata Σ<i>x</i>', v: rs.sumaX, dec: 4, upozorenje: rs.sumaX > 1.2 || rs.sumaX < -0.5, tekst: 'Zbir koeficijenata Σx' },
+      { naziv: 'Koeficijent <i>x</i>₁ (mali)', v: rs.x1, dec: 4, tekst: 'Koeficijent x1' },
+      { naziv: 'Pomeranje profila <i>x</i>₁·<i>m</i>ₙ', v: duz(rs.pom1), jed: J, tekst: 'Pomeranje profila 1' },
+      { naziv: 'Koeficijent <i>x</i>₂ (veliki)', v: rs.x2, dec: 4, tekst: 'Koeficijent x2' },
+      { naziv: 'Pomeranje profila <i>x</i>₂·<i>m</i>ₙ', v: duz(rs.pom2), jed: J, tekst: 'Pomeranje profila 2' }
+    ].forEach(function (sp) { t.appendChild(redTablice(sp)); });
+    if (rs.pomereno) t.appendChild(el('p', { class: 'sitno', text: 'Raspodela je pomerena da oba koeficijenta budu najmanje x_min (bez podsecanja).' }));
+
+    // Provera: a iz pomeranja zaokruženih na prikazani broj decimala (u izabranim jedinicama)
+    function zaokruzi(mm) { var f = Math.pow(10, pod.decimale); return izDuz(Math.round(duz(mm) * f) / f); }
+    var aProvera = P.rastojanjeIzPomeranja(u, zaokruzi(rs.pom1), zaokruzi(rs.pom2));
+    var razlika = aProvera - rs.a;
+    [
+      { naziv: 'Zadato osno rastojanje <i>a</i>', v: duz(rs.a), jed: J, tekst: 'Zadato osno rastojanje a' },
+      { naziv: 'Osno rastojanje iz pomeranja', v: duz(aProvera), jed: J, tekst: 'Osno rastojanje iz pomeranja' },
+      { naziv: 'Razlika', v: duz(razlika), dec: Math.max(pod.decimale, 4), jed: J, tekst: 'Razlika osnog rastojanja' }
+    ].forEach(function (sp) { tp.appendChild(redTablice(sp)); });
+    var tolerancija = 0.01; // mm
+    if (isFinite(razlika) && Math.abs(razlika) <= tolerancija) {
+      st.textContent = '✓ Podudara se sa zadatim osnim rastojanjem (odstupanje ispod ' + fmt(duz(tolerancija), pod.jedinice === 'in' ? 4 : 2) + ' ' + J + ').';
+    } else {
+      st.textContent = 'Odstupa od zadatog osnog rastojanja — proveri zaokruživanje pomeranja.';
+      st.classList.add('odstupa');
+    }
+  }
+
   function prikaziRezultate() {
     var r = trenutniRez;
     prikaziUpozorenja('#upozorenja-proracun', r);
@@ -237,9 +264,11 @@
     var kratka = $('#tablica-kratka'), puna = $('#tablica-puna');
     kratka.innerHTML = ''; puna.innerHTML = '';
     if (!rez) {
+      prikaziPomeranje(null);
       puna.appendChild(el('p', { class: 'kurziv', text: 'Zoran obično računa apsolutno nepogrešivo — ali samo sa ispravnim podacima. Ispravi unos.' }));
       return;
     }
+    prikaziPomeranje(rez);
     var redovi = redoviTablice(rez);
     // kratka tablica (telefon)
     redovi.par.filter(function (s) { return s.kratko; }).forEach(function (s) { kratka.appendChild(redTablice(s)); });
@@ -303,7 +332,7 @@
     if (!rez) return '';
     var redovi = redoviTablice(rez);
     var u = rez.ulaz;
-    var linije = ['Zoran ' + APP_VERSION + ' — Zet Obično Računa Apsolutno Nepogrešivo', 'Zupčasti par z1 = ' + u.z1 + ', z2 = ' + u.z2 + ', mn = ' + zaKopiju(u.mn) + ' mm, β = ' + zaKopiju(u.beta) + '°, αn = ' + zaKopiju(u.alfaN) + '°, b = ' + zaKopiju(duz(u.b)) + ' ' + jedDuz(), ''];
+    var linije = ['Zoran ' + APP_VERSION + ' — Zet Obično Računa Apsolutno Nepogrešivo', 'Zupčasti par z1 = ' + u.z1 + ', z2 = ' + u.z2 + ', mn = ' + zaKopiju(u.mn) + ' mm, β = ' + zaKopiju(u.beta) + '°, αn = ' + zaKopiju(u.alfaN) + '°, b = ' + zaKopiju(duz(u.b)) + ' ' + jedDuz() + ', zadato a = ' + zaKopiju(duz(u.a)) + ' ' + jedDuz(), ''];
     function dodaj(s) { linije.push(s.tekst + '\t' + zaKopiju(s.v, s.dec) + (s.jed ? '\t' + s.jed : '')); }
     linije.push('Par zupčanika'); redovi.par.forEach(dodaj);
     linije.push('', 'Mali zupčanik (z1 = ' + u.z1 + ')'); redovi.zup[0].forEach(dodaj);
@@ -387,7 +416,7 @@
   function preuzmiIzProracuna() {
     var r = poslednjiRez;
     if (!r) return;
-    upisiSavetnik({ a: Math.round(r.par.a * 100) / 100, z1: r.ulaz.z1, z2: r.ulaz.z2, mn: r.ulaz.mn, beta: r.ulaz.beta, alfaN: r.ulaz.alfaN });
+    upisiSavetnik({ a: r.ulaz.a !== undefined ? r.ulaz.a : Math.round(r.par.a * 100) / 100, z1: r.ulaz.z1, z2: r.ulaz.z2, mn: r.ulaz.mn, beta: r.ulaz.beta, alfaN: r.ulaz.alfaN });
     if (!$('#s-tol').value) $('#s-tol').value = zaPolje(2);
     racunajSavetnik();
   }
@@ -470,7 +499,7 @@
 
   function primeniKombinaciju(k, u) {
     var b = poslednjiRez ? poslednjiRez.ulaz.b : P.PODRAZUMEVANO.b;
-    upisiUnos({ z1: k.z1, z2: k.z2, mn: k.mn, beta: u.beta, alfaN: u.alfaN, pom1: Math.round(k.pom1 * 1000) / 1000, pom2: Math.round(k.pom2 * 1000) / 1000, b: b });
+    upisiUnos({ z1: k.z1, z2: k.z2, mn: k.mn, beta: u.beta, alfaN: u.alfaN, a: u.a, b: b });
     preracunaj();
     prikaziEkran('proracun');
     $('#napomena-proracun').innerHTML = 'Primenjeno iz Savetnika: <i>m</i>ₙ = ' + esc(zaPolje(k.mn)) + ' mm, <i>z</i>₁ = ' + k.z1 + ', <i>z</i>₂ = ' + k.z2 + '.';
@@ -523,7 +552,7 @@
       out.appendChild(el('p', { class: 'kurziv', text: 'Zoran računa nepogrešivo, ali misli još ne čita — unesi podatke ručno.' }));
     }
     var cilj = el('div', { class: 'izbor' }, [
-      el('span', { class: 'natpis-izbora', text: 'Broj zuba i pomeranje profila primeni na:' }),
+      el('span', { class: 'natpis-izbora', text: 'Broj zuba primeni na:' }),
       el('div', { class: 'prekidac', role: 'radiogroup', 'aria-label': 'Zupčanik' }, [
         el('label', null, [el('input', { type: 'radio', name: 'uvoz-cilj', value: '1', checked: true }), el('span', { html: 'mali (<i>z</i>₁)' })]),
         el('label', null, [el('input', { type: 'radio', name: 'uvoz-cilj', value: '2' }), el('span', { html: 'veliki (<i>z</i>₂)' })])
@@ -538,16 +567,19 @@
       var id = 'uv-' + par.kljuc;
       var vred = nadjen ? (par.kljuc === 'pom' || par.kljuc === 'b' ? duz(n.vrednost) : n.vrednost) : NaN;
       var red = el('div', { class: 'nalaz' });
-      red.appendChild(el('input', { type: 'checkbox', id: id + '-da', checked: nadjen, 'aria-label': 'Primeni ' + par.naziv }));
+      var samoInfo = par.kljuc === 'pom'; // pomeranje se sada računa iz osnog rastojanja
+      red.appendChild(el('input', { type: 'checkbox', id: id + '-da', checked: nadjen && !samoInfo, disabled: samoInfo, 'aria-label': 'Primeni ' + par.naziv }));
       var naziv = par.naziv.replace('[mm]', '[' + (par.kljuc === 'pom' || par.kljuc === 'b' ? jedDuz() : 'mm') + ']');
       red.appendChild(el('label', { for: id, text: naziv }));
       var inp = el('input', { type: 'text', id: id, inputmode: 'decimal', value: nadjen ? zaPolje(vred) : '', placeholder: '—' });
-      inp.addEventListener('input', function () { $('#' + id + '-da').checked = isFinite(P.parsirajBroj(inp.value)); });
+      if (samoInfo) inp.readOnly = true;
+      else inp.addEventListener('input', function () { $('#' + id + '-da').checked = isFinite(P.parsirajBroj(inp.value)); });
       red.appendChild(inp);
       var izvor;
       if (nadjen) izvor = el('div', { class: 'izvor', text: 'Izvor: ' + n.izvor + ' — svojstvo „' + n.ime + '“' + (n.napomena ? ' (' + n.napomena + ')' : '') });
       else if (n) izvor = el('div', { class: 'izvor nema', text: 'Svojstvo „' + n.ime + '“ postoji, ali vrednost „' + n.sirovo + '“ nije broj — unesi ručno.' });
-      else izvor = el('div', { class: 'izvor nema', text: 'nije pronađeno, unesi ručno' });
+      else izvor = el('div', { class: 'izvor nema', text: samoInfo ? 'nije pronađeno' : 'nije pronađeno, unesi ručno' });
+      if (samoInfo) izvor.appendChild(document.createTextNode(' — samo za poređenje: Zoran pomeranje računa iz zadatog osnog rastojanja.'));
       red.appendChild(izvor);
       lista.appendChild(red);
     });
@@ -558,11 +590,11 @@
       var cil = ($('input[name="uvoz-cilj"]:checked') || {}).value || '1';
       var nove = {}, primenjeno = [];
       S.PARAMETRI.forEach(function (par) {
-        if (!$('#uv-' + par.kljuc + '-da').checked) return;
+        if (par.kljuc === 'pom' || !$('#uv-' + par.kljuc + '-da').checked) return;
         var v = P.parsirajBroj($('#uv-' + par.kljuc).value);
         if (!isFinite(v)) return;
         if (par.kljuc === 'pom' || par.kljuc === 'b') v = izDuz(v);
-        var k = par.kljuc === 'z' ? 'z' + cil : par.kljuc === 'pom' ? 'pom' + cil : par.kljuc;
+        var k = par.kljuc === 'z' ? 'z' + cil : par.kljuc;
         nove[k] = v;
         primenjeno.push(par.naziv.replace(/\s*\[.*\]$/, ''));
       });
@@ -957,6 +989,12 @@
   (function ucitajUnos() {
     var s = citaj('zoran.unos', null);
     if (s && s.vrednosti) {
+      // Stari unos (do 1.2.x) je imao pomeranja, a ne osno rastojanje: pretvori ih u a,
+      // da korisnik posle ažuriranja dobije isti par.
+      if (s.vrednosti.a === undefined && isFinite(s.vrednosti.pom1) && isFinite(s.vrednosti.pom2)) {
+        var star = P.proracunaj(s.vrednosti);
+        s.vrednosti.a = star.ok ? Math.round(star.par.a * 1000) / 1000 : P.PODRAZUMEVANO.a;
+      }
       var v = {};
       POLJA.forEach(function (k) {
         var x = s.vrednosti[k];
