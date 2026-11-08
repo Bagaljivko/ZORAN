@@ -2,6 +2,18 @@
 
 Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zadatka i drži ga se.**
 
+## Glavno pravilo (dogovor sa vlasnikom repoa)
+
+Vlasnik ne radi ništa na GitHub-u — sve ide preko razgovora sa Claude-om. Kad se dogovorimo oko izmene:
+
+1. Uradi izmenu na radnoj grani (vidi „Pre svake izmene“).
+2. Pokreni **`node tests/provera-aplikacije.js`** — ona proverava ceo spisak ispod — i ručno proveri ono što skripta ne pokriva (izgled izmenjenog dela na snimku ekrana, smisao novih tekstova).
+3. Ako bilo šta ne prolazi ili je pokvareno, **popravi na licu mesta** i ponovo pokreni celu proveru, ne samo deo koji je pao.
+4. Kad sve prođe: commit, push, otvori PR sa popunjenim spiskom i **odmah ga sam spoji u `main`**. Grana se briše automatski (uključeno u podešavanjima repoa).
+5. Javi vlasniku kratko šta je urađeno i da na telefonu pritisne Podešavanja › „Proveri novu verziju“ › „Osveži“.
+
+Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo dogovora; ako izmena utiče na sačuvane podatke korisnika (localStorage), napravi prenos starih podataka. Ako dogovor nije jasan, prvo pitaj. Ako nešto važno ne može da se popravi ili proveri, **ne spajaj** — objasni vlasniku šta nedostaje.
+
 - Repo: https://github.com/Bagaljivko/ZORAN — radi isključivo u ovom repou.
 - Live: https://bagaljivko.github.io/ZORAN/ (GitHub Pages iz grane `main`, aplikacija živi na `/ZORAN/`).
 - Ceo tekst u aplikaciji je na srpskom (latinica).
@@ -16,7 +28,8 @@ Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zada
 - `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
 - `js/app.js` — interfejs; ovde je `APP_VERSION`.
 - `sw.js` — service worker; ovde je `CACHE_VERSION` i spisak fajlova za keš.
-- `tests/proracun.test.js` — testovi (`node tests/proracun.test.js`, bez biblioteka).
+- `tests/proracun.test.js` — testovi proračuna (`node tests/proracun.test.js`, bez biblioteka).
+- `tests/provera-aplikacije.js` — automatska provera celog spiska (uređaji, konzola, offline, ažuriranje, localStorage, keš, verzije, putanje). Koristi Playwright/Chromium iz okruženja; sama podiže server na `/ZORAN/` i ne menja fajlove. Izlaz 0 = sve prolazi.
 - `tools/` — SolidWorks makro i uputstvo.
 
 ## Pre svake izmene
@@ -41,7 +54,7 @@ Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zada
 
 ### PWA i ažuriranje
 - [ ] `CACHE_VERSION` u `sw.js` i broj verzije aplikacije (`APP_VERSION` u `js/app.js`) su povećani.
-- [ ] Svaki novi fajl je dodat u keš u `sw.js`.
+- [ ] Svaki novi fajl aplikacije (js, css, fontovi, ikonice) je dodat u keš u `sw.js`.
 - [ ] Offline: posle prvog otvaranja i isključene mreže aplikacija se učitava sa svim ekranima.
 - [ ] „Proveri novu verziju“ prikazuje „Nova verzija je spremna“, a „Osveži“ učitava novu verziju.
 - [ ] Sve putanje su relativne (`./`), jer aplikacija živi na `/ZORAN/`.
@@ -55,13 +68,13 @@ Ovo je trajni radni postupak za projekat. **Pročitaj ga na početku svakog zada
 
 ## Isporuka
 
-- Otvori PR ka `main`. U opisu PR-a navedi ceo spisak sa [x] za ono što je prošlo, i napiši šta NIJE provereno (na primer: „nije testirano na pravom iPhone-u“).
-- Ako nešto sa spiska ne prolazi, popravi to pre PR-a ili jasno napiši zašto nije urađeno.
-- **Spajanje u `main` (stalna dozvola vlasnika repoa):** kada sve provere iz ovog fajla prođu, sam spoji PR u `main` (merge commit) i obriši radnu granu, bez čekanja na posebno odobrenje. Ako bilo koja provera ne prolazi, ili nešto nije moglo da se proveri a važno je za tu izmenu, **ne spajaj** — ostavi PR otvoren i napiši šta nedostaje.
+- Otvori PR ka `main`. U opisu PR-a navedi ceo spisak sa [x] za ono što je prošlo (izlaz skripte `tests/provera-aplikacije.js` može da se nalepi), i napiši šta NIJE provereno (na primer: „nije testirano na pravom iPhone-u“).
+- **Spajanje u `main` (stalna dozvola vlasnika repoa):** kada sve provere prođu, sam spoji PR u `main` (merge commit) bez čekanja na posebno odobrenje. Ako nešto ne prolazi, prvo to popravi; ako ne može da se popravi, ili nešto važno za tu izmenu nije moglo da se proveri, **ne spajaj** — ostavi PR otvoren i napiši vlasniku šta nedostaje.
 - Posle spajanja proveri da je `main` ažuran, a sledeći zadatak počni od svežeg `main`-a (vidi „Pre svake izmene“).
 
 ## Saveti za proveru
 
+- Najbrže: `node tests/provera-aplikacije.js` (traje oko 2 minuta).
 - Lokalni server koji oponaša GitHub Pages putanju: iz roditeljskog foldera repoa pokreni `python3 -m http.server 8765` i otvori `http://127.0.0.1:8765/ZORAN/`.
 - Playwright/Chromium: uređaji `iPhone 13` (390×844), `Pixel 7`, `iPad (gen 7)` ili ručno 820×1180, i 1440×900. Horizontalni skrol: `document.documentElement.scrollWidth <= innerWidth`.
 - Offline: `context.setOffline(true)` pa `page.reload()`.

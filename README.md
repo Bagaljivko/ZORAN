@@ -49,7 +49,7 @@ U `tests/primeri/primer-ole.sldprt` je mali veštački OLE fajl za probu uvoza.
 
 - Čist HTML, CSS i JavaScript, bez build koraka i bez frameworka. GitHub Pages iz grane `main`.
 - `js/proracun.js` — proračun i savetnik (čiste funkcije), `js/crtez.js` — SVG crtež, `js/sldprt.js` — čitanje `.SLDPRT`, `js/app.js` — interfejs.
-- Testovi: `node tests/proracun.test.js` (bez biblioteka).
+- Testovi: `node tests/proracun.test.js` (bez biblioteka). Cela provera pre objave (uređaji, offline, ažuriranje): `node tests/provera-aplikacije.js` (Playwright/Chromium).
 - Pri svakoj promeni povećaj `CACHE_VERSION` u `sw.js` i `APP_VERSION` u `js/app.js`.
 - Radni postupak i spisak provera pre svakog PR-a: [`CLAUDE.md`](CLAUDE.md).
 
