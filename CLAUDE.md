@@ -9,7 +9,7 @@ Vlasnik ne radi ništa na GitHub-u — sve ide preko razgovora sa Claude-om. Kad
 1. Uradi izmenu na radnoj grani (vidi „Pre svake izmene“).
 2. Pokreni **`node tests/provera-aplikacije.js`** — ona proverava ceo spisak ispod — i ručno proveri ono što skripta ne pokriva (izgled izmenjenog dela na snimku ekrana, smisao novih tekstova).
 3. Ako bilo šta ne prolazi ili je pokvareno, **popravi na licu mesta** i ponovo pokreni celu proveru, ne samo deo koji je pao.
-4. Kad sve prođe: commit, push, otvori PR sa popunjenim spiskom i **odmah ga sam spoji u `main`**. Grana se briše automatski (uključeno u podešavanjima repoa).
+4. Kad sve prođe: commit, push, otvori PR sa popunjenim spiskom, sačekaj da i GitHub-ova automatska provera „Provera“ (`.github/workflows/provera.yml`) bude zelena, pa **odmah sam spoji PR u `main`**. Ako GitHub-ova provera padne, popravi i ponovi. Grana se briše automatski (uključeno u podešavanjima repoa).
 5. Javi vlasniku kratko šta je urađeno i da na telefonu pritisne Podešavanja › „Proveri novu verziju“ › „Osveži“.
 
 Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo dogovora; ako izmena utiče na sačuvane podatke korisnika (localStorage), napravi prenos starih podataka. Ako dogovor nije jasan, prvo pitaj. Ako nešto važno ne može da se popravi ili proveri, **ne spajaj** — objasni vlasniku šta nedostaje.
@@ -31,6 +31,7 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - `tests/proracun.test.js` — testovi proračuna (`node tests/proracun.test.js`, bez biblioteka).
 - `tests/provera-aplikacije.js` — automatska provera celog spiska (uređaji, konzola, offline, ažuriranje, localStorage, keš, verzije, putanje). Koristi Playwright/Chromium iz okruženja; sama podiže server na `/ZORAN/` i ne menja fajlove. Izlaz 0 = sve prolazi.
 - `tools/` — SolidWorks makro i uputstvo.
+- `.github/workflows/provera.yml` — GitHub sam pokreće obe provere na svakom PR-u i posle spajanja u `main`. `.github/pull_request_template.md` — šablon opisa PR-a sa spiskom.
 
 ## Pre svake izmene
 

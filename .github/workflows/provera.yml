@@ -1,0 +1,38 @@
+# ZORAN — automatska provera (isti spisak kao u CLAUDE.md).
+# Pokreće se na svakom PR-u ka main i posle svakog spajanja u main.
+name: Provera
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provera:
+    name: Ceo spisak iz CLAUDE.md
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # potrebna je grana main za poređenje verzija
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Testovi proračuna
+        run: node tests/proracun.test.js
+
+      - name: Playwright i Chromium (samo za proveru, nisu deo aplikacije)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Uređaji, offline, ažuriranje, keš, verzije, putanje
+        run: node tests/provera-aplikacije.js
