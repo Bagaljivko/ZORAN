@@ -363,6 +363,108 @@
     return { ok: true, greske: [], vlastita: vlastita, predlozi: predlozi, status: status, brojKandidata: kandidati.length };
   }
 
+  // ------------------------------------------------------------------
+  // Kontrolne mere za radionicu (DIN 3960)
+  // ------------------------------------------------------------------
+
+  /** Preporučeni prečnik kuglice: ≈ 1,68·mₙ, zaokruženo na 0,5 mm (najmanje 1 mm). */
+  function preporucenaKuglica(mn) {
+    return Math.max(1, Math.round(1.68 * mn * 2) / 2);
+  }
+
+  /**
+   * Mera preko zuba W_k i mera preko kuglica M_d za jedan zupčanik.
+   * @param rez rezultat proracunaj; @param i 0 = mali, 1 = veliki; @param DM prečnik kuglice (opciono)
+   */
+  function kontrolneMere(rez, i, DM) {
+    var p = rez.par, g = rez.zupcanici[i];
+    var mn = rez.ulaz.mn, alfaN = p.alfaN, beta = p.beta, alfaT = p.alfaT, invAt = p.invAt;
+    var z = g.z, x = g.x;
+    var betaB = Math.atan(Math.tan(beta) * Math.cos(alfaT));
+    // broj zuba preko kojih se meri
+    var cosAx = g.d * Math.cos(alfaT) / (g.d + 2 * x * mn);
+    var alfaX = Math.acos(Math.min(1, cosAx));
+    var kRac = z / PI * (Math.tan(alfaX) / Math.pow(Math.cos(betaB), 2) - 2 * x * Math.tan(alfaN) / z - invAt) + 0.5;
+    var k = Math.min(Math.max(2, Math.round(kRac)), z - 1);
+    var W = mn * Math.cos(alfaN) * ((k - 0.5) * PI + z * invAt) + 2 * x * mn * Math.sin(alfaN);
+    var bPotrebno = W * Math.sin(betaB);
+    // mera preko kuglica
+    DM = DM || preporucenaKuglica(mn);
+    var invAMt = invAt + DM / (z * mn * Math.cos(alfaN)) - PI / (2 * z) + 2 * x * Math.tan(alfaN) / z;
+    var alfaMt = invInverse(invAMt);
+    var dK = isFinite(alfaMt) ? g.db / Math.cos(alfaMt) : NaN;
+    var Md = z % 2 === 0 ? dK + DM : dK * Math.cos(PI / (2 * z)) + DM;
+    // tačka dodira kuglice mora biti na evolventi (između osnovne i temene kružnice)
+    var rDodir = Math.sqrt(g.rb * g.rb + Math.pow(g.rb * Math.tan(alfaMt) - DM / (2 * Math.cos(betaB)), 2));
+    return {
+      k: k, W: W, bPotrebno: bPotrebno, mozeW: rez.ulaz.b >= bPotrebno,
+      DM: DM, dK: dK, Md: Md, alfaMt: alfaMt, rDodir: rDodir,
+      kuglicaDobra: isFinite(Md) && rDodir > g.rb && rDodir < g.ra
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // Sile u zahvatu
+  // ------------------------------------------------------------------
+
+  /** Sile na malom zupčaniku za obrtni moment T₁ [N·m]. */
+  function sileUZahvatu(rez, T1) {
+    var p = rez.par, g1 = rez.zupcanici[0];
+    var Ft = 2000 * T1 / g1.dw;                       // N (T u N·m, d u mm)
+    var betaW = Math.atan(Math.tan(p.beta) * g1.dw / g1.d);
+    return {
+      T1: T1, T2: T1 * p.u,
+      Ft: Ft,
+      Fr: Ft * Math.tan(p.alfaWt),
+      Fa: Ft * Math.tan(betaW),
+      Fn: Ft / (Math.cos(p.alfaWt) * Math.cos(Math.atan(Math.tan(betaW) * Math.cos(p.alfaWt)))),
+      betaW: betaW
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // Napomene za konstrukciju (ne utiču na ocenu u Savetniku)
+  // ------------------------------------------------------------------
+
+  function nzd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a; }
+
+  /** „Lovački zub“: ako z₁ i z₂ imaju zajednički delilac, predloži susedne z₂ bez njega. */
+  function lovackiZub(z1, z2, tolPct) {
+    var d = nzd(z1, z2);
+    var predlozi = [];
+    if (d > 1) {
+      var u = z2 / z1;
+      for (var delta = 1; delta <= 3 && predlozi.length < 2; delta++) {
+        [z2 - delta, z2 + delta].forEach(function (zz) {
+          if (zz > 4 && nzd(z1, zz) === 1 && predlozi.length < 2) {
+            var odst = (zz / z1 - u) / u * 100;
+            if (Math.abs(odst) <= (tolPct || 3)) predlozi.push({ z2: zz, odnos: zz / z1, odstupanje: odst });
+          }
+        });
+      }
+    }
+    return { nzd: d, predlozi: predlozi };
+  }
+
+  function napomeneZaKonstrukciju(rez) {
+    var n = [], g1 = rez.zupcanici[0], u = rez.ulaz;
+    var bd = u.b / g1.d;
+    if (bd > 1.2) n.push({ kod: 'b/d1', poruka: 'Odnos b/d₁ = ' + formatBroja(bd.toFixed(2)) + ' je veći od 1,2: opterećenje se neravnomerno raspoređuje po širini zuba. Razmisli o većem z₁ ili modulu, ili o manjoj širini.' });
+    if (u.beta > 30) n.push({ kod: 'beta', poruka: 'Ugao nagiba β = ' + formatBroja(u.beta) + '° je veći od 30°: aksijalne sile su velike (Fₐ = Fₜ·tan β) — proveri ležajeve.' });
+    var lz = lovackiZub(u.z1, u.z2, 3);
+    if (lz.nzd > 1) {
+      var predlog = lz.predlozi.length ? ' Predlog: ' + lz.predlozi.map(function (q) { return 'z₂ = ' + q.z2 + ' (odnos ' + formatBroja(q.odnos.toFixed(4)) + ', ' + (q.odstupanje >= 0 ? '+' : '−') + formatBroja(Math.abs(q.odstupanje).toFixed(2)) + ' %)'; }).join(' ili ') + '.' : '';
+      n.push({ kod: 'lovacki', poruka: 'Lovački zub: z₁ = ' + u.z1 + ' i z₂ = ' + u.z2 + ' imaju zajednički delilac ' + lz.nzd + ', pa se isti zubi uvek sreću i neravnomernije habaju.' + predlog });
+    }
+    [0, 1].forEach(function (i) {
+      var km = kontrolneMere(rez, i);
+      var oz = i === 0 ? 'z₁' : 'z₂';
+      if (!km.mozeW) n.push({ kod: 'W', poruka: 'Mera preko zuba na zupčaniku ' + oz + ' nije izvodljiva: širina b mora biti najmanje ' + formatBroja(km.bPotrebno.toFixed(1)) + ' mm. Koristi meru preko kuglica.' });
+      if (!km.kuglicaDobra) n.push({ kod: 'kuglica', poruka: 'Kuglica Ø ' + formatBroja(km.DM) + ' mm na zupčaniku ' + oz + ' ne dodiruje evolventni deo boka — izaberi drugi prečnik.' });
+    });
+    return n;
+  }
+
   return {
     DEG: DEG,
     inv: inv,
@@ -370,6 +472,12 @@
     parsirajBroj: parsirajBroj,
     proveriPolje: proveriPolje,
     proracunaj: proracunaj,
+    kontrolneMere: kontrolneMere,
+    preporucenaKuglica: preporucenaKuglica,
+    sileUZahvatu: sileUZahvatu,
+    lovackiZub: lovackiZub,
+    nzd: nzd,
+    napomeneZaKonstrukciju: napomeneZaKonstrukciju,
     proracunajIzRastojanja: proracunajIzRastojanja,
     rastojanjeIzPomeranja: rastojanjeIzPomeranja,
     raspodelaDIN3992: raspodelaDIN3992,

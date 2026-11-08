@@ -40,7 +40,14 @@
   <span class="desno" id="naziv-ekrana">Proračun</span>
 </header>
 
+<!-- Obaveštenje posle ažuriranja -->
+<div class="obavestenje-verzija" id="obavestenje-verzija" hidden>
+  <p>ZORAN je ažuriran na verziju <span data-verzija-broj></span>. <a href="./novosti.html" target="_blank" rel="noopener" id="link-novosti-baner">Pogledaj šta je novo</a></p>
+  <button type="button" class="kopiraj" id="zatvori-obavestenje" aria-label="Zatvori obaveštenje" title="Zatvori"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+</div>
+
 <main id="sadrzaj">
+  <div class="stampa-zaglavlje" id="stampa-zaglavlje"></div>
 
   <!-- ===================== PRORAČUN ===================== -->
   <section id="ekran-proracun" class="ekran" aria-label="Proračun">
@@ -95,6 +102,7 @@
       </form>
       <p class="sitno" data-napomena-inc hidden>Modul i uglovi su uvek u mm i stepenima; u inčima su širina, osno rastojanje, pomeranje i dužine u rezultatima.</p>
       <div class="upozorenja" id="upozorenja-proracun" aria-live="polite"></div>
+      <div class="napomene" id="napomene-proracun"></div>
       <div class="napomena" id="napomena-proracun" aria-live="polite"></div>
       <div class="dugmad">
         <button type="button" class="dugme" id="dugme-podrazumevano">Vrati podrazumevano</button>
@@ -144,9 +152,34 @@
       <h2><span class="par">§ 3.</span>Tablica rezultata</h2>
       <div class="dugmad">
         <button type="button" class="pecat kopiraj-sve" id="dugme-kopiraj-sve">Kopiraj sve</button>
+        <button type="button" class="dugme" id="dugme-stampaj">Štampaj / PDF</button>
+        <button type="button" class="dugme" id="dugme-link-proracuna">Link do proračuna</button>
       </div>
+      <p class="poruka-akcenat" id="poruka-link" aria-live="polite"></p>
       <div class="upozorenja" id="upozorenja-tablica"></div>
+      <div class="napomene" id="napomene-tablica"></div>
       <div id="tablica-puna"></div>
+
+      <section class="sile-sekcija" aria-labelledby="naslov-sile">
+        <h3 id="naslov-sile">Sile u zahvatu</h3>
+        <div class="polje sile-unos">
+          <label for="u-T1">Obrtni moment na malom zupčaniku <i>T</i>₁ <span class="jed">[N·m]</span></label>
+          <input id="u-T1" name="T1" inputmode="decimal" placeholder="npr. 500" aria-describedby="h-T1 p-T1">
+          <div class="pomoc pomoc-tekst" id="h-T1">Neobavezno — upiši moment da dobiješ sile za proračun vratila i ležajeva.</div>
+          <div class="poruka" id="p-T1" role="alert"></div>
+        </div>
+        <div class="tablica" id="tablica-sile"></div>
+      </section>
+
+      <section class="varijante-sekcija" aria-labelledby="naslov-varijante">
+        <h3 id="naslov-varijante">Varijante — poređenje</h3>
+        <p class="sitno">Sačuvaj trenutni par, promeni ulazne podatke i uporedi rezultate jedan pored drugog (najviše 6 varijanti).</p>
+        <div class="dugmad">
+          <button type="button" class="dugme" id="dugme-sacuvaj-varijantu">Sačuvaj kao varijantu</button>
+          <button type="button" class="dugme" id="dugme-kopiraj-poredjenje" hidden>Kopiraj poređenje</button>
+        </div>
+        <div class="varijante-okvir" id="varijante"></div>
+      </section>
       <p class="kolofon">Izračunao Zoran — <i><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</i>.</p>
     </div>
   </section>
@@ -224,6 +257,7 @@
     </div>
     <div class="dugmad">
       <button type="button" class="pecat" id="dugme-proveri">Proveri novu verziju</button>
+      <a class="dugme dugme-link" href="./novosti.html" target="_blank" rel="noopener">Šta je novo — sve izmene</a>
       <button type="button" class="pecat" id="dugme-osvezi" hidden>Osveži</button>
     </div>
     <p id="stanje-verzije" aria-live="polite"></p>

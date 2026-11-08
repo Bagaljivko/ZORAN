@@ -312,10 +312,6 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
   .naslovna { transition: none; }
 }
 
-@media print {
-  .donja-traka, .gornja-traka, .kopiraj, .dugmad, .alati-crteza { display: none !important; }
-  .ekran { display: block !important; }
-}
 
 /* ---------- Ponašanje kao aplikacija ---------- */
 html { touch-action: manipulation; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
@@ -399,3 +395,56 @@ html.prozor-otvoren { overflow: hidden; }
 .legenda .legenda-prodiranje { color: var(--akcenat); }
 .legenda .legenda-prodiranje line { stroke: var(--akcenat); }
 .legenda span[hidden] { display: none; }
+
+/* ---------- Napomene za konstrukciju (mastilo, ne akcenat) ---------- */
+.napomene { margin: 0.9rem 0; padding: 0.5rem 0.75rem; border-left: 2px solid var(--mastilo); }
+.napomene:empty { display: none; }
+.napomene p { margin: 0.2rem 0; }
+.napomene .naslov { font-variant: small-caps; letter-spacing: 0.06em; }
+.poruka-akcenat { color: var(--akcenat); font-style: italic; min-height: 0; margin: 0.2rem 0; }
+.poruka-akcenat:empty { display: none; }
+a.dugme-link { display: inline-flex; align-items: center; text-decoration: none; }
+
+/* ---------- Obaveštenje posle ažuriranja ---------- */
+.obavestenje-verzija { display: flex; align-items: center; gap: 0.5rem; max-width: 1600px; margin: 0 auto; padding: 0.2rem 16px; border-bottom: 1px solid var(--mastilo); background: var(--papir-svetlo); }
+.obavestenje-verzija[hidden] { display: none; }
+.obavestenje-verzija p { margin: 0; flex: 1; font-style: italic; }
+.obavestenje-verzija a { color: var(--mastilo); font-style: normal; display: inline-block; padding: 0.5rem 0; }
+
+/* ---------- Sile i varijante ---------- */
+.sile-sekcija, .varijante-sekcija { margin-top: 1.2rem; }
+.varijante-okvir { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0.4rem 0; }
+.varijante-okvir:empty { display: none; }
+.varijante { border-collapse: collapse; font-size: 0.92rem; min-width: 100%; }
+.varijante th, .varijante td { padding: 0.25rem 0.5rem; border-bottom: 1px dotted var(--mastilo-blago); text-align: right; white-space: nowrap; }
+.varijante th:first-child, .varijante td:first-child { text-align: left; position: sticky; left: 0; background: var(--papir); }
+.varijante td { font-family: var(--mono); font-size: 0.85rem; }
+.varijante td:first-child { font-family: var(--serif); font-size: 0.92rem; }
+.varijante thead th { font-weight: 400; font-variant: small-caps; letter-spacing: 0.04em; border-bottom: 1px solid var(--mastilo); vertical-align: bottom; }
+.varijante .upozorenje { color: var(--akcenat); }
+.varijante .akcije button { min-height: 44px; min-width: 44px; margin: 0.1rem 0; }
+.varijante .akcije { white-space: normal; }
+
+/* ---------- Štampa / PDF: stranica priručnika ---------- */
+.stampa-zaglavlje { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  html, body { background: #fff !important; color: #000; }
+  body { font-size: 11pt; }
+  .naslovna, .tekuce-zaglavlje, .donja-traka, .gornja-traka, .obavestenje-verzija, .dugmad, .alati-crteza,
+  .kopiraj, .kol-ulaz, .samo-telefon, .samo-sirok, .varijante-sekcija, .sile-unos, .poruka-akcenat,
+  #ekran-savetnik, #ekran-uvoz, #ekran-podesavanja, .broj-strane, #obavestenje { display: none !important; }
+  main, main.radni { display: block !important; max-width: none; padding: 0; }
+  #ekran-proracun, #ekran-tablica { display: block !important; }
+  .kol { border: 0 !important; padding: 0 !important; position: static !important; }
+  .stampa-zaglavlje { display: block; border-bottom: 1px solid #000; margin-bottom: 0.6rem; padding-bottom: 0.3rem; }
+  .stampa-zaglavlje .glava { display: flex; justify-content: space-between; font-style: italic; }
+  .stampa-zaglavlje h1 { font-size: 16pt; margin: 0.3rem 0 0.1rem; font-weight: 400; }
+  .kol-crtez figure { break-inside: avoid; }
+  .crtez-okvir { max-width: 170mm; margin: 0 auto; }
+  .pomeranje-profila, .tablica, h3 { break-inside: avoid; }
+  #ekran-tablica { break-before: page; }
+  .red { min-height: 0; padding: 1px 0; }
+  .kolofon { break-inside: avoid; }
+  .crtez-svg .oz { stroke: #fff; }
+}

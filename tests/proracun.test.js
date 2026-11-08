@@ -198,6 +198,75 @@ test('Savetnik ne predlaže kombinacije sa prodiranjem', function () {
   tacno(s.predlozi.every(function (k) { return k.rez.par.tA >= 0 && k.rez.par.tE >= 0; }));
 });
 
+console.log('Kontrolne mere, sile, napomene');
+
+test('mera preko zuba: z = 20, m = 2, x = 0 → k = 3, W = 15,3209 mm (tablične vrednosti)', function () {
+  var r = P.proracunaj({ z1: 20, z2: 40, mn: 2, beta: 0, alfaN: 20, pom1: 0, pom2: 0, b: 20 });
+  var m = P.kontrolneMere(r, 0);
+  tacno(m.k === 3, 'k = ' + m.k);
+  jednako(m.W, 15.3209, 1e-4, 'W:');
+});
+
+test('mera preko zuba: nezavisno preko luka na osnovnoj kružnici (kosi zubi sa pomeranjem)', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  var betaB = Math.atan(Math.tan(r.par.beta) * Math.cos(r.par.alfaT));
+  [0, 1].forEach(function (i) {
+    var g = r.zupcanici[i], m = P.kontrolneMere(r, i);
+    var C = g.st / (2 * g.r) + r.par.invAt;
+    var Wt = g.rb * ((m.k - 1) * 2 * Math.PI / g.z + 2 * C); // čeona dužina na osnovnoj tangenti
+    jednako(m.W, Wt * Math.cos(betaB), 1e-9, 'W z' + (i + 1) + ':');
+  });
+});
+
+test('mera preko kuglica: kuglica stvarno dodiruje bok (numerički, čeoni presek)', function () {
+  [[16, 58, 6.5, 9, 250], [17, 41, 3, 15, 92]].forEach(function (c) {
+    var r = P.proracunajIzRastojanja({ z1: c[0], z2: c[1], mn: c[2], beta: c[3], alfaN: 20, b: 60, a: c[4] });
+    tacno(r.ok, 'proračun ' + c.join('/'));
+    var betaB = Math.atan(Math.tan(r.par.beta) * Math.cos(r.par.alfaT));
+    [0, 1].forEach(function (i) {
+      var g = r.zupcanici[i], m = P.kontrolneMere(r, i);
+      var RK = m.dK / 2, psi = Math.PI / g.z; // centar kuglice na osi međuzublja
+      var px = RK * Math.cos(psi), py = RK * Math.sin(psi), min = Infinity;
+      for (var n = 0; n <= 20000; n++) {
+        var R = g.rb + (g.ra - g.rb) * n / 20000;
+        var th = C.ugaoBoka(R, g, r.par.invAt);
+        min = Math.min(min, Math.hypot(px - R * Math.cos(th), py - R * Math.sin(th)));
+      }
+      jednako(min, m.DM / (2 * Math.cos(betaB)), 2e-3, c[0] + '/' + c[1] + ' z' + (i + 1) + ' rastojanje centra od boka:');
+      jednako(m.Md, (g.z % 2 ? m.dK * Math.cos(Math.PI / (2 * g.z)) : m.dK) + m.DM, 1e-9, 'Md:');
+      tacno(m.kuglicaDobra, 'dodir na evolventi');
+    });
+  });
+});
+
+test('sile u zahvatu: Fₜ = 2T/d_w, Fᵣ = Fₜ·tan αwt, pravi zubi bez aksijalne sile', function () {
+  var r = P.proracunaj({ z1: 20, z2: 40, mn: 2, beta: 0, alfaN: 20, pom1: 0, pom2: 0, b: 20 });
+  var f = P.sileUZahvatu(r, 100);
+  jednako(f.Ft, 2000 * 100 / 40, 1e-9, 'Ft:');
+  jednako(f.Fr, f.Ft * Math.tan(20 * P.DEG), 1e-9, 'Fr:');
+  jednako(f.Fa, 0, 1e-12, 'Fa:');
+  jednako(f.T2, 200, 1e-9, 'T2:');
+  var k = P.sileUZahvatu(P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 }), 500);
+  tacno(k.Fa > 0 && k.Fa < k.Ft, 'kosi zubi: 0 < Fa < Ft');
+});
+
+test('lovački zub i napomene za konstrukciju', function () {
+  var l = P.lovackiZub(16, 58);
+  tacno(l.nzd === 2 && l.predlozi.length === 2 && l.predlozi[0].z2 === 57 && l.predlozi[1].z2 === 59, JSON.stringify(l));
+  tacno(P.lovackiZub(17, 58).nzd === 1);
+  var d = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  var kodovi = P.napomeneZaKonstrukciju(d).map(function (n) { return n.kod; });
+  tacno(kodovi.join() === 'lovacki', 'podrazumevano: ' + kodovi.join());
+  var r = P.proracunaj({ z1: 17, z2: 40, mn: 3, beta: 35, alfaN: 20, pom1: 0, pom2: 0, b: 90 });
+  kodovi = P.napomeneZaKonstrukciju(r).map(function (n) { return n.kod; });
+  tacno(kodovi.indexOf('beta') >= 0 && kodovi.indexOf('b/d1') >= 0, kodovi.join());
+  var u = P.proracunaj({ z1: 20, z2: 41, mn: 4, beta: 20, alfaN: 20, pom1: 0, pom2: 0, b: 5 });
+  tacno(P.napomeneZaKonstrukciju(u).some(function (n) { return n.kod === 'W'; }), 'uska širina: mera preko zuba nije izvodljiva');
+  // napomene ne kvare ocenu u Savetniku
+  var s = P.savetnik({ a: 250, z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, tol: 2 });
+  tacno(s.vlastita.ocena === 'Prihvatljivo', 'ocena: ' + s.vlastita.ocena);
+});
+
 console.log('Savetnik');
 
 test('povratni put: a iz proračuna → Σx = 1,09 i x₁ = 0,52', function () {

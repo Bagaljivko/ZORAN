@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZORAN — Šta je novo</title>
+<meta name="description" content="Sve izmene ZORAN-a, kalkulatora cilindričnih evolventnih zupčanika, po verzijama — detaljno, na srpskom, sa slikama.">
+<meta name="theme-color" content="#EDE2C6">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./css/zoran.css">
+<style>
+  .novosti { max-width: 760px; margin: 0 auto; padding: 0.5rem 16px 2rem; }
+  .novosti h1 { font-size: 2rem; font-weight: 400; margin: 0.6rem 0 0.2rem; }
+  .novosti h1 b { letter-spacing: 0.06em; font-weight: 400; }
+  .novosti .uvod { font-style: italic; }
+  .novosti h2 { margin-top: 2.2rem; padding-top: 0.6rem; border-top: 1px solid var(--mastilo); }
+  .novosti h2 .datum { display: block; font-size: 0.9rem; font-style: italic; color: var(--mastilo-blago); margin-top: 0.15rem; }
+  .novosti h3 { margin-top: 1.2rem; }
+  .novosti ul { padding-left: 1.2rem; margin: 0.3rem 0 0.6rem; }
+  .novosti li { margin: 0.25rem 0; }
+  .novosti figure { margin: 0.9rem 0 1.1rem; }
+  .novosti figure img { display: block; width: 100%; height: auto; border: 1px solid var(--mastilo); background: #fff; }
+  .novosti figure.usko img { max-width: 360px; margin: 0 auto; }
+  .novosti figcaption { font-size: 0.95rem; }
+  .sadrzaj-lista { list-style: none; padding: 0; margin: 0.6rem 0 0; border-top: 1px solid var(--mastilo); }
+  .sadrzaj-lista li { margin: 0; border-bottom: 1px dotted var(--mastilo-blago); }
+  .sadrzaj-lista a { display: flex; justify-content: space-between; gap: 1rem; align-items: center; min-height: 44px; color: var(--mastilo); text-decoration: none; padding: 0.2rem 0; }
+  .sadrzaj-lista a span:last-child { font-family: var(--mono); font-size: 0.9rem; color: var(--mastilo-blago); white-space: nowrap; }
+  .tehnicki { font-size: 0.9rem; color: var(--mastilo-blago); border-left: 1px solid var(--mastilo); padding: 0.2rem 0.75rem; margin: 0.6rem 0; }
+  .nazad { display: inline-flex; align-items: center; min-height: 44px; color: var(--mastilo); }
+  .kako-azurirati { border: 3px double var(--mastilo); padding: 0.5rem 0.9rem; margin: 1rem 0; }
+  .kako-azurirati p { margin: 0.3rem 0; }
+</style>
+</head>
+<body>
+<header class="tekuce-zaglavlje">
+  <span class="levo">Mašinski elementi</span>
+  <span class="desno">Šta je novo</span>
+</header>
+
+<main class="novosti">
+  <p><a class="nazad" href="./">← Nazad na ZORAN</a></p>
+  <h1>Šta je novo u <b>ZORAN</b>-u</h1>
+  <p class="uvod">Zet Obično Računa Apsolutno Nepogrešivo — a evo i šta je sve naučio, verziju po verziju.</p>
+
+  <div class="kako-azurirati">
+    <p><b>Kako da dobiješ najnoviju verziju:</b> otvori ZORAN › Podešavanja › <i>Proveri novu verziju</i> › <i>Osveži</i>. Tvoji uneti podaci i podešavanja ostaju sačuvani.</p>
+    <p>Broj verzije vidiš u Podešavanjima, u delu „O aplikaciji“.</p>
+  </div>
+
+  <h3>Sadržaj</h3>
+  <ul class="sadrzaj-lista">
+    <li><a href="#v1-5-0"><span>Kontrolne mere, sile, varijante, štampa</span><span>1.5.0</span></a></li>
+    <li><a href="#v1-4-0"><span>Crvena upozorenja za prodiranje zuba</span><span>1.4.0</span></a></li>
+    <li><a href="#v1-3-1"><span>Akronim u jednom redu</span><span>1.3.1</span></a></li>
+    <li><a href="#v1-3-0"><span>Zadaješ osno rastojanje, pomeranje se računa</span><span>1.3.0</span></a></li>
+    <li><a href="#v1-2-1"><span>Ispravka naziva širine</span><span>1.2.1</span></a></li>
+    <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
+    <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
+  </ul>
+
+  <!-- ================= 1.5.0 ================= -->
+  <h2 id="v1-5-0">Verzija 1.5.0 — kontrolne mere, sile, varijante i štampa<span class="datum">8. novembar 2026.</span></h2>
+  <p>Najveće ažuriranje do sada: ZORAN sada daje i mere za radionicu, sile za proračun vratila i ležajeva, poređenje više varijanti i stranicu za štampu ili PDF.</p>
+
+  <h3>Kontrolne mere za radionicu</h3>
+  <p>U Tablici, kod svakog zupčanika, stoje tri nova reda:</p>
+  <ul>
+    <li><b>Mera preko zuba <i>W</i><sub>k</sub></b> — rastojanje između dva paralelna merna lica preko <i>k</i> zuba (k je izračunat tako da merna lica dodiruju bokove oko sredine visine zuba). To je mera koja se upisuje na radionički crtež i kojom se zupčanik proverava mikrometrom sa tanjirastim pipcima.</li>
+    <li><b>Prečnik kuglice <i>D</i><sub>M</sub></b> — preporuka ≈ 1,68·<i>m</i>ₙ, zaokruženo na 0,5 mm.</li>
+    <li><b>Mera preko kuglica <i>M</i><sub>d</sub></b> — mera preko dve kuglice u suprotnim međuzubljima. Pouzdana je i kod uskih kosih zupčanika, gde merenje preko zuba nije moguće.</li>
+  </ul>
+  <figure>
+    <img src="./novosti/v150-kontrolne-mere.jpg" width="585" height="221" loading="lazy" alt="Redovi Mera preko zuba, Prečnik kuglice i Mera preko kuglica u Tablici">
+    <figcaption><span class="sl">Sl. 1.</span> Kontrolne mere malog zupčanika (z₁ = 16): W₃ = 51,793 mm, kuglica Ø 11 mm, M<sub>d</sub> = 125,033 mm.</figcaption>
+  </figure>
+  <p><b>Kako to menja rad:</b> više ne treba tražiti mere u tablicama ili ih računati ručno — vrednosti idu direktno na crtež, a ikonica pored svake vrednosti je kopira.</p>
+  <p class="tehnicki">Formule po DIN 3960: <i>W</i><sub>k</sub> = <i>m</i>ₙ·cos <i>α</i>ₙ·[(<i>k</i> − 0,5)·π + <i>z</i>·inv <i>α</i>ₜ] + 2·<i>x</i>·<i>m</i>ₙ·sin <i>α</i>ₙ; za kuglice inv <i>α</i><sub>Mt</sub> = inv <i>α</i>ₜ + <i>D</i><sub>M</sub>/(<i>z</i>·<i>m</i>ₙ·cos <i>α</i>ₙ) − π/(2<i>z</i>) + 2<i>x</i>·tan <i>α</i>ₙ/<i>z</i>. Provereno: za <i>z</i> = 20, <i>m</i> = 2 mera W₃ = 15,3209 mm (tablična vrednost), a numeričkim proračunom je potvrđeno da kuglica stvarno dodiruje evolventni bok, i za paran i za neparan broj zuba.</p>
+
+  <h3>Napomene za konstrukciju</h3>
+  <p>Ispod upozorenja (u Proračunu i u Tablici) stoje <b>napomene</b> — saveti koji ne znače da je par pogrešan, ali vredi razmisliti o njima. Pisane su mastilom, ne crvenom bojom, i ne utiču na ocenu u Savetniku.</p>
+  <ul>
+    <li><b>Lovački zub:</b> kad z₁ i z₂ imaju zajednički delilac (npr. 16 i 58 imaju 2), isti zubi se uvek sreću i neravnomernije habaju. ZORAN predlaže susedni z₂ bez zajedničkog delioca, uz odstupanje prenosnog odnosa.</li>
+    <li><b>b/d₁ &gt; 1,2:</b> preširok zupčanik u odnosu na prečnik — opterećenje se neravnomerno raspoređuje po širini.</li>
+    <li><b>β &gt; 30°:</b> velike aksijalne sile — treba proveriti ležajeve.</li>
+    <li><b>Mera preko zuba nije izvodljiva</b> kad je zupčanik preuzak za dati ugao nagiba, i <b>kuglica ne dodiruje evolventu</b> kad preporučeni prečnik ne odgovara.</li>
+  </ul>
+  <figure>
+    <img src="./novosti/v150-napomene.jpg" width="537" height="275" loading="lazy" alt="Okvir Napomene za konstrukciju sa savetom o lovačkom zubu">
+    <figcaption><span class="sl">Sl. 2.</span> Napomena o lovačkom zubu za par 16/58, sa predlogom z₂ = 57 ili 59.</figcaption>
+  </figure>
+
+  <h3>Sile u zahvatu</h3>
+  <p>U Tablici je novo, neobavezno polje <b>Obrtni moment <i>T</i>₁ [N·m]</b>. Kad ga upišeš, dobiješ obimnu, radijalnu, aksijalnu i normalnu silu na boku, kao i moment na velikom zupčaniku. To su ulazni podaci za proračun vratila i ležajeva.</p>
+  <figure>
+    <img src="./novosti/v150-sile.jpg" width="537" height="605" loading="lazy" alt="Sekcija Sile u zahvatu sa upisanim momentom 500 N·m">
+    <figcaption><span class="sl">Sl. 3.</span> Sile za <i>T</i>₁ = 500 N·m: <i>F</i>ₜ = 9250 N, <i>F</i>ᵣ ≈ 4108 N, <i>F</i>ₐ ≈ 1504 N.</figcaption>
+  </figure>
+  <p class="tehnicki"><i>F</i>ₜ = 2·<i>T</i>₁/<i>d</i>w₁, <i>F</i>ᵣ = <i>F</i>ₜ·tan <i>α</i>wt, <i>F</i>ₐ = <i>F</i>ₜ·tan <i>β</i>w. Moment na velikom zupčaniku je dat bez gubitaka (<i>T</i>₂ = <i>T</i>₁·<i>u</i>).</p>
+
+  <h3>Varijante — poređenje</h3>
+  <p>Na dnu Tablice: <b>Sačuvaj kao varijantu</b> pamti trenutni par. Promeni ulazne podatke, sačuvaj ponovo — i varijante se pojavljuju jedna pored druge (do 6): broj zuba, modul, osno rastojanje, pomeranja, prečnici, stepeni sprezanja i broj upozorenja. <b>Učitaj</b> vraća varijantu u Proračun, <b>Kopiraj poređenje</b> kopira celu tabelu (lepi se u Excel).</p>
+  <figure class="usko">
+    <img src="./novosti/v150-varijante.jpg" width="537" height="1086" loading="lazy" alt="Tabela poređenja dve varijante: 16/58 i 16/59">
+    <figcaption><span class="sl">Sl. 4.</span> Poređenje para 16/58 i 16/59 na istom osnom rastojanju.</figcaption>
+  </figure>
+
+  <h3>Štampa i PDF</h3>
+  <p>Dugme <b>Štampaj / PDF</b> u Tablici pravi stranicu kao iz priručnika: zaglavlje sa podacima i datumom, crtež zahvata, izračunato pomeranje profila sa proverom, pa cela Tablica. Na telefonu izaberi „Sačuvaj kao PDF“ u meniju za štampu.</p>
+  <figure class="usko">
+    <img src="./novosti/v150-stampa.jpg" width="794" height="1123" loading="lazy" alt="Prva strana odštampanog proračuna sa crtežom zahvata">
+    <figcaption><span class="sl">Sl. 5.</span> Prva strana PDF-a (A4). Tablica počinje na drugoj strani.</figcaption>
+  </figure>
+
+  <h3>Link do proračuna</h3>
+  <p>Dugme <b>Link do proračuna</b> pravi link sa svim unetim podacima (z₁, z₂, mₙ, β, αₙ, b, a). Kolega ga otvori i odmah vidi isti proračun. Na telefonu se otvara meni za deljenje, na računaru se link kopira.</p>
+
+  <h3>Obaveštenje o novoj verziji i ova stranica</h3>
+  <p>Posle svakog ažuriranja, ispod zaglavlja se jednom pojavi traka „ZORAN je ažuriran…“ sa linkom ovde. Stranica je dostupna i iz Podešavanja (<i>Šta je novo — sve izmene</i>) i radi bez interneta.</p>
+
+  <!-- ================= 1.4.0 ================= -->
+  <h2 id="v1-4-0">Verzija 1.4.0 — crvena upozorenja za prodiranje zuba<span class="datum">8. novembar 2026.</span></h2>
+  <p>Kad zahvat počne pre tačke T₁ ili se završi posle T₂, vrh jednog zupčanika zalazi u nogu drugog, gde nema evolvente — „zub ulazi u zub“.</p>
+  <ul>
+    <li><b>Upozorenje</b> sa iznosom, npr. „vrh velikog zupčanika zalazi u nogu malog — zahvat počinje 3,463 mm pre tačke T₁“.</li>
+    <li><b>Na crtežu</b>: deo zahvatne linije van T₁T₂ je crven, a oko mesta prodiranja je isprekidan crveni krug (za oba smera okretanja).</li>
+    <li><b>U animaciji</b>: par zuba postaje crven tačno dok mu je tačka dodira u zabranjenoj zoni.</li>
+    <li><b>U Tablici</b>: „Početak zahvata od T₁“ i „Kraj zahvata do T₂“ — negativna vrednost (crveno) znači prodiranje.</li>
+    <li><b>Savetnik</b> više ne predlaže kombinacije sa prodiranjem.</li>
+  </ul>
+  <figure>
+    <img src="./novosti/v140-prodiranje.jpg" width="424" height="292" loading="lazy" alt="Zona zahvata sa crveno obeleženim parom zuba i crvenim krugovima">
+    <figcaption><span class="sl">Sl. 6.</span> Par z₁ = 10, z₂ = 15, a = 62,5 mm u animaciji: crveni par zuba se dodiruje van T₁T₂.</figcaption>
+  </figure>
+  <p><b>Kako to menja rad:</b> greška koja bi se inače videla tek na probnoj montaži sada se vidi odmah. Kod podrazumevanog para (16/58) prodiranja nema; javlja se kod malog broja zuba i premalog osnog rastojanja.</p>
+
+  <!-- ================= 1.3.1 ================= -->
+  <h2 id="v1-3-1">Verzija 1.3.1 — akronim u jednom redu<span class="datum">8. novembar 2026.</span></h2>
+  <p>„Zet Obično Računa Apsolutno Nepogrešivo“ sada stoji u jednom redu i na naslovnoj animaciji i u Podešavanjima. Veličina slova se sama prilagođava širini ekrana (najmanje 16 px na najužem telefonu), a tokom animacije red se ne pomera.</p>
+
+  <!-- ================= 1.3.0 ================= -->
+  <h2 id="v1-3-0">Verzija 1.3.0 — zadaješ osno rastojanje, pomeranje profila se računa<span class="datum">8. novembar 2026.</span></h2>
+  <ul>
+    <li><b>Gore se unosi:</b> z₁, z₂, mₙ, β, αₙ, širina ozubljenja <i>b</i> i <b>osno rastojanje <i>a</i></b> koje zadaješ.</li>
+    <li><b>Pomeranje profila se više ne unosi:</b> iz zadatog <i>a</i> ZORAN računa Σ<i>x</i>, a raspodelu na <i>x</i>₁ i <i>x</i>₂ radi po DIN 3992, uz zaštitu od podsecanja.</li>
+    <li><b>Ispod crteža</b> stoje izračunata pomeranja i <b>provera</b>: iz pomeranja zaokruženih kako bi se upisala u crtež ponovo se računa osno rastojanje i poredi sa zadatim.</li>
+    <li>Polje je preimenovano u „Širina ozubljenja <i>b</i>“.</li>
+    <li>Ranije uneta pomeranja su se pri ažuriranju pretvorila u odgovarajuće <i>a</i>, pa niko nije izgubio svoj par.</li>
+  </ul>
+  <figure class="usko">
+    <img src="./novosti/v130-unos.jpg" width="537" height="774" loading="lazy" alt="Ulazni podaci sa poljem Zadato osno rastojanje">
+    <figcaption><span class="sl">Sl. 7.</span> Ulazni podaci sa poljem „Zadato osno rastojanje“.</figcaption>
+  </figure>
+  <figure class="usko">
+    <img src="./novosti/v130-pomeranje.jpg" width="537" height="845" loading="lazy" alt="Izračunato pomeranje profila i provera osnog rastojanja">
+    <figcaption><span class="sl">Sl. 8.</span> Izračunato pomeranje profila i provera osnog rastojanja.</figcaption>
+  </figure>
+
+  <!-- ================= 1.2.1 ================= -->
+  <h2 id="v1-2-1">Verzija 1.2.1 — ispravka naziva širine<span class="datum">8. novembar 2026.</span></h2>
+  <p>„Širina b“ je preimenovana (u 1.3.0 konačno u „Širina ozubljenja <i>b</i>“), i u Uvozu i u SolidWorks makrou. Ime svojstva <code>ZORAN_Sirina</code> je ostalo isto, pa ranije označeni delovi i dalje rade.</p>
+
+  <!-- ================= 1.2.0 ================= -->
+  <h2 id="v1-2-0">Verzija 1.2.0 — Podeli Zorana, ZORAN velikim slovima, animacija naslova<span class="datum">7. novembar 2026.</span></h2>
+  <ul>
+    <li><b>Podeli Zorana</b> (Podešavanja): prozor sa QR kodom za skeniranje kamerom, „Pošalji u aplikaciju“ (Viber, WhatsApp, poruke…) i „Kopiraj link“. QR se pravi bez interneta.</li>
+    <li><b>ZORAN velikim slovima</b> i <b>animacija</b> na naslovnoj strani: slova se slože, ispod svakog se povuče crta, a početno slovo „padne“ u akronim i razvije reč. Dodir je preskače.</li>
+    <li>Aplikacija se ponaša kao prava aplikacija: dvostruki dodir i „pinch“ ne zumiraju, a donja traka se sklanja dok kucaš.</li>
+    <li>Akronim se pojavljuje i u kolofonu Tablice i kad kopiraš rezultate.</li>
+  </ul>
+  <figure class="usko">
+    <img src="./novosti/v120-naslovna.jpg" width="516" height="486" loading="lazy" alt="Naslovna strana sa natpisom ZORAN i akronimom">
+    <figcaption><span class="sl">Sl. 9.</span> Naslovna strana (korica) na kraju animacije.</figcaption>
+  </figure>
+  <figure class="usko">
+    <img src="./novosti/v120-podeli.jpg" width="522" height="678" loading="lazy" alt="Prozor Podeli Zorana sa QR kodom">
+    <figcaption><span class="sl">Sl. 10.</span> Prozor „Podeli Zorana“.</figcaption>
+  </figure>
+
+  <!-- ================= 1.0.0 ================= -->
+  <h2 id="v1-0-0">Verzija 1.0.0 — prva verzija<span class="datum">7. novembar 2026.</span></h2>
+  <p>Kalkulator cilindričnih evolventnih zupčanika sa pravim i kosim zubima, u stilu starog udžbenika Mašinskih elemenata:</p>
+  <ul>
+    <li><b>Proračun</b> dok kucaš: prečnici, debljine zuba, skraćenje temena, stepeni sprezanja i upozorenja (podsecanje, zašiljen vrh, εα &lt; 1,1).</li>
+    <li><b>Crtež zahvata</b> iz pravih evolventi, sa tri prikaza i animacijom.</li>
+    <li><b>Tablica</b> sa kopiranjem svake vrednosti, <b>Savetnik</b> (DIN 3992 / DIN 780), <b>Uvoz</b> iz SolidWorks-a (.SLDPRT) i <b>Podešavanja</b> (mm/inč, zarez/tačka, decimale, dijagnostika).</li>
+    <li>Radi bez interneta i instalira se na telefon.</li>
+  </ul>
+  <figure>
+    <img src="./novosti/v100-pregled.jpg" width="1280" height="800" loading="lazy" alt="ZORAN na računaru: ulazni podaci, crtež i tablica u tri kolone">
+    <figcaption><span class="sl">Sl. 11.</span> ZORAN na računaru — tri kolone: ulazni podaci, crtež, Tablica (izgled u trenutnoj verziji).</figcaption>
+  </figure>
+
+  <p class="kolofon">ZORAN — <i><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</i>.</p>
+  <p><a class="nazad" href="./">← Nazad na ZORAN</a></p>
+</main>
+</body>
+</html>

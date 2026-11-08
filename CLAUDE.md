@@ -27,6 +27,7 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - `js/crtez.js` — SVG crtež zahvata. `js/sldprt.js` — čitanje `.SLDPRT`.
 - `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
 - `js/app.js` — interfejs; ovde je `APP_VERSION`.
+- `novosti.html` i `novosti/` — stranica „Šta je novo“ (otvara se u novom tabu) sa slikama izmena.
 - `sw.js` — service worker; ovde je `CACHE_VERSION` i spisak fajlova za keš.
 - `tests/proracun.test.js` — testovi proračuna (`node tests/proracun.test.js`, bez biblioteka).
 - `tests/provera-aplikacije.js` — automatska provera celog spiska (uređaji, konzola, offline, ažuriranje, localStorage, keš, verzije, putanje). Koristi Playwright/Chromium iz okruženja; sama podiže server na `/ZORAN/` i ne menja fajlove. Izlaz 0 = sve prolazi.
@@ -66,6 +67,9 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - [ ] Kontrast teksta je najmanje 4,5:1, dodirne površine su najmanje 44×44 px.
 - [ ] Svaka nova vrednost ima ikonicu za kopiranje.
 - [ ] Sav novi tekst je na srpskom.
+
+### Šta je novo
+- [ ] Svaka nova verzija ima zapis na vrhu `novosti.html`: šta je novo, kako menja rad, slika (snimak stvarne aplikacije u `novosti/`, JPEG ~70 %), datum i broj verzije. Nove slike su u kešu `sw.js`.
 
 ## Isporuka
 

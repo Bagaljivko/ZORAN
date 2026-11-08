@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.4.0';
+  var APP_VERSION = '1.5.0';
   var P = window.Proracun, C = window.Crtez, S = window.Sldprt;
   var DEG = P.DEG;
   var MM_PO_INCU = 25.4;
@@ -253,10 +253,24 @@
     }
   }
 
+  function prikaziNapomene(cilj, rez) {
+    var box = $(cilj);
+    box.innerHTML = '';
+    if (!rez) return;
+    var n = P.napomeneZaKonstrukciju(rez);
+    if (!n.length) return;
+    box.appendChild(el('p', { class: 'naslov', text: 'Napomene za konstrukciju' }));
+    n.forEach(function (x) { box.appendChild(el('p', { text: x.poruka })); });
+  }
+
   function prikaziRezultate() {
     var r = trenutniRez;
     prikaziUpozorenja('#upozorenja-proracun', r);
     prikaziUpozorenja('#upozorenja-tablica', r);
+    prikaziNapomene('#napomene-proracun', poslednjiRez);
+    prikaziNapomene('#napomene-tablica', poslednjiRez);
+    prikaziSile();
+    prikaziVarijante();
     var napomena = $('#napomena-proracun');
     napomena.textContent = !r.ok && poslednjiRez ? 'Zoran obično računa apsolutno nepogrešivo — ali samo sa ispravnim podacima. Crtež i tablica prikazuju poslednji ispravan unos.' : '';
 
@@ -306,6 +320,7 @@
       { naziv: 'Stepen sprezanja bokova <i>ε</i>β', v: p.epsB, dec: 4, kratko: true, tekst: 'Stepen sprezanja bokova εβ' },
       { naziv: 'Ukupni stepen sprezanja <i>ε</i>γ', v: p.epsG, dec: 4, kratko: true, tekst: 'Ukupni stepen sprezanja εγ' }
     ];
+    var km = [P.kontrolneMere(rez, 0), P.kontrolneMere(rez, 1)];
     var zup = rez.zupcanici.map(function (g, i) {
       var ix = i === 0 ? '₁' : '₂', ixa = i === 0 ? '1' : '2';
       var podsec = rez.upozorenja.some(function (w) { return w.kod === 'podsecanje' && w.zupcanik === i; });
@@ -323,7 +338,10 @@
         { naziv: 'Debljina na temenu <i>s</i>ₐ', v: duz(g.sa), jed: J, upozorenje: zas, tekst: 'Debljina na temenu sa' + ixa },
         { naziv: 'Ugao profila na temenu <i>α</i>ₐ', v: g.alfaA / DEG, dec: 4, jed: '°', tekst: 'Ugao profila na temenu αa' + ixa },
         { naziv: 'Ekvivalentni broj zuba <i>z</i>ₙ', v: g.zn, dec: 3, tekst: 'Ekvivalentni broj zuba zn' + ixa },
-        { naziv: 'Granica podsecanja <i>x</i>min', v: g.xmin, dec: 4, tekst: 'Granica podsecanja xmin' + ixa }
+        { naziv: 'Granica podsecanja <i>x</i>min', v: g.xmin, dec: 4, tekst: 'Granica podsecanja xmin' + ixa },
+        { naziv: 'Mera preko zuba <i>W</i>' + '<sub>' + km[i].k + '</sub> (preko ' + km[i].k + ' zuba)', v: duz(km[i].W), jed: J, upozorenje: !km[i].mozeW, tekst: 'Mera preko zuba W' + ixa + ' (k = ' + km[i].k + ')' },
+        { naziv: 'Prečnik kuglice <i>D</i>M', v: duz(km[i].DM), jed: J, tekst: 'Prečnik kuglice DM' + ixa },
+        { naziv: 'Mera preko kuglica <i>M</i>d', v: duz(km[i].Md), jed: J, upozorenje: !km[i].kuglicaDobra, tekst: 'Mera preko kuglica Md' + ixa }
       ];
     });
     return { par: par, zup: zup };
@@ -339,8 +357,104 @@
     linije.push('Par zupčanika'); redovi.par.forEach(dodaj);
     linije.push('', 'Mali zupčanik (z1 = ' + u.z1 + ')'); redovi.zup[0].forEach(dodaj);
     linije.push('', 'Veliki zupčanik (z2 = ' + u.z2 + ')'); redovi.zup[1].forEach(dodaj);
+    var sile = trenutneSile();
+    if (sile) { linije.push('', 'Sile u zahvatu (T1 = ' + zaKopiju(sile.T1, 1) + ' N·m)'); redoviSila(sile).forEach(dodaj); }
     if (rez.upozorenja.length) { linije.push('', 'Upozorenja'); rez.upozorenja.forEach(function (w) { linije.push(w.poruka); }); }
+    var nap = P.napomeneZaKonstrukciju(rez);
+    if (nap.length) { linije.push('', 'Napomene za konstrukciju'); nap.forEach(function (w) { linije.push(w.poruka); }); }
     return linije.join('\n');
+  }
+
+  // ------------------------------------------------------------------
+  // Sile u zahvatu
+  // ------------------------------------------------------------------
+  function trenutneSile() {
+    var T = P.parsirajBroj($('#u-T1').value);
+    if (!poslednjiRez || !isFinite(T) || T <= 0) return null;
+    return P.sileUZahvatu(poslednjiRez, T);
+  }
+  function redoviSila(f) {
+    return [
+      { naziv: 'Obimna sila <i>F</i>ₜ', v: f.Ft, dec: 1, jed: 'N', tekst: 'Obimna sila Ft' },
+      { naziv: 'Radijalna sila <i>F</i>ᵣ', v: f.Fr, dec: 1, jed: 'N', tekst: 'Radijalna sila Fr' },
+      { naziv: 'Aksijalna sila <i>F</i>ₐ', v: f.Fa, dec: 1, jed: 'N', tekst: 'Aksijalna sila Fa' },
+      { naziv: 'Normalna sila na bok <i>F</i>ₙ', v: f.Fn, dec: 1, jed: 'N', tekst: 'Normalna sila Fn' },
+      { naziv: 'Moment na velikom <i>T</i>₂ (bez gubitaka)', v: f.T2, dec: 1, jed: 'N·m', tekst: 'Moment na velikom T2' }
+    ];
+  }
+  function prikaziSile() {
+    var t = $('#tablica-sile'), por = $('#p-T1');
+    t.innerHTML = ''; por.textContent = ''; $('#u-T1').removeAttribute('aria-invalid');
+    var txt = $('#u-T1').value.trim();
+    if (!txt) return;
+    var T = P.parsirajBroj(txt);
+    if (!isFinite(T) || T <= 0) { por.textContent = 'Obrtni moment: unesi pozitivan broj u N·m.'; $('#u-T1').setAttribute('aria-invalid', 'true'); return; }
+    var f = trenutneSile();
+    if (!f) return;
+    redoviSila(f).forEach(function (sp) { t.appendChild(redTablice(sp)); });
+    t.appendChild(el('p', { class: 'sitno', html: 'Sile deluju na kotrljajnom prečniku malog zupčanika: <i>F</i>ₜ = 2<i>T</i>₁/<i>d</i>w₁, <i>F</i>ᵣ = <i>F</i>ₜ·tan <i>α</i>wt, <i>F</i>ₐ = <i>F</i>ₜ·tan <i>β</i>w.' }));
+  }
+
+  // ------------------------------------------------------------------
+  // Varijante — poređenje
+  // ------------------------------------------------------------------
+  var VARIJANTE_KLJUC = 'zoran.varijante';
+  function citajVarijante() { var v = citaj(VARIJANTE_KLJUC, []); return Array.isArray(v) ? v : []; }
+  function prikaziVarijante() {
+    var okvir = $('#varijante');
+    var lista = citajVarijante();
+    okvir.innerHTML = '';
+    $('#dugme-kopiraj-poredjenje').hidden = !lista.length;
+    if (!lista.length) return;
+    var J = jedDuz();
+    var rez = lista.map(function (v) { return P.proracunajIzRastojanja(v.ulaz); });
+    var redovi = [
+      ['z₁ / z₂', function (r, v) { return v.ulaz.z1 + ' / ' + v.ulaz.z2; }],
+      ['mₙ [mm]', function (r, v) { return fmt(v.ulaz.mn, 3).replace(/[,.]?0+$/, ''); }],
+      ['β [°]', function (r, v) { return fmt(v.ulaz.beta, 2).replace(/[,.]?0+$/, ''); }],
+      ['b [' + J + ']', function (r, v) { return fmt(duz(v.ulaz.b)); }],
+      ['a [' + J + ']', function (r, v) { return fmt(duz(v.ulaz.a)); }],
+      ['Σx', function (r) { return r.ok ? fmt(r.raspodela.sumaX, 4) : '—'; }],
+      ['x₁ / x₂', function (r) { return r.ok ? fmt(r.raspodela.x1, 3) + ' / ' + fmt(r.raspodela.x2, 3) : '—'; }],
+      ['dₐ₁ [' + J + ']', function (r) { return r.ok ? fmt(duz(r.zupcanici[0].da)) : '—'; }],
+      ['dₐ₂ [' + J + ']', function (r) { return r.ok ? fmt(duz(r.zupcanici[1].da)) : '—'; }],
+      ['εα', function (r) { return r.ok ? fmt(r.par.epsA, 3) : '—'; }],
+      ['εβ', function (r) { return r.ok ? fmt(r.par.epsB, 3) : '—'; }],
+      ['εγ', function (r) { return r.ok ? fmt(r.par.epsG, 3) : '—'; }],
+      ['Upozorenja', function (r) { return !r.ok ? 'neispravno' : r.upozorenja.length ? String(r.upozorenja.length) : 'nema'; }, function (r) { return !r.ok || r.upozorenja.length; }]
+    ];
+    var tab = el('table', { class: 'varijante' });
+    var glava = el('tr', null, [el('th', { scope: 'col', text: 'Veličina' })]);
+    lista.forEach(function (v) { glava.appendChild(el('th', { scope: 'col', text: v.ime })); });
+    tab.appendChild(el('thead', null, [glava]));
+    var telo = el('tbody');
+    redovi.forEach(function (red) {
+      var tr = el('tr', null, [el('td', { text: red[0] })]);
+      lista.forEach(function (v, i) { tr.appendChild(el('td', { class: red[2] && red[2](rez[i]) ? 'upozorenje' : null, text: red[1](rez[i], v) })); });
+      telo.appendChild(tr);
+    });
+    var akc = el('tr', null, [el('td', { text: '' })]);
+    lista.forEach(function (v, i) {
+      akc.appendChild(el('td', { class: 'akcije' }, [
+        el('button', { type: 'button', class: 'dugme', text: 'Učitaj', 'aria-label': 'Učitaj ' + v.ime + ' u proračun', onclick: function () {
+          upisiUnos(v.ulaz); preracunaj(); prikaziEkran('proracun');
+          $('#napomena-proracun').textContent = 'Učitana je ' + v.ime + '.';
+        } }), ' ',
+        el('button', { type: 'button', class: 'dugme', text: 'Obriši', 'aria-label': 'Obriši ' + v.ime, onclick: function () {
+          var l = citajVarijante(); l.splice(i, 1); pisi(VARIJANTE_KLJUC, l); prikaziVarijante();
+        } })
+      ]));
+    });
+    telo.appendChild(akc);
+    tab.appendChild(telo);
+    okvir.appendChild(tab);
+  }
+  function tekstPoredjenja() {
+    var t = $('#varijante table');
+    if (!t) return '';
+    return Array.prototype.slice.call(t.rows).slice(0, -1).map(function (tr) {
+      return Array.prototype.slice.call(tr.cells).map(function (c) { return c.textContent.replace(/\u2212/g, '-'); }).join('\t');
+    }).join('\n');
   }
 
   // ------------------------------------------------------------------
@@ -992,6 +1106,94 @@
   });
 
   // ------------------------------------------------------------------
+  // Tablica: varijante, sile, štampa, link do proračuna
+  // ------------------------------------------------------------------
+  $('#dugme-sacuvaj-varijantu').addEventListener('click', function () {
+    var r = poslednjiRez;
+    if (!r) return;
+    var l = citajVarijante();
+    if (l.length >= 6) l.shift(); // najstarija izlazi
+    var br = 1, imena = l.map(function (v) { return v.ime; });
+    while (imena.indexOf('Varijanta ' + br) >= 0) br++;
+    var u = r.ulaz;
+    l.push({ ime: 'Varijanta ' + br, ulaz: { z1: u.z1, z2: u.z2, mn: u.mn, beta: u.beta, alfaN: u.alfaN, b: u.b, a: u.a } });
+    pisi(VARIJANTE_KLJUC, l);
+    prikaziVarijante();
+    $('#obavestenje').textContent = 'Sačuvana je Varijanta ' + br + '.';
+  });
+  $('#dugme-kopiraj-poredjenje').addEventListener('click', function () {
+    var b = this;
+    kopirajTekst(tekstPoredjenja()).then(function () {
+      b.textContent = '✓ kopirano'; b.classList.add('kopiraj-sve', 'kopirano');
+      setTimeout(function () { b.textContent = 'Kopiraj poređenje'; b.classList.remove('kopirano'); }, 1500);
+    });
+  });
+
+  $('#u-T1').value = citaj('zoran.sile', '') || '';
+  $('#u-T1').addEventListener('input', function () { pisi('zoran.sile', this.value); prikaziSile(); });
+
+  function popuniZaglavljeStampe() {
+    var r = poslednjiRez;
+    if (!r) return;
+    var u = r.ulaz, J = jedDuz();
+    var datum = new Date();
+    var dd = String(datum.getDate()).padStart(2, '0') + '.' + String(datum.getMonth() + 1).padStart(2, '0') + '.' + datum.getFullYear() + '.';
+    $('#stampa-zaglavlje').innerHTML = '<div class="glava"><span>Mašinski elementi</span><span>ZORAN ' + esc(APP_VERSION) + ' · ' + dd + '</span></div>' +
+      '<h1>Proračun zupčastog para <i>z</i>₁ = ' + u.z1 + ', <i>z</i>₂ = ' + u.z2 + '</h1>' +
+      '<p><i>m</i>ₙ = ' + esc(fmt(u.mn, 3)) + ' mm · <i>β</i> = ' + esc(fmt(u.beta, 2)) + '° · <i>α</i>ₙ = ' + esc(fmt(u.alfaN, 2)) + '° · <i>b</i> = ' + esc(fmt(duz(u.b))) + ' ' + J +
+      ' · zadato <i>a</i> = ' + esc(fmt(duz(u.a))) + ' ' + J + '</p>';
+  }
+  window.addEventListener('beforeprint', function () { popuniZaglavljeStampe(); crtaj(); });
+  $('#dugme-stampaj').addEventListener('click', function () { popuniZaglavljeStampe(); window.print(); });
+
+  function linkProracuna() {
+    var r = poslednjiRez;
+    if (!r) return window.Podeli.LINK;
+    var u = r.ulaz, q = [];
+    ['z1', 'z2', 'mn', 'beta', 'alfaN', 'b', 'a'].forEach(function (k) { q.push(k + '=' + encodeURIComponent(String(Math.round(u[k] * 1e6) / 1e6))); });
+    return window.Podeli.LINK + '?' + q.join('&');
+  }
+  $('#dugme-link-proracuna').addEventListener('click', function () {
+    var link = linkProracuna(), poruka = $('#poruka-link');
+    function kopiraj() {
+      kopirajTekst(link).then(function (ok) {
+        poruka.textContent = ok ? 'Link do ovog proračuna je kopiran — kolega ga otvara sa istim podacima.' : 'Kopiranje nije uspelo. Link: ' + link;
+        if (ok) setTimeout(function () { poruka.textContent = ''; }, 3000);
+      });
+    }
+    if (typeof navigator.share === 'function') {
+      navigator.share({ title: 'ZORAN — proračun zupčanika', text: 'Proračun zupčastog para u ZORAN-u:', url: link }).catch(function (e) { if (!e || e.name !== 'AbortError') kopiraj(); });
+    } else kopiraj();
+  });
+
+  /** Ulazni podaci iz linka (?z1=…&a=…); vraća objekat ili null. */
+  function unosIzLinka() {
+    if (!location.search) return null;
+    var par = {}, ima = false;
+    location.search.slice(1).split('&').forEach(function (d) {
+      var kv = d.split('=');
+      var k = decodeURIComponent(kv[0] || ''), v = P.parsirajBroj(decodeURIComponent(kv[1] || ''));
+      if (POLJA.indexOf(k) >= 0 && isFinite(v)) { par[k] = v; ima = true; }
+    });
+    return ima ? par : null;
+  }
+
+  // ------------------------------------------------------------------
+  // Obaveštenje posle ažuriranja
+  // ------------------------------------------------------------------
+  (function obavestenjeOVerziji() {
+    var bila = citaj('zoran.verzija', null);
+    pisi('zoran.verzija', APP_VERSION);
+    if (!bila || bila === APP_VERSION) return; // prva instalacija ili ista verzija
+    var o = $('#obavestenje-verzija');
+    $$('[data-verzija-broj]').forEach(function (x) { x.textContent = APP_VERSION; });
+    $('#link-novosti-baner').href = './novosti.html#v' + APP_VERSION.replace(/\./g, '-');
+    o.hidden = false;
+    $('#zatvori-obavestenje').addEventListener('click', function () { o.hidden = true; });
+    $('#link-novosti-baner').addEventListener('click', function () { o.hidden = true; });
+  })();
+
+  // ------------------------------------------------------------------
   // Pokretanje
   // ------------------------------------------------------------------
   postaviPodesavanja();
@@ -1012,6 +1214,13 @@
       });
       upisiUnos(v);
     } else upisiUnos(P.PODRAZUMEVANO);
+    // proračun iz linka ima prednost nad sačuvanim unosom
+    var izLinka = unosIzLinka();
+    if (izLinka) {
+      upisiUnos(izLinka);
+      setTimeout(function () { $('#napomena-proracun').textContent = 'Učitan je proračun iz linka.'; }, 0);
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* bez čišćenja adrese */ }
+    }
   })();
   POLJA.forEach(function (k) { $('#u-' + k).addEventListener('input', preracunaj); });
   $('#dugme-podrazumevano').addEventListener('click', function () {

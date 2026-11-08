@@ -18,7 +18,7 @@ var KOREN = path.resolve(__dirname, '..');
 var PORT = 8790 + Math.floor(Math.random() * 100);
 var URL = 'http://127.0.0.1:' + PORT + '/ZORAN/';
 var EKRANI = ['proracun', 'tablica', 'savetnik', 'uvoz', 'podesavanja'];
-var APP_FAJLOVI = /^(index\.html|manifest\.json|sw\.js|css\/|js\/|fonts\/.*\.woff2$|icons\/)/;
+var APP_FAJLOVI = /^([^/]+\.html|manifest\.json|sw\.js|css\/|js\/|fonts\/.*\.woff2$|icons\/|novosti\/)/;
 
 var rezultati = [];
 function stavka(grupa, opis, ok, detalj) {
@@ -107,6 +107,16 @@ async function proveriUredjaj(b, ime, opcije, dodir) {
     var zatvoren = await pg.evaluate(function () { return !document.querySelector('#prozor-podeli').open && document.activeElement.id === 'dugme-podeli'; });
     stavka('Uređaji', ime + ': rad tastaturom (Enter otvara, Escape zatvara i vraća fokus)', otvoren && zatvoren);
   }
+  // stranica „Šta je novo“
+  await pg.goto(URL + 'novosti.html'); await cekaj(600);
+  var nov = await pg.evaluate(function () {
+    var slike = Array.prototype.slice.call(document.images);
+    var male = Array.prototype.slice.call(document.querySelectorAll('a')).filter(function (a) { var b = a.getBoundingClientRect(); return b.width && (b.height < 43.5); }).map(function (a) { return a.textContent.trim().slice(0, 20); });
+    return { strana: /Šta je novo/.test((document.querySelector('h1') || {}).textContent || ''), skrol: document.documentElement.scrollWidth <= innerWidth, slike: slike.length, male: male };
+  });
+  await pg.evaluate(function () { return Promise.all(Array.prototype.slice.call(document.images).map(function (i) { i.loading = 'eager'; return i.decode().then(function () { return true; }, function () { return false; }); })); }).then(function (ok) { nov.neucitane = ok.filter(function (x) { return !x; }).length; });
+  stavka('Uređaji', ime + ': „Šta je novo“ — bez skrola u stranu, sve slike se učitavaju, linkovi ≥ 44 px', nov.strana && nov.slike > 0 && nov.skrol && !nov.neucitane && !nov.male.length,
+    (nov.strana ? '' : 'NIJE otvorena stranica „Šta je novo“; ') + 'slika: ' + nov.slike + (nov.neucitane ? ', neučitano: ' + nov.neucitane : '') + (nov.male.length ? ', mali linkovi: ' + nov.male.join('; ') : ''));
   stavka('Uređaji', ime + ': u konzoli nema grešaka ni upozorenja', !konzola.length, konzola.slice(0, 4).join(' | '));
   await ctx.close();
 }
@@ -131,6 +141,14 @@ async function proveriPWA(b) {
     off.push(await pg.evaluate(function (h) { var s = document.querySelector('#ekran-' + h); return s.classList.contains('aktivan') && s.innerText.length > 40; }, EKRANI[i]));
   }
   stavka('PWA', 'Offline: svih 5 ekrana se učitava bez mreže', off.every(Boolean), off.join(','));
+  var npg = await ctx.newPage();
+  await npg.goto(URL + 'novosti.html').catch(function () {}); await cekaj(800);
+  var novOff = await npg.evaluate(function () {
+    return Promise.all(Array.prototype.slice.call(document.images).map(function (i) { i.loading = 'eager'; return i.decode().then(function () { return 1; }, function () { return 0; }); }))
+      .then(function (r) { return { naslov: /Šta je novo/.test((document.querySelector('h1') || {}).textContent || ''), slike: r.length, ok: r.reduce(function (a, b) { return a + b; }, 0) }; });
+  }).catch(function () { return { naslov: false, slike: 0, ok: 0 }; });
+  stavka('PWA', 'Offline: „Šta je novo“ se otvara sa svim slikama', novOff.naslov && novOff.slike > 0 && novOff.ok === novOff.slike, novOff.ok + '/' + novOff.slike + ' slika');
+  await npg.close();
   await ctx.setOffline(false);
   podmetniNovuVerziju = true;
   await pg.evaluate(function () { location.hash = 'podesavanja'; }); await cekaj(200);
@@ -173,11 +191,11 @@ function proveriStatiku() {
     fs.readdirSync(path.join(KOREN, dir)).forEach(function (f) {
       var rel = dir + '/' + f;
       if (fs.statSync(path.join(KOREN, rel)).isDirectory()) return obidji(rel);
-      if (/\.(js|css|woff2|png)$/.test(f) && uKesu.indexOf(rel) < 0) fale.push(rel);
+      if (/\.(js|css|woff2|png|jpg|jpeg|webp|svg)$/.test(f) && uKesu.indexOf(rel) < 0) fale.push(rel);
     });
   }
-  ['css', 'js', 'fonts', 'icons'].forEach(obidji);
-  ['index.html', 'manifest.json'].forEach(function (f) { if (uKesu.indexOf(f) < 0) fale.push(f); });
+  ['css', 'js', 'fonts', 'icons', 'novosti'].forEach(function (d) { if (fs.existsSync(path.join(KOREN, d))) obidji(d); });
+  fs.readdirSync(KOREN).filter(function (f) { return /\.html$/.test(f); }).concat(['manifest.json']).forEach(function (f) { if (uKesu.indexOf(f) < 0) fale.push(f); });
   stavka('PWA', 'Svaki fajl aplikacije je u kešu u sw.js', !fale.length, fale.join(', '));
   // verzije povećane ako su menjani fajlovi aplikacije
   var promenjeno = [];
