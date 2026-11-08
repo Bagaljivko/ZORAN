@@ -166,7 +166,11 @@
     var epsB = b * Math.sin(beta) / (PI * mn);
     var epsG = epsA + epsB;
 
-    var upozorenja = proveriUpozorenja(g1, g2, epsA, mn);
+    // Granice zahvata na zahvatnoj liniji: zahvat mora da počne (A) posle T₁ i završi se (E) pre T₂.
+    // tA = |T₁A|, tE = |ET₂|; negativna vrednost znači prodiranje vrha u nogu drugog zupčanika.
+    var L = a * Math.sin(alfaWt);
+    var tA = L - g2a, tE = L - g1a;
+    var upozorenja = proveriUpozorenja(g1, g2, epsA, mn, tA, tE);
 
     return {
       ok: true,
@@ -177,7 +181,7 @@
         u: z2 / z1,
         mt: mt, alfaT: alfaT, alfaWt: alfaWt, invAt: invAt, invAwt: invAwt,
         a0: a0, a: a, y: y, k: k, sumaX: x1 + x2,
-        pbt: pbt, gAlfa: gAlfa,
+        pbt: pbt, gAlfa: gAlfa, tA: tA, tE: tE,
         epsA: epsA, epsB: epsB, epsG: epsG,
         b: b, beta: beta, alfaN: alfaN
       },
@@ -185,7 +189,7 @@
     };
   }
 
-  function proveriUpozorenja(g1, g2, epsA, mn) {
+  function proveriUpozorenja(g1, g2, epsA, mn, tA, tE) {
     var w = [];
     [g1, g2].forEach(function (g, i) {
       var oznaka = i === 0 ? 'z₁' : 'z₂';
@@ -194,6 +198,10 @@
       if (!(g.sa >= 0.25 * mn))
         w.push({ kod: 'zasiljen', zupcanik: i, poruka: 'Zašiljen vrh zuba na zupčaniku ' + oznaka + ': sₐ = ' + formatBroja(g.sa.toFixed(3)) + ' mm je manje od 0,25·mₙ = ' + formatBroja((0.25 * mn).toFixed(3)) + ' mm.' });
     });
+    if (tA < -1e-9)
+      w.push({ kod: 'prodiranje', zupcanik: 1, iznos: -tA, poruka: 'Prodiranje zuba: vrh velikog zupčanika (z₂) zalazi u nogu malog (z₁) — zahvat počinje ' + formatBroja((-tA).toFixed(3)) + ' mm pre tačke T₁.' });
+    if (tE < -1e-9)
+      w.push({ kod: 'prodiranje', zupcanik: 0, iznos: -tE, poruka: 'Prodiranje zuba: vrh malog zupčanika (z₁) zalazi u nogu velikog (z₂) — zahvat se završava ' + formatBroja((-tE).toFixed(3)) + ' mm posle tačke T₂.' });
     if (epsA < 1.1)
       w.push({ kod: 'epsilon', poruka: 'Stepen sprezanja profila εα = ' + formatBroja(epsA.toFixed(3)) + ' je manji od 1,1.' });
     return w;

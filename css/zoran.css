@@ -391,3 +391,11 @@ html.prozor-otvoren { overflow: hidden; }
 .polje .pomoc-tekst { font-family: var(--serif); font-style: italic; }
 .provera-status { margin: 0.2rem 0 0.4rem; font-style: italic; }
 .provera-status.odstupa { color: var(--akcenat); }
+
+/* Prodiranje zuba — crveno mastilo, kao ispravka profesora */
+.crtez-svg .prodiranje-linija { stroke: var(--akcenat); stroke-width: 3; stroke-linecap: butt; }
+.crtez-svg .prodiranje-krug { fill: none; stroke: var(--akcenat); stroke-width: 1.4; stroke-dasharray: 5 3; }
+.crtez-svg .zub-prodire { fill: none; stroke: var(--akcenat); stroke-width: 2.4; stroke-linejoin: round; }
+.legenda .legenda-prodiranje { color: var(--akcenat); }
+.legenda .legenda-prodiranje line { stroke: var(--akcenat); }
+.legenda span[hidden] { display: none; }
