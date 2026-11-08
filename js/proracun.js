@@ -60,7 +60,8 @@
     mn: { min: 0.05, max: 100, naziv: 'Modul mₙ' },
     beta: { min: 0, max: 45, maxOtvoren: true, naziv: 'Ugao nagiba β' },
     alfaN: { min: 10, max: 35, naziv: 'Ugao profila αₙ' },
-    b: { min: 0, minOtvoren: true, max: 10000, naziv: 'Širina zahvata b' },
+    b: { min: 0, minOtvoren: true, max: 10000, naziv: 'Širina ozubljenja b' },
+    a: { min: 0, minOtvoren: true, max: 100000, naziv: 'Osno rastojanje a' },
     pom1: { naziv: 'Pomeranje profila (mali)' },
     pom2: { naziv: 'Pomeranje profila (veliki)' }
   };
@@ -254,6 +255,49 @@
     };
   }
 
+  /**
+   * Proračun para iz ZADATOG osnog rastojanja: pomeranje profila se ne unosi, nego računa.
+   * Σx iz a (inv αwt), raspodela po DIN 3992 (sa korekcijom na x_min), pa ceo proračun.
+   * @param {object} u {z1, z2, mn, beta, alfaN, b, a}
+   * @returns rezultat kao proracunaj(), uz polje `raspodela` {a, sumaX, x1, x2, pom1, pom2, pomereno, razlika}
+   */
+  function proracunajIzRastojanja(u) {
+    var greske = [];
+    ['z1', 'z2', 'mn', 'beta', 'alfaN', 'b', 'a'].forEach(function (k) {
+      var g = proveriPolje(k, u[k]);
+      if (g) greske.push({ polje: k, poruka: g });
+    });
+    if (greske.length) return { ok: false, greske: greske, upozorenja: [] };
+    var k = oceniKombinaciju(u.a, u.z1, u.z2, u.mn, u.beta, u.alfaN, u.b);
+    if (!k.ostvarivo) {
+      var alfaT = Math.atan(Math.tan(u.alfaN * DEG) / Math.cos(u.beta * DEG));
+      var najmanje = k.a0 * Math.cos(alfaT);
+      return { ok: false, upozorenja: [], greske: [{ polje: 'a', poruka:
+        'Osno rastojanje a = ' + formatBroja(+u.a.toFixed(3)) + ' mm nije ostvarivo za ove zupčanike: mora biti veće od ' +
+        formatBroja(najmanje.toFixed(3)) + ' mm (nulto rastojanje a₀ = ' + formatBroja(k.a0.toFixed(3)) + ' mm).' }] };
+    }
+    var rez = k.rez;
+    if (!rez.ok) {
+      // pomeranja izračunata iz a daju nemoguć zub — greška pripada polju a
+      return { ok: false, upozorenja: [], greske: rez.greske.map(function (g) {
+        return { polje: (g.polje === 'pom1' || g.polje === 'pom2') ? 'a' : g.polje, poruka: g.poruka };
+      }) };
+    }
+    rez.upozorenja = k.upozorenja;
+    rez.ulaz.a = u.a;
+    rez.raspodela = {
+      a: u.a, sumaX: k.sumaX, x1: k.x1, x2: k.x2, pom1: k.pom1, pom2: k.pom2,
+      pomereno: k.pomereno, razlika: rez.par.a - u.a
+    };
+    return rez;
+  }
+
+  /** Osno rastojanje koje daju zaokružena pomeranja (provera „na kraju“). */
+  function rastojanjeIzPomeranja(u, pom1, pom2) {
+    var r = proracunaj({ z1: u.z1, z2: u.z2, mn: u.mn, beta: u.beta, alfaN: u.alfaN, pom1: pom1, pom2: pom2, b: u.b });
+    return r.ok ? r.par.a : NaN;
+  }
+
   function bodujKombinaciju(k, mnKorisnik, odstupanjePct) {
     return Math.abs(k.sumaX - 0.35) - 0.6 * Math.min(k.epsA, 1.8) + 0.05 * Math.abs(odstupanjePct) +
       0.6 * Math.abs(k.mn - mnKorisnik) / mnKorisnik + (k.z1 < 14 ? 0.3 : 0);
@@ -318,11 +362,13 @@
     parsirajBroj: parsirajBroj,
     proveriPolje: proveriPolje,
     proracunaj: proracunaj,
+    proracunajIzRastojanja: proracunajIzRastojanja,
+    rastojanjeIzPomeranja: rastojanjeIzPomeranja,
     raspodelaDIN3992: raspodelaDIN3992,
     oceniKombinaciju: oceniKombinaciju,
     savetnik: savetnik,
     DIN780_RED1: DIN780_RED1,
     DIN780_RED2: DIN780_RED2,
-    PODRAZUMEVANO: { z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, pom1: 3.380, pom2: 3.705, b: 88 }
+    PODRAZUMEVANO: { z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, pom1: 3.380, pom2: 3.705, b: 88, a: 250 }
   };
 });

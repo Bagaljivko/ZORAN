@@ -294,7 +294,6 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
   main.radni #ekran-proracun, main.radni #ekran-tablica { display: contents; }
   main.radni .kol { min-width: 0; }
   main.radni .kol-ulaz { border-right: 1px solid var(--linija); padding-right: 1.6rem; }
-  main.radni .kol-crtez { position: sticky; top: 64px; }
   main.radni .kol-tablica { border-left: 1px solid var(--linija); padding-left: 1.6rem; }
   .ekran.uzak { max-width: 920px; margin: 0 auto; }
 }
@@ -382,3 +381,9 @@ html.prozor-otvoren { overflow: hidden; }
   .animiraj .slovo, .animiraj .rec b, .animiraj .rep, .animiraj .tanka-linija, .animiraj .verzija-tekst, .animiraj .ornament { animation: none; opacity: 1; transform: none; clip-path: none; }
   .animiraj .slovo::after { animation: none; }
 }
+
+/* Pomeranje profila ispod crteža i provera osnog rastojanja */
+.pomeranje-profila { margin-top: 0.4rem; }
+.polje .pomoc-tekst { font-family: var(--serif); font-style: italic; }
+.provera-status { margin: 0.2rem 0 0.4rem; font-style: italic; }
+.provera-status.odstupa { color: var(--akcenat); }

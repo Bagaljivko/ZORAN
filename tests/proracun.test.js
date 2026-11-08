@@ -120,6 +120,45 @@ test('neispravan unos daje poruku na srpskom, bez izuzetka', function () {
   tacno(!r3.ok, 'previše negativno pomeranje se odbija');
 });
 
+test('iz zadatog a = 250 mm: pomeranja se računaju (DIN 3992) i a se podudara', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  tacno(r.ok, 'proračun mora uspeti');
+  jednako(r.par.a, 250, 1e-9, 'a iz pomeranja:');
+  jednako(r.raspodela.razlika, 0, 1e-9, 'razlika:');
+  jednako(r.raspodela.sumaX, 1.0908, 2e-4, 'Σx:');
+  jednako(r.raspodela.x1 + r.raspodela.x2, r.raspodela.sumaX, 1e-12, 'x1 + x2 = Σx:');
+  jednako(r.raspodela.x1, 0.52, 0.002, 'x1:');
+  jednako(r.zupcanici[0].pomeranje, r.raspodela.x1 * 6.5, 1e-12, 'pomeranje 1 = x1·mn:');
+  tacno(r.upozorenja.length === 0, 'bez upozorenja');
+});
+
+test('povratni put: a iz ručnih pomeranja (3,380 / 3,705) → ista Σx i isto a', function () {
+  var a = rez.par.a;
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: a });
+  tacno(r.ok);
+  jednako(r.raspodela.sumaX, 1.09, 1e-9, 'Σx:');
+  jednako(r.par.a, a, 1e-9, 'a:');
+  jednako(P.rastojanjeIzPomeranja(r.ulaz, 3.380, 3.705), a, 1e-9, 'provera preko ručnih pomeranja:');
+});
+
+test('zaokružena pomeranja daju a koje se razlikuje najviše za stoti deo milimetra', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  var a2 = P.rastojanjeIzPomeranja(r.ulaz, Math.round(r.raspodela.pom1 * 1000) / 1000, Math.round(r.raspodela.pom2 * 1000) / 1000);
+  tacno(Math.abs(a2 - 250) < 0.01, 'razlika ' + (a2 - 250));
+});
+
+test('neostvarivo ili prazno osno rastojanje daje poruku za polje a', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 200 });
+  tacno(!r.ok && r.greske[0].polje === 'a' && /nije ostvarivo/.test(r.greske[0].poruka), JSON.stringify(r.greske));
+  var r2 = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: NaN });
+  tacno(!r2.ok && r2.greske[0].polje === 'a');
+});
+
+test('Σx van opsega daje upozorenje i u proračunu iz a', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 252 });
+  tacno(r.ok && r.upozorenja.some(function (w) { return w.kod === 'sumaX'; }), JSON.stringify(r.upozorenja));
+});
+
 console.log('Savetnik');
 
 test('povratni put: a iz proračuna → Σx = 1,09 i x₁ = 0,52', function () {
