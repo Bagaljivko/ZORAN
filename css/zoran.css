@@ -363,14 +363,14 @@ html.prozor-otvoren { overflow: hidden; }
   content: ''; position: absolute; left: 14%; right: 22%; bottom: -0.04em;
   border-top: 2px solid var(--mastilo); transform: scaleX(0); opacity: 0;
 }
-.animiraj .slovo { opacity: 0; animation: zoran-slovo 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: calc(var(--i) * 80ms); }
-.animiraj .slovo::after { animation: zoran-crta 0.9s ease-out forwards; animation-delay: calc(700ms + var(--i) * 220ms); }
-.animiraj .rec b { opacity: 0; animation: zoran-pad 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) forwards; animation-delay: calc(700ms + var(--i) * 220ms); }
-.animiraj .rep { clip-path: inset(0 100% 0 0); animation: zoran-rep 0.5s ease-out forwards; animation-delay: calc(820ms + var(--i) * 220ms); }
-.animiraj .tanka-linija { transform: scaleX(0); animation: zoran-linija 0.5s ease-out 1.95s forwards; }
+.animiraj .slovo { opacity: 0; animation: zoran-slovo 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: calc(var(--i) * 60ms); }
+.animiraj .slovo::after { animation: zoran-crta 0.7s ease-out forwards; animation-delay: calc(480ms + var(--i) * 160ms); }
+.animiraj .rec b { opacity: 0; animation: zoran-pad 0.38s cubic-bezier(0.3, 0.8, 0.3, 1) forwards; animation-delay: calc(480ms + var(--i) * 160ms); }
+.animiraj .rep { clip-path: inset(0 100% 0 0); animation: zoran-rep 0.42s ease-out forwards; animation-delay: calc(560ms + var(--i) * 160ms); }
+.animiraj .tanka-linija { transform: scaleX(0); animation: zoran-linija 0.4s ease-out 1.42s forwards; }
 .animiraj .verzija-tekst, .animiraj .ornament { opacity: 0; animation: zoran-pojava 0.5s ease-out forwards; }
 .animiraj .ornament { animation-delay: 0.1s; }
-.animiraj .verzija-tekst { animation-delay: 2.15s; }
+.animiraj .verzija-tekst { animation-delay: 1.55s; }
 @keyframes zoran-slovo { from { opacity: 0; transform: translateY(0.18em); } to { opacity: 1; transform: none; } }
 @keyframes zoran-crta { 0% { transform: scaleX(0); opacity: 1; } 35% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
 @keyframes zoran-pad { from { opacity: 0; transform: translateY(-0.9em); } to { opacity: 1; transform: none; } }
@@ -447,4 +447,48 @@ a.dugme-link { display: inline-flex; align-items: center; text-decoration: none;
   .red { min-height: 0; padding: 1px 0; }
   .kolofon { break-inside: avoid; }
   .crtez-svg .oz { stroke: #fff; }
+}
+
+/* ================= 1.6.0: izgled ================= */
+
+/* Zrnast papir — jedna mala SVG pločica, iscrtava se jednom (bez filtera na celoj strani) */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.13 0 0 0 0 0.09 0 0 0 0.075 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23z)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* Listanje strane pri promeni ekrana */
+@keyframes zoran-list { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ekran.aktivan { animation: zoran-list 0.22s ease-out; }
+main.radni .ekran.aktivan { animation: none; }
+
+/* Zupčanici se iscrtavaju mastilom (pri prvom prikazu i promeni prikaza) */
+/* crtica postoji samo tokom animacije; posle nje linija je puna u svakom pregledaču */
+@keyframes zoran-mastilo { from { stroke-dasharray: 1 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1 1; stroke-dashoffset: 0; } }
+@keyframes zoran-pojava-crteza { from { opacity: 0; } to { opacity: 1; } }
+.crtez-svg.mastilo-crta .zub { animation: zoran-mastilo 1.1s cubic-bezier(0.45, 0.05, 0.25, 1) backwards; }
+.crtez-svg.mastilo-crta .kotrljajna, .crtez-svg.mastilo-crta .osnovna, .crtez-svg.mastilo-crta .osa,
+.crtez-svg.mastilo-crta .zahvatna, .crtez-svg.mastilo-crta .aktivna, .crtez-svg.mastilo-crta .tc,
+.crtez-svg.mastilo-crta .oz, .crtez-svg.mastilo-crta .prodiranje-linija, .crtez-svg.mastilo-crta .prodiranje-krug {
+  opacity: 0; animation: zoran-pojava-crteza 0.45s ease-out 0.75s forwards;
+}
+
+/* Pečat se utiskuje pri pritisku */
+.pecat, .dugme { transition: transform 0.08s ease-out, background-color 0.12s ease-out; }
+.pecat:active, .dugme:active { transform: translateY(1px) scale(0.98); }
+
+/* Red tablice pod mišem, kao prst koji prati red u knjizi */
+@media (hover: hover) {
+  .red:hover { background: rgba(43, 33, 23, 0.045); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ekran.aktivan { animation: none; }
+  .crtez-svg.mastilo-crta * { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; }
+  .pecat, .dugme { transition: none; }
+}
+@media print {
+  body::before { display: none; }
+  .ekran.aktivan { animation: none; }
 }

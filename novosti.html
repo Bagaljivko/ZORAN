@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-6-0"><span>Brže i lepše: iscrtavanje mastilom, listanje strana</span><span>1.6.0</span></a></li>
     <li><a href="#v1-5-0"><span>Kontrolne mere, sile, varijante, štampa</span><span>1.5.0</span></a></li>
     <li><a href="#v1-4-0"><span>Crvena upozorenja za prodiranje zuba</span><span>1.4.0</span></a></li>
     <li><a href="#v1-3-1"><span>Akronim u jednom redu</span><span>1.3.1</span></a></li>
@@ -58,6 +59,39 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.6.0 ================= -->
+  <h2 id="v1-6-0">Verzija 1.6.0 — brže i lepše<span class="datum">8. novembar 2026.</span></h2>
+  <p>Isti proračun, iste formule i isti rezultati — ali ZORAN se brže pokreće, brže odgovara dok kucaš i izgleda još više kao stranica starog priručnika.</p>
+
+  <h3>Brže</h3>
+  <ul>
+    <li><b>Naslovna strana traje 2,1 s umesto 2,9 s.</b> Animacija je ista (slova se slože, reči se razviju), samo je zbijenija. Dodir je i dalje preskače.</li>
+    <li><b>Dok kucaš, iscrtava se samo ono što vidiš.</b> Ranije se pri svakom pritisku tastera iznova gradila cela Tablica (oko 70 redova) i Savetnik, iako se nisu videli. Sada se oni pripremaju u pozadini, kad aplikacija miruje, pa su gotovi kad ih otvoriš.</li>
+    <li><b>Više pritisaka u istom trenutku = jedan proračun.</b> Brzo kucanje ne pravi zastoje.</li>
+    <li><b>Na pokretanju se učitava 78 KB manje koda.</b> Čitač SolidWorks fajlova i QR biblioteka se učitavaju tek kad zatrebaju — i dalje iz memorije telefona, pa rade i bez interneta.</li>
+    <li>Kontrolne mere se računaju jednom po proračunu, a uneti podaci se čuvaju najviše jednom u četvrtini sekunde (i odmah pri zatvaranju aplikacije).</li>
+  </ul>
+  <p>Izmereno na emuliranom telefonu (Pixel 7) sa četiri puta usporenim procesorom, medijana tri merenja:</p>
+  <ul>
+    <li>rad skripti pri pokretanju: <b>107 → 56 ms</b> (upola manje);</li>
+    <li>odziv na pritisak tastera, sa iscrtavanjem: <b>34 → 25 ms</b> (najsporiji: 45 → 30 ms);</li>
+    <li>animacija zupčanika: i dalje glatkih 60 kadrova u sekundi, bez zastoja;</li>
+    <li>prelazak na drugi ekran: isto kao ranije (oko 45 ms), iako sada ima i animaciju listanja.</li>
+  </ul>
+
+  <h3>Lepše</h3>
+  <ul>
+    <li><b>Zupčanici se iscrtavaju mastilom</b> — kad se crtež prvi put pojavi i kad promeniš prikaz (Ceo par, Pregled, Zona zahvata), pero obiđe profil zuba, pa se pojave kružnice, zahvatna linija i oznake.</li>
+    <li><b>Listanje strana</b> — ekrani se smenjuju blagim pomakom, kao kad okreneš list.</li>
+    <li><b>Zrnast papir</b> — jedva primetna tekstura, kao na pravom papiru starog udžbenika.</li>
+    <li><b>Pečat se utiskuje</b> — dugmad se pri pritisku blago spuste, a red Tablice pod mišem se lako zatamni (na računaru).</li>
+  </ul>
+  <figure>
+    <img src="./novosti/v160-mastilo.jpg" width="900" height="611" loading="lazy" alt="Četiri kadra: zupčanici se iscrtavaju mastilom, pa se pojavljuju kružnice i oznake">
+    <figcaption><span class="sl">Sl. 12.</span> Iscrtavanje mastilom posle naslovne strane: pero obilazi zupčanike, zatim se pojave kružnice, zahvatna linija i oznake (oko 1,2 s).</figcaption>
+  </figure>
+  <p class="tehnicki">Ako je na telefonu uključeno „Smanji kretanje“ (Reduce motion), efekti se ne prikazuju — crtež se pojavi odmah, a naslovna strana stoji 1,5 s bez animacije.</p>
 
   <!-- ================= 1.5.0 ================= -->
   <h2 id="v1-5-0">Verzija 1.5.0 — kontrolne mere, sile, varijante i štampa<span class="datum">8. novembar 2026.</span></h2>

@@ -230,8 +230,8 @@
     // zupčanici (rotirajuće grupe)
     var ug1 = opt.ugao1 || 0;
     var ug2 = -ug1 * g1.z / g2.z;
-    s += '<g id="zup1" transform="rotate(' + f(-ug1 * 180 / PI) + ' 0 0)"><path class="zub" d="' + d1 + '"/></g>';
-    s += '<g id="zup2" transform="rotate(' + f(-ug2 * 180 / PI) + ' ' + f(p.a) + ' 0)"><path class="zub" transform="translate(' + f(p.a) + ' 0)" d="' + d2 + '"/></g>';
+    s += '<g id="zup1" transform="rotate(' + f(-ug1 * 180 / PI) + ' 0 0)"><path class="zub" pathLength="1" d="' + d1 + '"/></g>';
+    s += '<g id="zup2" transform="rotate(' + f(-ug2 * 180 / PI) + ' ' + f(p.a) + ' 0)"><path class="zub" pathLength="1" transform="translate(' + f(p.a) + ' 0)" d="' + d2 + '"/></g>';
     // zahvatna linija
     s += linija(T.T1, T.T2, 'zahvatna');
     s += linija(T.A, T.E, 'aktivna');

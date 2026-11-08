@@ -377,6 +377,13 @@
    * @param rez rezultat proracunaj; @param i 0 = mali, 1 = veliki; @param DM prečnik kuglice (opciono)
    */
   function kontrolneMere(rez, i, DM) {
+    if (!DM) { // podrazumevana kuglica: rezultat se pamti uz proračun
+      rez._kontrolne = rez._kontrolne || [];
+      return rez._kontrolne[i] || (rez._kontrolne[i] = kontrolneMereRacun(rez, i));
+    }
+    return kontrolneMereRacun(rez, i, DM);
+  }
+  function kontrolneMereRacun(rez, i, DM) {
     var p = rez.par, g = rez.zupcanici[i];
     var mn = rez.ulaz.mn, alfaN = p.alfaN, beta = p.beta, alfaT = p.alfaT, invAt = p.invAt;
     var z = g.z, x = g.x;
