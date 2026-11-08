@@ -70,6 +70,77 @@
     return d + 'Z';
   }
 
+  /** Obris jednog zuba sa osom na uglu 0 i centrom u (0, 0) — za crveno označavanje. */
+  function putanjaZuba(g, invAt, n) {
+    var bok = tackeBoka(g, invAt, n);
+    var korak = 2 * PI / g.z;
+    var d = '';
+    function P(R, ang) { return pt(R * Math.cos(ang), R * Math.sin(ang)); }
+    for (var j = 0; j < bok.length; j++) d += (j ? 'L' : 'M') + P(bok[j].R, -Math.min(bok[j].t, korak / 2));
+    var tTip = Math.min(bok[bok.length - 1].t, korak / 2);
+    d += 'A' + f(g.ra) + ' ' + f(g.ra) + ' 0 0 0 ' + P(g.ra, tTip);
+    for (var k = bok.length - 2; k >= 0; k--) d += 'L' + P(bok[k].R, Math.min(bok[k].t, korak / 2));
+    return d + 'Z';
+  }
+
+  /**
+   * Koji parovi zuba su u prodiranju pri zaokretu malog zupčanika ug1 (rad, matematički smer).
+   * Par je u prodiranju dok mu je tačka dodira na zahvatnoj liniji van T₁T₂, tj. na delu A–T₁
+   * (vrh velikog zupčanika u nozi malog) ili T₂–E (vrh malog u nozi velikog). Tu nema evolvente,
+   * pa pravilan zahvat nije moguć.
+   * Položaj dodira (donjeg) boka zuba i na liniji, mereno od T₁: s = r_b1·(αwt + C − φᵢ), C = sₜ/(2r) + inv αₜ
+   * (iz uslova: polarni ugao tačke na liniji αwt − arctg(s/r_b) = φᵢ − C + inv α).
+   * Isto važi i za drugu zahvatnu liniju (suprotan smer okretanja), simetrično u odnosu na osu.
+   * Vraća {z1: [indeksi zuba malog], z2: [indeksi zuba velikog]}.
+   */
+  function zubiUProdiranju(rez, ug1) {
+    var p = rez.par, g1 = rez.zupcanici[0], g2 = rez.zupcanici[1];
+    var out = { z1: [], z2: [] };
+    if (!(p.tA < 0 || p.tE < 0)) return out;
+    ug1 = ug1 || 0;
+    var ug2 = -ug1 * g1.z / g2.z;
+    var k1 = 2 * PI / g1.z, k2 = 2 * PI / g2.z;
+    var fi02 = PI + PI / g2.z + ug2;
+    var aw = p.alfaWt, L = p.a * Math.sin(aw);
+    var C1 = g1.st / (2 * g1.r) + p.invAt;
+    var T = tackeZahvata(rez);
+    var sA = p.tA, sE = L - p.tE; // A i E mereno od T₁
+    function norm(x) { x = x % (2 * PI); if (x > PI) x -= 2 * PI; if (x <= -PI) x += 2 * PI; return x; }
+    function dodaj(niz, i) { if (niz.indexOf(i) < 0) niz.push(i); }
+    for (var i = 0; i < g1.z; i++) {
+      var fi = ug1 + i * k1;
+      [1, -1].forEach(function (zn) { // 1: zahvatna linija T₁T₂, −1: simetrična (drugi smer)
+        var sx = g1.rb * norm(aw + C1 - zn * fi);
+        var prodire = (p.tA < 0 && sx >= sA && sx < 0) || (p.tE < 0 && sx > L && sx <= sE);
+        if (!prodire) return;
+        var qx = T.T1.x + sx * T.u.x, qy = zn * (T.T1.y + sx * T.u.y);
+        var rel = Math.atan2(qy, qx - p.a) - fi02;
+        dodaj(out.z1, i);
+        dodaj(out.z2, ((Math.round(rel / k2) % g2.z) + g2.z) % g2.z);
+      });
+    }
+    return out;
+  }
+
+  /** SVG za zube u prodiranju (crveni obrisi) pri zaokretu ug1. */
+  function prodiranjeSVG(rez, ug1) {
+    var z = zubiUProdiranju(rez, ug1);
+    if (!z.z1.length && !z.z2.length) return '';
+    var p = rez.par, g1 = rez.zupcanici[0], g2 = rez.zupcanici[1];
+    if (!rez._zubi) rez._zubi = [putanjaZuba(g1, p.invAt, 16), putanjaZuba(g2, p.invAt, 16)];
+    var ug2 = -(ug1 || 0) * g1.z / g2.z;
+    var s = '';
+    z.z1.forEach(function (i) {
+      var fi = (ug1 || 0) + i * 2 * PI / g1.z;
+      s += '<path class="zub-prodire" transform="rotate(' + f(-fi * 180 / PI) + ')" d="' + rez._zubi[0] + '"/>';
+    });
+    z.z2.forEach(function (j) {
+      var fi = PI + PI / g2.z + ug2 + j * 2 * PI / g2.z;
+      s += '<path class="zub-prodire" transform="translate(' + f(p.a) + ' 0) rotate(' + f(-fi * 180 / PI) + ')" d="' + rez._zubi[1] + '"/>';
+    });
+    return s;
+  }
+
   /** Karakteristične tačke zahvata. */
   function tackeZahvata(rez) {
     var p = rez.par, g1 = rez.zupcanici[0], g2 = rez.zupcanici[1];
@@ -164,6 +235,21 @@
     // zahvatna linija
     s += linija(T.T1, T.T2, 'zahvatna');
     s += linija(T.A, T.E, 'aktivna');
+    // prodiranje: deo zahvatne linije van T₁T₂ i krug oko mesta udara (crveno)
+    if (p.tA < 0) {
+      s += linija(T.A, T.T1, 'prodiranje-linija');
+      // isto mesto za drugi smer okretanja (simetrično u odnosu na osu)
+      [1, -1].forEach(function (zn) {
+        s += '<circle class="prodiranje-krug" cx="' + f(T.T1.x) + '" cy="' + f(-zn * T.T1.y) + '" r="' + f(Math.max(fs * 1.4, -p.tA * 0.8)) + '"/>';
+      });
+    }
+    if (p.tE < 0) {
+      s += linija(T.T2, T.E, 'prodiranje-linija');
+      [1, -1].forEach(function (zn) {
+        s += '<circle class="prodiranje-krug" cx="' + f(T.T2.x) + '" cy="' + f(-zn * T.T2.y) + '" r="' + f(Math.max(fs * 1.4, -p.tE * 0.8)) + '"/>';
+      });
+    }
+    s += '<g id="prodiranje">' + prodiranjeSVG(rez, ug1) + '</g>';
     // tačke i oznake
     [T.O1, T.O2, T.P, T.T1, T.T2, T.A, T.E].forEach(function (Q) { s += tacka(Q); });
     s += oznaka(T.O1, 'O<tspan baseline-shift="sub" font-size="70%">1</tspan>', -1.4, 0.5);
@@ -182,6 +268,9 @@
     tackeBoka: tackeBoka,
     putanjaZupcanika: putanjaZupcanika,
     tackeZahvata: tackeZahvata,
+    putanjaZuba: putanjaZuba,
+    zubiUProdiranju: zubiUProdiranju,
+    prodiranjeSVG: prodiranjeSVG,
     okvirPrikaza: okvirPrikaza,
     nacrtaj: nacrtaj
   };

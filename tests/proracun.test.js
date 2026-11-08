@@ -159,6 +159,45 @@ test('Σx van opsega daje upozorenje i u proračunu iz a', function () {
   tacno(r.ok && r.upozorenja.some(function (w) { return w.kod === 'sumaX'; }), JSON.stringify(r.upozorenja));
 });
 
+test('prodiranje: podrazumevani par nema prodiranja (T₁A > 0, ET₂ > 0)', function () {
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  tacno(r.par.tA > 0 && r.par.tE > 0, 'tA = ' + r.par.tA + ', tE = ' + r.par.tE);
+  tacno(!r.upozorenja.some(function (w) { return w.kod === 'prodiranje'; }));
+});
+
+test('prodiranje: z 10/15, a = 62,5 mm — vrh z₂ zalazi u nogu z₁, iznos se slaže sa crtežom', function () {
+  var r = P.proracunajIzRastojanja({ z1: 10, z2: 15, mn: 5, beta: 0, alfaN: 20, b: 40, a: 62.5 });
+  tacno(r.ok);
+  var w = r.upozorenja.filter(function (x) { return x.kod === 'prodiranje'; });
+  tacno(w.length === 1 && w[0].zupcanik === 1, JSON.stringify(w));
+  // nezavisno: rastojanje tačaka A i T₁ sa crteža, sa znakom (A pre T₁ = negativno)
+  var T = C.tackeZahvata(r);
+  var s = (T.A.x - T.T1.x) * T.u.x + (T.A.y - T.T1.y) * T.u.y;
+  jednako(r.par.tA, s, 1e-9, 'T₁A:');
+  jednako(w[0].iznos, -s, 1e-9, 'iznos:');
+});
+
+test('prodiranje: crtež boji par zuba samo dok mu je dodir van T₁T₂', function () {
+  function kadrova(r, z1) {
+    var n = 0;
+    for (var k = 0; k < 200; k++) { var z = C.zubiUProdiranju(r, k / 200 * 2 * Math.PI / z1); if (z.z1.length || z.z2.length) n++; }
+    return n;
+  }
+  var d = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 });
+  tacno(kadrova(d, 16) === 0, 'podrazumevani par nikad nije crven');
+  var r = P.proracunajIzRastojanja({ z1: 10, z2: 15, mn: 5, beta: 0, alfaN: 20, b: 40, a: 62.5 });
+  var n = kadrova(r, 10);
+  tacno(n > 0 && n < 200, 'crveno samo deo ciklusa: ' + n + '/200');
+  var svg = C.nacrtaj(r, { prikaz: 'zona' });
+  tacno(/prodiranje-linija/.test(svg) && svg.indexOf('NaN') < 0, 'crvena linija na crtežu');
+});
+
+test('Savetnik ne predlaže kombinacije sa prodiranjem', function () {
+  var s = P.savetnik({ a: 62.5, z1: 10, z2: 15, mn: 5, beta: 0, alfaN: 20, tol: 2 });
+  tacno(s.vlastita.ocena === 'Loše', 'ocena: ' + s.vlastita.ocena);
+  tacno(s.predlozi.every(function (k) { return k.rez.par.tA >= 0 && k.rez.par.tE >= 0; }));
+});
+
 console.log('Savetnik');
 
 test('povratni put: a iz proračuna → Σx = 1,09 i x₁ = 0,52', function () {

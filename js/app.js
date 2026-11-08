@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.3.1';
+  var APP_VERSION = '1.4.0';
   var P = window.Proracun, C = window.Crtez, S = window.Sldprt;
   var DEG = P.DEG;
   var MM_PO_INCU = 25.4;
@@ -300,6 +300,8 @@
       { naziv: 'Skraćenje temena <i>k</i>', v: p.k, dec: 4, tekst: 'Skraćenje temena k' },
       { naziv: 'Osnovni korak <i>p</i>bt', v: duz(p.pbt), jed: J, tekst: 'Osnovni korak pbt' },
       { naziv: 'Dužina aktivnog dela <i>AE</i>', v: duz(p.gAlfa), jed: J, tekst: 'Dužina aktivnog dela AE' },
+      { naziv: 'Početak zahvata od <i>T</i>₁ (<i>T</i>₁<i>A</i>)', v: duz(p.tA), jed: J, upozorenje: p.tA < 0, tekst: 'Početak zahvata od T1 (T1A)' },
+      { naziv: 'Kraj zahvata do <i>T</i>₂ (<i>ET</i>₂)', v: duz(p.tE), jed: J, upozorenje: p.tE < 0, tekst: 'Kraj zahvata do T2 (ET2)' },
       { naziv: 'Stepen sprezanja profila <i>ε</i>α', v: p.epsA, dec: 4, kratko: true, upozorenje: p.epsA < 1.1, tekst: 'Stepen sprezanja profila εα' },
       { naziv: 'Stepen sprezanja bokova <i>ε</i>β', v: p.epsB, dec: 4, kratko: true, tekst: 'Stepen sprezanja bokova εβ' },
       { naziv: 'Ukupni stepen sprezanja <i>ε</i>γ', v: p.epsG, dec: 4, kratko: true, tekst: 'Ukupni stepen sprezanja εγ' }
@@ -359,6 +361,7 @@
     if (!vidljiv && okvir.firstChild) return;
     okvir.innerHTML = C.nacrtaj(rez, { prikaz: prikaz, ugao1: animacija.ugao, odnosStrana: 0.62 });
     okvir.classList.toggle('zastarelo', !!(trenutniRez && !trenutniRez.ok));
+    $('#legenda-prodiranje').hidden = !(rez.par.tA < 0 || rez.par.tE < 0);
     var nazivPrikaza = { ceo: 'čeoni presek', pregled: 'čeoni presek, pregled', zona: 'zona zahvata, uveličano' }[prikaz];
     $('#potpis-crteza').innerHTML = '<span class="sl">Sl. 1.</span> Zahvat para <i>z</i>₁ = ' + rez.ulaz.z1 + ', <i>z</i>₂ = ' + rez.ulaz.z2 + ' (' + nazivPrikaza + ')';
   }
@@ -377,6 +380,12 @@
         var u2 = animacija.ugao * rez.ulaz.z1 / rez.ulaz.z2 * 180 / Math.PI;
         g1.setAttribute('transform', 'rotate(' + u1.toFixed(4) + ' 0 0)');
         g2.setAttribute('transform', 'rotate(' + u2.toFixed(4) + ' ' + rez.par.a.toFixed(4) + ' 0)');
+        // crveni zubi samo dok se stvarno preklapaju (prodiranje)
+        if (rez.par.tA < 0 || rez.par.tE < 0) {
+          var sloj = $('#prodiranje');
+          var html = C.prodiranjeSVG(rez, animacija.ugao);
+          if (sloj && sloj._html !== html) { sloj.innerHTML = html; sloj._html = html; }
+        }
       }
     }
     animacija.id = requestAnimationFrame(korakAnimacije);
