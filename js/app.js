@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.2.0';
+  var APP_VERSION = '1.2.1';
   var P = window.Proracun, C = window.Crtez, S = window.Sldprt;
   var DEG = P.DEG;
   var MM_PO_INCU = 25.4;

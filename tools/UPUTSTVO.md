@@ -8,7 +8,7 @@ Makro upisuje parametre zupčanika u **Custom Properties** (kartica *Custom* u *
 | `ZORAN_BrojZuba` | broj zuba z |
 | `ZORAN_UgaoNagiba` | ugao nagiba β [°] (0 za prave zube) |
 | `ZORAN_UgaoProfila` | ugao profila αₙ [°] |
-| `ZORAN_Sirina` | širina b [mm] |
+| `ZORAN_Sirina` | širina zahvata b [mm] |
 | `ZORAN_PomeranjeProfila` | pomeranje profila x·mₙ [mm] |
 
 ## Pokretanje
