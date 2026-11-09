@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZORAN — Privatnost</title>
+<meta name="description" content="Kako ZORAN, kalkulator zupčanika, postupa sa tvojim podacima.">
+<meta name="theme-color" content="#EDE2C6">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./css/zoran.css">
+<style>
+  .privatnost { max-width: 760px; margin: 0 auto; padding: 0.5rem 16px 2rem; }
+  .privatnost h1 { font-size: 2rem; font-weight: 400; margin: 0.6rem 0 0.2rem; }
+  .privatnost h2 { margin-top: 1.8rem; padding-top: 0.6rem; border-top: 1px solid var(--mastilo); }
+  .privatnost ul { padding-left: 1.2rem; margin: 0.3rem 0 0.6rem; }
+  .privatnost li { margin: 0.25rem 0; }
+  .privatnost .uvod { font-style: italic; }
+  .nazad { display: inline-flex; align-items: center; min-height: 44px; color: var(--mastilo); }
+</style>
+</head>
+<body>
+<header class="tekuce-zaglavlje">
+  <span class="levo">Mašinski elementi</span>
+  <span class="desno">Privatnost</span>
+</header>
+
+<main class="privatnost">
+  <p><a class="nazad" href="./">← Nazad na ZORAN</a></p>
+  <h1>Privatnost</h1>
+  <p class="uvod">ZORAN je besplatan kalkulator zupčanika koji radi u tvom pregledaču. Nema naloga, reklama ni praćenja.</p>
+
+  <h2>Šta ostaje na tvom uređaju</h2>
+  <ul>
+    <li>Uneti podaci, podešavanja i sačuvane varijante čuvaju se samo u pregledaču na tvom uređaju (localStorage) i nigde se ne šalju.</li>
+    <li>SolidWorks fajl (.SLDPRT) koji izabereš u „Uvozu“ čita se samo na tvom uređaju.</li>
+    <li>Aplikacija se učitava sa GitHub Pages (GitHub, Inc.), koji kao i svaki veb-server može da beleži tehničke podatke o pristupu, npr. IP adresu.</li>
+  </ul>
+
+  <h2 id="povratne">Povratne informacije i dijagnostika</h2>
+  <p>Ništa se ne šalje samo od sebe — samo kad u aplikaciji pritisneš <i>Pošalji</i> (u prozoru „Pošalji utisak“, u Podešavanjima › Dijagnostika ili kad oceniš ZORAN palcem gore/dole).</p>
+  <p><b>Šta se šalje:</b></p>
+  <ul>
+    <li>vrsta poruke (nešto ne radi, ideja, sviđa mi se) i tekst koji napišeš;</li>
+    <li>mejl — <b>samo ako ga upišeš</b>, neobavezan je i služi da ti autor odgovori;</li>
+    <li>nasumičan anonimni broj korisnika (napravi se jednom na tvom uređaju i ne otkriva ko si);</li>
+    <li>jezik aplikacije, verzija, ekran na kom si bio, uređaj i pregledač (oznaka pregledača i veličina ekrana);</li>
+    <li>ako je uključeno „Priloži tehničke podatke“, ili kad šalješ dijagnostiku: verzija keša, stanje mreže, zauzeće skladišta, stanje dozvola, podešavanja prikaza (jedinice, decimale) i poslednje greške u aplikaciji.</li>
+  </ul>
+  <p><b>Šta se nikad ne šalje:</b> tvoji proračuni i uneti podaci, fajlovi i njihova imena, ključevi, tokeni i lozinke. Pre slanja se iz tehničkog izveštaja automatski uklanja sve što liči na ključ, token, mejl ili ime fajla.</p>
+  <p><b>Gde se čuva:</b> u Google tabeli autora ZORAN-a (Google Workspace / Google Drive, Google LLC). Podacima pristupa samo autor.</p>
+  <p><b>Koliko dugo:</b> najviše 2 godine, posle čega se brišu.</p>
+  <p><b>Brisanje na zahtev:</b> pošalji zahtev kroz „Pošalji utisak“ u aplikaciji (vrsta „Ideja“), sa istim mejlom sa kog si slao poruke — ili, ako mejl nisi upisivao, navedi otprilike kada si poslao poruku i šta je pisalo. Autor briše tvoje poruke čim primi zahtev.</p>
+  <p>Ako poruka ne može odmah da se pošalje (nema mreže), čeka na tvom uređaju i šalje se kad se veza vrati; čuva se najviše 20 takvih poruka.</p>
+
+  <p class="sitno">Poslednja izmena: 9. novembar 2026.</p>
+</main>
+</body>
+</html>

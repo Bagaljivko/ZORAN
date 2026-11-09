@@ -25,11 +25,14 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - `css/zoran.css` — stil „Stari priručnik“.
 - `js/proracun.js` — proračun i savetnik (čiste funkcije, rade i u Node-u).
 - `js/crtez.js` — SVG crtež zahvata. `js/sldprt.js` — čitanje `.SLDPRT`.
+- `js/povratne.js` — „Pošalji utisak“ i dijagnostika (čiste funkcije, rade i u Node-u); adresa Apps Script-a je `ADRESA` u tom fajlu. `tools/zoran-povratne.gs` — prijem u Google tabelu.
+- `privatnost.html` — stranica o privatnosti.
 - `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
 - `js/app.js` — interfejs; ovde je `APP_VERSION`.
 - `novosti.html` i `novosti/` — stranica „Šta je novo“ (otvara se u novom tabu) sa slikama izmena.
 - `sw.js` — service worker; ovde je `CACHE_VERSION` i spisak fajlova za keš.
 - `tests/proracun.test.js` — testovi proračuna (`node tests/proracun.test.js`, bez biblioteka).
+- `tests/povratne.test.js` — testovi za „Pošalji utisak“ i Apps Script (`node tests/povratne.test.js`, bez pravog slanja).
 - `tests/provera-aplikacije.js` — automatska provera celog spiska (uređaji, konzola, offline, ažuriranje, localStorage, keš, verzije, putanje). Koristi Playwright/Chromium iz okruženja; sama podiže server na `/ZORAN/` i ne menja fajlove. Izlaz 0 = sve prolazi.
 - `tools/` — SolidWorks makro i uputstvo.
 - `.github/workflows/provera.yml` — GitHub sam pokreće obe provere na svakom PR-u i posle spajanja u `main`. `.github/pull_request_template.md` — šablon opisa PR-a sa spiskom.

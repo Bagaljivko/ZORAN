@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.8.0';
+  var APP_VERSION = '1.9.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -1380,22 +1380,190 @@
   })();
 
   // ------------------------------------------------------------------
-  // Pošalji predlog
+  // Pošalji utisak (povratne informacije) i dijagnostika — u Google tabelu autora
   // ------------------------------------------------------------------
-  $('#dugme-predlog').addEventListener('click', function () {
-    var poruka = $('#poruka-predlog');
-    var tekst = 'Predlog za ZORAN (verzija ' + APP_VERSION + ')\n\n' +
-      'Šta mi nedostaje ili šta ne radi:\n…\n\n' +
-      '—\nUređaj: ' + sistem() + ', ' + pregledac() + '\nProračun: ' + linkProracuna();
-    function kopiraj() {
-      kopirajTekst(tekst).then(function (ok) {
-        poruka.textContent = ok ? 'Tekst predloga je kopiran — nalepi ga u poruku (Viber, WhatsApp) ili mejl i dopiši svoj predlog.' : 'Kopiranje nije uspelo.';
+  var F = window.Povratne;
+  var ADRESA_POVRATNIH = window.ZORAN_ADRESA_POVRATNIH || F.ADRESA;
+  var prozorUtisak = $('#prozor-utisak');
+  var otvaracUtiska = null;
+  var tajmerTosta = 0;
+
+  function tost(tekst) {
+    var t = $('#tost');
+    t.textContent = tekst;
+    t.hidden = false;
+    clearTimeout(tajmerTosta);
+    tajmerTosta = setTimeout(function () { t.hidden = true; }, 4000);
+  }
+  function uredjaj() {
+    return sistem() + ', ' + pregledac() + ' · prozor ' + window.innerWidth + '×' + window.innerHeight + ', ekran ' + screen.width + '×' + screen.height + ' · UA: ' + navigator.userAgent;
+  }
+  /** Mejl prijavljenog naloga (kad bude veze sa nalogom); do tada poslednji upisani. */
+  function predloziMejl() { return citaj(F.KLJUC.mejl, '') || ''; }
+
+  function tehnickiIzvestaj() {
+    var d = {
+      verzija: APP_VERSION,
+      kes: verzijaKesa,
+      jezik: F.JEZIK,
+      jeziciUredjaja: (navigator.languages && navigator.languages.length ? navigator.languages.join(', ') : navigator.language) || '',
+      uredjaj: sistem() + ', ' + pregledac(),
+      ekran: window.innerWidth + '×' + window.innerHeight + ' (ekran ' + screen.width + '×' + screen.height + ', gustina ' + (window.devicePixelRatio || 1) + ')',
+      naMrezi: navigator.onLine,
+      dozvole: {},
+      podesavanja: {
+        jedinice: pod.jedinice, znak: pod.znak === ',' ? 'zarez' : 'tačka', decimale: pod.decimale,
+        osnoRastojanje: aRucno ? 'ručno' : 'idealno',
+        nacin: ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone) ? 'instalirana' : 'pregledač',
+        serviceWorker: !('serviceWorker' in navigator) ? 'nije podržan' : (navigator.serviceWorker.controller ? 'aktivan' : 'nije aktivan'),
+        varijanti: (citaj(VARIJANTE_KLJUC, []) || []).length,
+        porukaURedu: F.procitajRed(localStorage).length
+      },
+      greske: F.poslednjeGreske()
+    };
+    var obecanja = [];
+    if (navigator.storage && navigator.storage.estimate) {
+      obecanja.push(navigator.storage.estimate().then(function (e) { d.skladiste = mb(e.usage || 0) + ' od ' + mb(e.quota || 0); }, function () {}));
+    }
+    if (navigator.permissions && navigator.permissions.query) {
+      ['persistent-storage', 'clipboard-write', 'notifications'].forEach(function (ime) {
+        var q;
+        try { q = navigator.permissions.query({ name: ime }); } catch (e) { d.dozvole[ime] = 'nepodržano'; return; }
+        obecanja.push(Promise.resolve(q).then(function (s) { d.dozvole[ime] = s.state; }, function () { d.dozvole[ime] = 'nepodržano'; }));
       });
     }
-    if (typeof navigator.share === 'function') {
-      navigator.share({ title: 'Predlog za ZORAN', text: tekst }).catch(function (e) { if (!e || e.name !== 'AbortError') kopiraj(); });
-    } else kopiraj();
+    return Promise.all(obecanja).then(function () { return F.izvestaj(d); });
+  }
+
+  /** Šalje poruku: prvo u red, pa pokušaj slanja. Bez podešene adrese nudi deljenje/kopiranje teksta. */
+  function posaljiPoruku(poruka) {
+    if (!ADRESA_POVRATNIH) {
+      var tekst = F.tekstZaDeljenje(poruka);
+      var kopiraj = function () { return kopirajTekst(tekst).then(function (ok) { tost(ok ? F.t('kopirano') : F.t('nijeKopirano')); }); };
+      if (typeof navigator.share === 'function') {
+        return navigator.share({ title: 'ZORAN', text: tekst }).catch(function (e) { if (!e || e.name !== 'AbortError') return kopiraj(); });
+      }
+      return kopiraj();
+    }
+    var id = F.dodajURed(localStorage, poruka);
+    if (!navigator.onLine) { tost(F.t('sacuvano')); return Promise.resolve(); }
+    return F.isprazniRed({ sklad: localStorage, fetch: window.fetch.bind(window), adresa: ADRESA_POVRATNIH }).then(function (r) {
+      tost(r.poslato.indexOf(id) >= 0 ? F.t('poslato') : F.t('sacuvano'));
+    });
+  }
+  function isprazniRedPovratnih() {
+    if (!ADRESA_POVRATNIH || !navigator.onLine) return;
+    F.isprazniRed({ sklad: localStorage, fetch: window.fetch.bind(window), adresa: ADRESA_POVRATNIH });
+  }
+  window.addEventListener('online', isprazniRedPovratnih);
+
+  function greskaPolja(polje, tekst) {
+    var g = $('#' + polje.id + '-greska');
+    g.textContent = tekst || '';
+    if (tekst) polje.setAttribute('aria-invalid', 'true'); else polje.removeAttribute('aria-invalid');
+  }
+  function otvoriUtisak(tip, otvarac) {
+    if (prozor.open) zatvoriPodeli();
+    otvaracUtiska = otvarac || document.activeElement;
+    var t = F.TEKST[F.JEZIK].vrste;
+    $$('[data-vrsta]', prozorUtisak).forEach(function (s) { s.textContent = t[s.getAttribute('data-vrsta')]; });
+    $$('input[name="vrsta-utiska"]', prozorUtisak).forEach(function (r) { r.checked = r.value === (tip || 'bug'); });
+    $('#utisak-mejl').value = predloziMejl();
+    $('#utisak-dijag').checked = true;
+    greskaPolja($('#utisak-tekst'), '');
+    greskaPolja($('#utisak-mejl'), '');
+    if (typeof prozorUtisak.showModal === 'function') prozorUtisak.showModal();
+    else prozorUtisak.setAttribute('open', '');
+    document.documentElement.classList.add('prozor-otvoren');
+    $('#utisak-tekst').focus();
+  }
+  function zatvoriUtisak() {
+    if (typeof prozorUtisak.close === 'function' && prozorUtisak.open) prozorUtisak.close();
+    else { prozorUtisak.removeAttribute('open'); onZatvorenUtisak(); }
+  }
+  function onZatvorenUtisak() {
+    document.documentElement.classList.remove('prozor-otvoren');
+    if (otvaracUtiska && document.contains(otvaracUtiska) && otvaracUtiska.focus) otvaracUtiska.focus();
+  }
+  prozorUtisak.addEventListener('close', onZatvorenUtisak);
+  prozorUtisak.addEventListener('click', function (e) { if (e.target === prozorUtisak && e.detail !== 0) zatvoriUtisak(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && prozorUtisak.hasAttribute('open') && typeof prozorUtisak.showModal !== 'function') zatvoriUtisak();
   });
+  $('#utisak-odustani').addEventListener('click', zatvoriUtisak);
+  $('#dugme-utisak').addEventListener('click', function () { otvoriUtisak('bug', this); });
+  $('#utisak-tekst').addEventListener('input', function () { if (this.value.trim()) greskaPolja(this, ''); });
+  $('#utisak-mejl').addEventListener('input', function () { greskaPolja(this, ''); });
+
+  $('#forma-utisak').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var tekstPolje = $('#utisak-tekst'), mejlPolje = $('#utisak-mejl');
+    var izabrano = $('input[name="vrsta-utiska"]:checked', prozorUtisak);
+    var unos = { tip: izabrano ? izabrano.value : 'bug', tekst: tekstPolje.value, mejl: mejlPolje.value };
+    var pr = F.proveriUnos(unos);
+    greskaPolja(tekstPolje, pr.greske.tekst);
+    greskaPolja(mejlPolje, pr.greske.mejl);
+    if (!pr.ok) { (pr.greske.tekst ? tekstPolje : mejlPolje).focus(); return; }
+    pisi(F.KLJUC.mejl, unos.mejl.trim());
+    var dugme = $('#utisak-posalji');
+    dugme.disabled = true;
+    var ekran = trenutni;
+    (($('#utisak-dijag').checked) ? tehnickiIzvestaj() : Promise.resolve(null)).then(function (teh) {
+      var poruka = F.napraviPoruku({ tip: unos.tip, tekst: unos.tekst, mejl: unos.mejl, uid: F.korisnikId(localStorage), verzija: APP_VERSION, ekran: ekran, uredjaj: uredjaj(), tehnicki: teh });
+      zatvoriUtisak();
+      tekstPolje.value = '';
+      return posaljiPoruku(poruka);
+    }).catch(function () { tost(F.t('sacuvano')); }).then(function () { dugme.disabled = false; });
+  });
+
+  $('#dugme-posalji-dijag').addEventListener('click', function () {
+    var dugme = this;
+    dugme.disabled = true;
+    tehnickiIzvestaj().then(function (izv) {
+      var poruka = F.napraviDijagnostiku({ napomena: $('#dijag-napomena').value, mejl: predloziMejl(), uid: F.korisnikId(localStorage), verzija: APP_VERSION, ekran: trenutni, uredjaj: uredjaj(), izvestaj: izv });
+      $('#dijag-napomena').value = '';
+      return posaljiPoruku(poruka);
+    }).catch(function () { tost(F.t('sacuvano')); }).then(function () { dugme.disabled = false; });
+  });
+
+  // Retko pitanje „Kako ti se sviđa ZORAN?“ posle završene radnje u Tablici (najviše dvaput, ikad)
+  var pitanjePrikazanoSada = false;
+  function pitajZaUtisak(dugme) {
+    var pre = citaj(F.KLJUC.anketa, null), sada = Date.now();
+    var r = F.posleAktivnosti(pre, sada);
+    // ne uz molbu za deljenje i ne dvaput u istom otvaranju — tada se prikaz odlaže
+    if (r.prikazi && (pitanjePrikazanoSada || !$('#molba-podeli').hidden)) {
+      r.stanje.prikazano.pop();
+      r.stanje.danaPosle = F.zabeleziDan(pre, sada).danaPosle;
+      r.prikazi = false;
+    }
+    pisi(F.KLJUC.anketa, r.stanje);
+    if (!r.prikazi) return;
+    pitanjePrikazanoSada = true;
+    var stari = $('#pitanje-utisak');
+    if (stari) stari.remove();
+    var red = el('div', { class: 'pitanje-utisak', id: 'pitanje-utisak', role: 'group', 'aria-label': F.t('anketaPitanje') });
+    red.appendChild(el('span', { class: 'pitanje-tekst', text: F.t('anketaPitanje') }));
+    var PALAC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10.5v9H4v-9zM7 19.5h9.2a2 2 0 0 0 2-1.6l1.2-6a2 2 0 0 0-2-2.4H13l.7-3.6A1.6 1.6 0 0 0 12.1 4L7 10.5"/></svg>';
+    function brza(tip, tekst) {
+      return function () {
+        red.innerHTML = '';
+        red.appendChild(el('span', { class: 'pitanje-tekst', text: F.t('anketaHvala') }));
+        setTimeout(function () { red.remove(); }, 2500);
+        posaljiPoruku(F.napraviPoruku({ tip: tip, tekst: tekst, mejl: predloziMejl(), uid: F.korisnikId(localStorage), verzija: APP_VERSION, ekran: trenutni, uredjaj: uredjaj(), tehnicki: null }));
+      };
+    }
+    red.appendChild(el('button', { type: 'button', class: 'dugme palac', 'aria-label': F.t('anketaDa'), title: F.t('anketaDa'), html: PALAC, onclick: brza('like', F.t('brzaDa')) }));
+    red.appendChild(el('button', { type: 'button', class: 'dugme palac palac-dole', 'aria-label': F.t('anketaNe'), title: F.t('anketaNe'), html: PALAC, onclick: brza('dislike', F.t('brzaNe')) }));
+    red.appendChild(el('button', { type: 'button', class: 'dugme', text: F.t('anketaPisi'), onclick: function () { red.remove(); otvoriUtisak('idea', $('#dugme-kopiraj-sve')); } }));
+    var mesto = dugme.closest('.dugmad') || dugme;
+    mesto.parentNode.insertBefore(red, mesto.nextSibling);
+  }
+  ['#dugme-kopiraj-sve', '#dugme-stampaj', '#dugme-link-proracuna', '#dugme-sacuvaj-varijantu'].forEach(function (s) {
+    $(s).addEventListener('click', function () { var b = this; setTimeout(function () { pitajZaUtisak(b); }, 600); });
+  });
+  pisi(F.KLJUC.anketa, F.zabeleziDan(citaj(F.KLJUC.anketa, null), Date.now()));
+  setTimeout(isprazniRedPovratnih, 2500);
 
   $$('input[name="decimale-brzo"]').forEach(function (r) { r.addEventListener('change', function () { promeniPodesavanje({ decimale: Number(this.value) }); }); });
 

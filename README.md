@@ -20,6 +20,7 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Varijante, štampa i link** — poređenje do 6 varijanti, štampa/PDF kao strana priručnika, link koji otvara isti proračun.
 - **Šta je novo** — detaljan opis svake verzije sa slikama (`novosti.html`); posle ažuriranja aplikacija sama ponudi link.
 - **Podešavanja** — mm ili inč, zarez ili tačka, 2–4 decimale, provera nove verzije, dijagnostika i **Podeli Zorana** (QR kod, sistemski meni za deljenje, kopiranje linka).
+- **Pošalji utisak** — poruka autoru (nešto ne radi / ideja / sviđa mi se) i slanje dijagnostike pravo u Google tabelu autora, i bez interneta (šalje se kad se veza vrati). Šta se šalje: [`privatnost.html`](privatnost.html); postavljanje tabele: [`tools/POVRATNE-UPUTSTVO.md`](tools/POVRATNE-UPUTSTVO.md).
 
 ## Instalacija na telefon
 
@@ -57,7 +58,7 @@ U `tests/primeri/primer-ole.sldprt` je mali veštački OLE fajl za probu uvoza.
 
 - Čist HTML, CSS i JavaScript, bez build koraka i bez frameworka. GitHub Pages iz grane `main`.
 - `js/proracun.js` — proračun i savetnik (čiste funkcije), `js/crtez.js` — SVG crtež, `js/sldprt.js` — čitanje `.SLDPRT`, `js/app.js` — interfejs.
-- Testovi: `node tests/proracun.test.js` (bez biblioteka). Cela provera pre objave (uređaji, offline, ažuriranje): `node tests/provera-aplikacije.js` (Playwright/Chromium).
+- Testovi: `node tests/proracun.test.js` i `node tests/povratne.test.js` (bez biblioteka). Cela provera pre objave (uređaji, offline, ažuriranje): `node tests/provera-aplikacije.js` (Playwright/Chromium).
 - Pri svakoj promeni povećaj `CACHE_VERSION` u `sw.js` i `APP_VERSION` u `js/app.js`.
 - Radni postupak i spisak provera pre svakog PR-a: [`CLAUDE.md`](CLAUDE.md).
 

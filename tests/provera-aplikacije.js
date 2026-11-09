@@ -168,11 +168,105 @@ async function proveriPWA(b) {
   await ctx.close();
 }
 
+// „Pošalji utisak“: prozor, upozorenja, tehnički podaci, red bez mreže, dijagnostika, retko pitanje.
+// Slanje ide na lažnu adresu koju presreće Playwright — prava tabela se nikad ne dira.
+var LAZNA_ADRESA = 'https://script.google.com/macros/s/PROVERA/exec';
+async function proveriPovratne(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['iPhone 13']));
+  await ctx.addInitScript(function (a) { window.ZORAN_ADRESA_POVRATNIH = a; }, LAZNA_ADRESA);
+  var poslato = [];
+  await ctx.route(LAZNA_ADRESA, function (route) {
+    poslato.push(JSON.parse(route.request().postData() || '{}'));
+    route.fulfill({ status: 200, contentType: 'text/plain', body: 'ok' });
+  });
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.type() + ': ' + m.text()); });
+  pg.on('pageerror', function (e) { konzola.push('pageerror: ' + e.message); });
+  await pg.goto(URL);
+  await cekaj(3300);
+  await pg.evaluate(function () { location.hash = 'podesavanja'; }); await cekaj(250);
+  await pg.click('#dugme-utisak'); await cekaj(300);
+  var stanje = await pg.evaluate(function () {
+    var d = document.querySelector('#prozor-utisak');
+    return { modal: d.matches(':modal'), dijag: document.querySelector('#utisak-dijag').checked, vrsta: document.querySelector('input[name="vrsta-utiska"]:checked').value,
+      skrol: document.documentElement.scrollWidth <= innerWidth, fokus: document.activeElement.id };
+  });
+  stavka('Povratne', 'Prozor se otvara iznad svega (modalno), fokus u poruci, „Priloži tehničke podatke“ uključeno', stanje.modal && stanje.dijag && stanje.vrsta === 'bug' && stanje.fokus === 'utisak-tekst' && stanje.skrol, JSON.stringify(stanje));
+  var male = await pg.evaluate(function () {
+    return Array.prototype.slice.call(document.querySelectorAll('#prozor-utisak button, #prozor-utisak .prekidac span, #prozor-utisak textarea, #prozor-utisak input[type=email], #prozor-utisak .potvrda-polje'))
+      .map(function (el) { var r = el.getBoundingClientRect(); return [el.id || el.textContent.trim().slice(0, 14), r]; })
+      .filter(function (x) { return x[1].width < 43.5 || x[1].height < 43.5; }).map(function (x) { return x[0] + ' ' + Math.round(x[1].width) + '×' + Math.round(x[1].height); });
+  });
+  stavka('Povratne', 'Prozor: dodirne površine ≥ 44×44 px', !male.length, male.join('; '));
+  // prazna poruka
+  await pg.click('#utisak-posalji'); await cekaj(300);
+  var prazno = await pg.evaluate(function () { return { g: document.querySelector('#utisak-tekst-greska').textContent, otvoren: document.querySelector('#prozor-utisak').open }; });
+  // neispravan mejl
+  await pg.fill('#utisak-tekst', 'Probna poruka iz automatske provere'); await pg.fill('#utisak-mejl', 'nije-mejl');
+  await pg.click('#utisak-posalji'); await cekaj(300);
+  var los = await pg.evaluate(function () { return { g: document.querySelector('#utisak-mejl-greska').textContent, otvoren: document.querySelector('#prozor-utisak').open }; });
+  stavka('Povratne', 'Prazna poruka i neispravan mejl daju upozorenje i ništa se ne šalje', /Napiši poruku/.test(prazno.g) && prazno.otvoren && /nije ispravan/.test(los.g) && los.otvoren && poslato.length === 0, JSON.stringify([prazno, los, poslato.length]));
+  // ispravno, sa tehničkim podacima
+  await pg.evaluate(function () { window.dispatchEvent(new ErrorEvent('error', { message: 'Probna greška access_token=ya29.TAJNA_VREDNOST_123 key=AIzaSyFAKEFAKEFAKEFAKEFAKEFAKE1' })); });
+  await pg.fill('#utisak-mejl', 'proba@primer.rs');
+  await pg.click('#utisak-posalji'); await cekaj(1200);
+  var tost1 = await pg.textContent('#tost');
+  var p1 = poslato[0] || {};
+  stavka('Povratne', 'Slanje: vrsta, tekst, mejl, anonimni ID, jezik, verzija, ekran, uređaj i tehnički podaci; „Hvala — poslato“',
+    poslato.length === 1 && p1.type === 'bug' && /Probna poruka/.test(p1.text) && p1.email === 'proba@primer.rs' && /^[0-9a-f-]{36}$/.test(p1.uid || '') && p1.lang === 'sr' && p1.version && p1.screen === 'podesavanja' && /UA:/.test(p1.device || '') && /Greške \(\d+\)/.test(p1.tech || '') && /Hvala — poslato/.test(tost1),
+    JSON.stringify({ n: poslato.length, type: p1.type, lang: p1.lang, screen: p1.screen, tost: tost1 }));
+  stavka('Povratne', 'Tehnički podaci ne sadrže ključeve ni tokene', !/TAJNA_VREDNOST|AIzaSyFAKE/.test(JSON.stringify(p1)), (p1.tech || '').split('\n').filter(function (r) { return /Probna greška/.test(r); })[0] || 'nema greške u izveštaju');
+  // isključeni tehnički podaci, mejl zapamćen
+  await pg.click('#dugme-utisak'); await cekaj(300);
+  var zapamcen = await pg.inputValue('#utisak-mejl');
+  await pg.click('#prozor-utisak .izbor-vrste label:nth-child(2)');
+  await pg.fill('#utisak-tekst', 'Ideja bez tehničkih podataka');
+  await pg.click('#prozor-utisak .potvrda-polje'); await pg.click('#utisak-posalji'); await cekaj(1200);
+  var p2 = poslato[1] || {};
+  stavka('Povratne', 'Tehnički podaci se mogu isključiti; mejl se pamti za sledeći put', p2.type === 'idea' && !('tech' in p2) && zapamcen === 'proba@primer.rs', JSON.stringify({ type: p2.type, tech: 'tech' in p2, mejl: zapamcen }));
+  // bez mreže: u red, pa slanje kad se mreža vrati
+  await ctx.setOffline(true);
+  await pg.click('#dugme-utisak'); await cekaj(300);
+  await pg.fill('#utisak-tekst', 'Poruka poslata bez mreže'); await pg.click('#utisak-posalji'); await cekaj(1000);
+  var off = await pg.evaluate(function () { return { tost: document.querySelector('#tost').textContent, red: JSON.parse(localStorage.getItem('zoran.povratne-red') || '[]').length }; });
+  var preMreze = poslato.length;
+  await ctx.setOffline(false); await cekaj(2000);
+  var red2 = await pg.evaluate(function () { return JSON.parse(localStorage.getItem('zoran.povratne-red') || '[]').length; });
+  stavka('Povratne', 'Bez mreže: „Sačuvano — poslaće se…“, poruka čeka u redu i šalje se kad se mreža vrati', /Sačuvano/.test(off.tost) && off.red === 1 && preMreze === 2 && poslato.length === 3 && red2 === 0 && /bez mreže/.test((poslato[2] || {}).text || ''),
+    JSON.stringify({ tost: off.tost, red: off.red, posle: red2, poslato: poslato.length }));
+  // dijagnostika
+  await pg.fill('#dijag-napomena', 'Napomena uz dijagnostiku');
+  await pg.click('#dugme-posalji-dijag'); await cekaj(1200);
+  var d = poslato[3] || {};
+  stavka('Povratne', 'Podešavanja › Dijagnostika › „Pošalji dijagnostiku“ šalje izveštaj (kind: diag) sa napomenom', d.kind === 'diag' && d.note === 'Napomena uz dijagnostiku' && /ZORAN \d/.test(d.report || '') && !/TAJNA_VREDNOST|AIzaSyFAKE/.test(d.report || ''), JSON.stringify({ kind: d.kind, note: d.note }));
+  // retko pitanje: posle 3. radnje u Tablici, jednom
+  await pg.evaluate(function () { location.hash = 'tablica'; }); await cekaj(300);
+  var vidljivo = [];
+  for (var i = 0; i < 4; i++) {
+    await pg.click('#dugme-kopiraj-sve'); await cekaj(800);
+    vidljivo.push(await pg.evaluate(function () { var r = document.querySelector('#pitanje-utisak'); return !!(r && r.offsetParent); }));
+  }
+  var preklapa = await pg.evaluate(function () {
+    var r = document.querySelector('#pitanje-utisak'); if (!r) return 'nema';
+    var a = r.getBoundingClientRect();
+    return Array.prototype.slice.call(document.querySelectorAll('#ekran-tablica .dugmad button')).some(function (bt) { var q = bt.getBoundingClientRect(); return !(q.bottom <= a.top || q.top >= a.bottom || q.right <= a.left || q.left >= a.right); });
+  });
+  await pg.click('#pitanje-utisak .palac'); await cekaj(1200);
+  var ocena = poslato[4] || {};
+  stavka('Povratne', 'Retko pitanje: posle 3. radnje, ne prekriva dugmad, palac gore šalje ocenu jednim dodirom', vidljivo.join(',') === 'false,false,true,true' && preklapa === false && ocena.type === 'like',
+    JSON.stringify({ vidljivo: vidljivo, preklapa: preklapa, ocena: ocena.type }));
+  stavka('Povratne', 'Konzola čista tokom slanja, rada bez mreže i dijagnostike', !konzola.filter(function (k) { return !/ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(k); }).length, konzola.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
   var red = (t.stdout.match(/Ukupno:.*$/m) || [''])[0];
   stavka('Proračun', 'node tests/proracun.test.js prolazi', t.status === 0, red);
+  var tp = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'povratne.test.js')], { encoding: 'utf8' });
+  stavka('Povratne', 'node tests/povratne.test.js prolazi (unos, red bez mreže, čišćenje izveštaja, retko pitanje, Apps Script)', tp.status === 0, (tp.stdout.match(/Ukupno:.*$/m) || [''])[0]);
   // relativne putanje
   var apsolutne = [];
   ['index.html', 'manifest.json', 'sw.js', 'css/zoran.css'].forEach(function (f) {
@@ -224,13 +318,14 @@ function proveriStatiku() {
     await proveriUredjaj(b, 'Tablet (820×1180)', { viewport: { width: 820, height: 1180 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, true);
     await proveriUredjaj(b, 'Desktop (1440×900)', { viewport: { width: 1440, height: 900 } }, false);
     await proveriPWA(b);
+    await proveriPovratne(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);
   } finally {
     await b.close();
     server.close();
   }
-  var REDOSLED = ['Proračun', 'Uređaji', 'PWA', 'Izgled', 'Greška'];
+  var REDOSLED = ['Proračun', 'Uređaji', 'PWA', 'Izgled', 'Povratne', 'Greška'];
   rezultati.sort(function (p, q) { return REDOSLED.indexOf(p.grupa) - REDOSLED.indexOf(q.grupa); });
   var grupa = '';
   rezultati.forEach(function (r) {
