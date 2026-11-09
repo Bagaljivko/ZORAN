@@ -21,8 +21,7 @@
   var SINHRONIZUJ = ['zoran.unos', 'zoran.podesavanja', 'zoran.varijante', 'zoran.savetnik', 'zoran.vratilo', 'zoran.sile', 'zoran.aRucno', 'zoran.povratne-mejl'];
   var KLJUC = {
     stanje: 'zoran.drive',        // povezano, mejl, ID fajla, vreme poslednje sinhronizacije…
-    token: 'zoran.drive-token',   // sessionStorage: pristup važi najviše sat vremena i briše se kad se zatvori aplikacija
-    proba: 'zoran.drive-proba'    // dok je u probi, deo za Drive se uključuje linkom ?drive=1
+    token: 'zoran.drive-token'    // sessionStorage: pristup važi najviše sat vremena i briše se kad se zatvori aplikacija
   };
 
   function citaj(sklad, kljuc, podr) {

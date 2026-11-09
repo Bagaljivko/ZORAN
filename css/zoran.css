@@ -562,3 +562,4 @@ main.radni .ekran.aktivan { animation: none; }
 .prozor-drive .prozor-sadrzaj { text-align: left; }
 .prozor-drive h2 { text-align: center; }
 .prozor-drive .dugmad-prozor { grid-template-columns: 1fr; }
+.drive-sekcija .sitno a { display: inline-flex; align-items: center; min-height: 44px; }

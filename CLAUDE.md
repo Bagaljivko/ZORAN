@@ -26,7 +26,7 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - `js/proracun.js` — proračun i savetnik (čiste funkcije, rade i u Node-u).
 - `js/crtez.js` — SVG crtež zahvata. `js/sldprt.js` — čitanje `.SLDPRT`.
 - `js/povratne.js` — „Pošalji utisak“ i dijagnostika (čiste funkcije, rade i u Node-u); adresa Apps Script-a je `ADRESA` u tom fajlu. `tools/zoran-povratne.gs` — prijem u Google tabelu.
-- `js/drive.js` — čuvanje na Google Drive (appDataFolder, Google Identity Services; Client ID je u fajlu). Dok je u probi, uključuje se linkom `?drive=1` (`?drive=0` isključuje).
+- `js/drive.js` — čuvanje na Google Drive (appDataFolder, Google Identity Services; Client ID je u fajlu).
 - `privatnost.html` — stranica o privatnosti.
 - `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
 - `js/app.js` — interfejs; ovde je `APP_VERSION`.

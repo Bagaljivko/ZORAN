@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.10.0';
+  var APP_VERSION = '1.11.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -1615,19 +1615,16 @@
   })();
 
   // ------------------------------------------------------------------
-  // Google Drive: čuvanje i sinhronizacija (dok je u probi, uključuje se linkom ?drive=1)
+  // Google Drive: čuvanje i sinhronizacija
   // ------------------------------------------------------------------
   (function googleDrive() {
     var D = window.ZoranDrive;
     if (!D) return;
     var sesija;
     try { sesija = window.sessionStorage; } catch (e) { sesija = { getItem: function () { return null; }, setItem: function () {}, removeItem: function () {} }; }
-    var parametri = location.search;
-    if (/[?&]drive=1\b/.test(parametri)) pisi(D.KLJUC.proba, true);
-    if (/[?&]drive=0\b/.test(parametri)) { try { localStorage.removeItem(D.KLJUC.proba); } catch (e) { /* nema */ } }
-    if (/[?&]drive=[01]\b/.test(parametri) && !unosIzLinka()) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* bez čišćenja */ } }
-    var ukljuceno = !!citaj(D.KLJUC.proba, false) || !!window.ZORAN_DRIVE_ZA_SVE;
-    if (!ukljuceno) return;
+    // proba je završena: Drive je uključen za sve; stari probni link i oznaka se samo čiste
+    try { localStorage.removeItem('zoran.drive-proba'); } catch (e) { /* nema */ }
+    if (/[?&]drive=[01]\b/.test(location.search) && !unosIzLinka()) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* bez čišćenja */ } }
     $('#drive-sekcija').hidden = false;
 
     var uToku = false, tajmerSlanja = 0;
