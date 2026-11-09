@@ -13,6 +13,7 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Tablica** — svi rezultati, uz kopiranje svake vrednosti i „Kopiraj sve“.
 - **Savetnik** — za zadato osno rastojanje računa Σx, raspodelu po DIN 3992 i predlaže bolje kombinacije modula (DIN 780) i broja zuba.
 - **Uvoz** — čita parametre i sliku pregleda iz SolidWorks `.SLDPRT` fajla, lokalno.
+- **Korak 0: kreni od vratila** — upišeš prečnik vratila i prenosni odnos, a Zoran predloži modul i broj zuba koji staju na vratilo sa klinom (DIN 6885, venac ≥ 2,5·mₙ, moduli DIN 780).
 - **Kontrolne mere za radionicu** — mera preko zuba W (preko k zuba) i mera preko kuglica M_d, za oba zupčanika.
 - **Sile u zahvatu** — za upisani obrtni moment T₁: obimna, radijalna, aksijalna i normalna sila.
 - **Napomene za konstrukciju** — lovački zub (sa predlogom z₂), b/d₁ > 1,2, β > 30°, izvodljivost merenja.

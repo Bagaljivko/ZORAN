@@ -449,6 +449,17 @@ a.dugme-link { display: inline-flex; align-items: center; text-decoration: none;
   .crtez-svg .oz { stroke: #fff; }
 }
 
+/* ================= 1.7.0: Korak 0 — od vratila ================= */
+.od-vratila { border: 1px solid var(--mastilo); margin: 0.4rem 0 1rem; padding: 0 0.75rem; }
+.od-vratila[open] { padding-bottom: 0.5rem; border-width: 3px; border-style: double; }
+.od-vratila summary { min-height: 44px; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-style: italic; list-style: none; }
+.od-vratila summary::-webkit-details-marker { display: none; }
+.od-vratila summary::after { content: '+'; margin-left: auto; font-style: normal; font-family: var(--mono); }
+.od-vratila[open] summary::after { content: '−'; }
+.od-vratila .korak { font-style: normal; font-variant: small-caps; letter-spacing: 0.06em; border: 1px solid var(--mastilo); padding: 0 0.4rem; white-space: nowrap; }
+.od-vratila fieldset, .od-vratila form { margin-top: 0.2rem; }
+.od-vratila .predlozi { grid-template-columns: 1fr; }
+
 /* ================= 1.6.0: izgled ================= */
 
 /* Zrnast papir — jedna mala SVG pločica, iscrtava se jednom (bez filtera na celoj strani) */

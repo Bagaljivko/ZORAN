@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.6.0';
+  var APP_VERSION = '1.7.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -329,6 +329,7 @@
   }
 
   function prikaziProracunDeo() {
+    if (detaljiVratila && detaljiVratila.open) racunajVratilo();
     var r = trenutniRez;
     prikaziUpozorenja('#upozorenja-proracun', r);
     prikaziNapomene('#napomene-proracun', poslednjiRez);
@@ -1260,6 +1261,113 @@
     });
     return ima ? par : null;
   }
+
+  // ------------------------------------------------------------------
+  // Korak 0: od vratila do modula i broja zuba
+  // ------------------------------------------------------------------
+  var VPOLJA = ['dv1', 'u', 'dv2', 'a'];
+  var VDUZINSKA = { dv1: true, dv2: true, a: true };
+  var detaljiVratila = $('#od-vratila');
+  function procitajVratilo() {
+    var u = {};
+    VPOLJA.forEach(function (k) {
+      var txt = $('#v-' + k).value.trim();
+      var v = txt === '' ? undefined : P.parsirajBroj(txt);
+      u[k] = (v !== undefined && VDUZINSKA[k] && isFinite(v)) ? izDuz(v) : v;
+    });
+    return u;
+  }
+  function racunajVratilo() {
+    var out = $('#vratilo-rezultat');
+    var sirovo = {};
+    VPOLJA.forEach(function (k) { sirovo[k] = $('#v-' + k).value; $('#vp-' + k).textContent = ''; $('#v-' + k).removeAttribute('aria-invalid'); });
+    pisi('zoran.vratilo', sirovo);
+    out.innerHTML = '';
+    var u = procitajVratilo();
+    if (u.dv1 === undefined || u.u === undefined) {
+      out.appendChild(el('p', { class: 'kurziv', text: 'Upiši prečnik vratila malog zupčanika i prenosni odnos.' }));
+      return;
+    }
+    var gl = procitajUnos();
+    u.beta = isFinite(gl.beta) ? gl.beta : P.PODRAZUMEVANO.beta;
+    u.alfaN = isFinite(gl.alfaN) ? gl.alfaN : P.PODRAZUMEVANO.alfaN;
+    u.b = isFinite(gl.b) ? gl.b : undefined;
+    var r = P.predlogOdVratila(u);
+    if (!r.ok) {
+      r.greske.forEach(function (g) {
+        var p = $('#vp-' + g.polje);
+        if (p) { p.textContent = g.poruka; $('#v-' + g.polje).setAttribute('aria-invalid', 'true'); }
+        else out.appendChild(el('p', { class: 'upozorenja', text: g.poruka }));
+      });
+      return;
+    }
+    if (!r.opcije.length) {
+      out.appendChild(el('div', { class: 'upozorenja', html: '<p class="naslov">Nema predloga</p><p>Nijedan standardni modul ne daje zupčanik koji staje na ovo vratilo uz zadate uslove. ' +
+        (r.imaA ? 'Probaj bez zadatog osnog rastojanja ili sa većim.' : 'Proveri prečnik vratila i prenosni odnos.') +
+        ' Ako mali zupčanik mora biti manji, ozubljenje može da se izradi direktno na vratilu (zupčasto vratilo).</p>' }));
+      return;
+    }
+    var J = jedDuz();
+    var lista = el('div', { class: 'predlozi' });
+    r.opcije.forEach(function (o, i) {
+      var kart = el('div', { class: 'predlog' + (i === r.preporuka ? ' najbolje' : '') });
+      kart.appendChild(el('div', { class: 'zaglavlje', html: '<span><i>m</i>ₙ = ' + esc(zaPolje(o.mn)) + ' mm' + (o.red2 ? ' <span class="sitno">(red 2)</span>' : '') +
+        ', <i>z</i>₁ = ' + o.z1 + ', <i>z</i>₂ = ' + o.z2 + '</span><span class="oznaka">' + (i === r.preporuka ? 'Preporuka' : '') + '</span>' }));
+      var t = el('div', { class: 'tablica' });
+      [
+        { naziv: 'Odnos <i>u</i> (' + esc(fmt(o.odstupanje, 2)) + ' %)', v: o.odnos, dec: 4 },
+        { naziv: 'Prečnik <i>d</i>₁', v: duz(o.d1), jed: J },
+        { naziv: 'Temeni <i>d</i>ₐ₁', v: duz(o.da1), jed: J },
+        { naziv: 'Venac (' + esc(fmt(o.venac1 / o.mn, 1)) + '·<i>m</i>ₙ)', v: duz(o.venac1), jed: J },
+        r.imaDv2 ? { naziv: 'Venac <i>z</i>₂ (' + esc(fmt(o.venac2 / o.mn, 1)) + '·<i>m</i>ₙ)', v: duz(o.venac2), jed: J } : null,
+        { naziv: 'Rastojanje <i>a</i>', v: duz(o.a), jed: J },
+        { naziv: 'Zbir pomeranja Σ<i>x</i>', v: o.sumaX, dec: 3 },
+        { naziv: 'Stepen sprezanja <i>ε</i>α', v: o.epsA, dec: 3 }
+      ].filter(Boolean).forEach(function (sp) { t.appendChild(redTablice(sp)); });
+      kart.appendChild(t);
+      kart.appendChild(el('div', { class: 'dugmad' }, [el('button', { type: 'button', class: 'dugme', text: 'Primeni', 'aria-label': 'Primeni modul ' + zaPolje(o.mn) + ', z₁ = ' + o.z1 + ', z₂ = ' + o.z2, onclick: function () {
+        upisiUnos({ z1: o.z1, z2: o.z2, mn: o.mn, a: o.a });
+        preracunaj();
+        detaljiVratila.open = false;
+        $('#napomena-proracun').innerHTML = 'Primenjeno iz koraka 0: <i>m</i>ₙ = ' + esc(zaPolje(o.mn)) + ' mm, <i>z</i>₁ = ' + o.z1 + ', <i>z</i>₂ = ' + o.z2 + ', <i>a</i> = ' + esc(fmt(duz(o.a))) + ' ' + J + '.';
+        $('#forma-proracun').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } })]));
+      lista.appendChild(kart);
+    });
+    out.appendChild(lista);
+    out.appendChild(el('p', { class: 'sitno', text: 'Preporuka je opcija sa oko 20 zuba na malom zupčaniku — dobar odnos mirnoće rada i čvrstoće. Manji modul daje kompaktniji par, veći modul jače zube.' }));
+  }
+  (function () {
+    var sac = citaj('zoran.vratilo', null);
+    if (sac) VPOLJA.forEach(function (k) { if (typeof sac[k] === 'string') $('#v-' + k).value = sac[k]; });
+    var zakazano = 0;
+    VPOLJA.forEach(function (k) { $('#v-' + k).addEventListener('input', function () {
+      if (!zakazano) zakazano = requestAnimationFrame(function () { zakazano = 0; racunajVratilo(); });
+    }); });
+    detaljiVratila.addEventListener('toggle', function () {
+      if (!detaljiVratila.open) return;
+      if (!$('#v-u').value && poslednjiRez) $('#v-u').value = zaPolje(Math.round(poslednjiRez.par.u * 1000) / 1000);
+      racunajVratilo();
+    });
+  })();
+
+  // ------------------------------------------------------------------
+  // Pošalji predlog
+  // ------------------------------------------------------------------
+  $('#dugme-predlog').addEventListener('click', function () {
+    var poruka = $('#poruka-predlog');
+    var tekst = 'Predlog za ZORAN (verzija ' + APP_VERSION + ')\n\n' +
+      'Šta mi nedostaje ili šta ne radi:\n…\n\n' +
+      '—\nUređaj: ' + sistem() + ', ' + pregledac() + '\nProračun: ' + linkProracuna();
+    function kopiraj() {
+      kopirajTekst(tekst).then(function (ok) {
+        poruka.textContent = ok ? 'Tekst predloga je kopiran — nalepi ga u poruku (Viber, WhatsApp) ili mejl i dopiši svoj predlog.' : 'Kopiranje nije uspelo.';
+      });
+    }
+    if (typeof navigator.share === 'function') {
+      navigator.share({ title: 'Predlog za ZORAN', text: tekst }).catch(function (e) { if (!e || e.name !== 'AbortError') kopiraj(); });
+    } else kopiraj();
+  });
 
   // ------------------------------------------------------------------
   // Obaveštenje posle ažuriranja

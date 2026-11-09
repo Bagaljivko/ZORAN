@@ -267,6 +267,58 @@ test('lovački zub i napomene za konstrukciju', function () {
   tacno(s.vlastita.ocena === 'Prihvatljivo', 'ocena: ' + s.vlastita.ocena);
 });
 
+console.log('Korak 0: od vratila');
+
+test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {
+  jednako(P.dubinaZlebaGlavcine(40), 3.3, 1e-12);
+  var pret = 0;
+  for (var d = 6; d <= 230; d++) { var t = P.dubinaZlebaGlavcine(d); tacno(t >= pret, 'd = ' + d); pret = t; }
+});
+
+test('od vratila Ø40, u = 3: svaka opcija ima venac ≥ 2,5·mₙ, bez upozorenja, odnos u ±2 %', function () {
+  var r = P.predlogOdVratila({ dv1: 40, u: 3, beta: 0, alfaN: 20 });
+  tacno(r.ok && r.opcije.length >= 3, 'opcija: ' + r.opcije.length);
+  tacno(r.preporuka >= 0 && r.preporuka < r.opcije.length);
+  r.opcije.forEach(function (o) {
+    var venac = (o.rez.zupcanici[0].df - 40) / 2 - 3.3; // nezavisno: podnožje − vratilo − žleb
+    tacno(venac >= 2.5 * o.mn - 1e-9, 'm ' + o.mn + ': venac ' + venac);
+    tacno(o.rez.upozorenja.length === 0, 'm ' + o.mn + ': upozorenja');
+    tacno(Math.abs(o.odstupanje) <= 2 + 1e-9, 'm ' + o.mn + ': odnos');
+    tacno(!o.red2, 'prednost imaju moduli iz reda 1');
+  });
+});
+
+test('od vratila: predloženi z₁ je najmanji koji ispunjava sve uslove', function () {
+  var r = P.predlogOdVratila({ dv1: 40, u: 3, beta: 0, alfaN: 20 });
+  r.opcije.forEach(function (o) {
+    for (var z1 = 12; z1 < o.z1; z1++) {
+      var z2 = Math.round(z1 * 3);
+      if (Math.abs((z2 / z1 - 3) / 3 * 100) > 2) continue;
+      var a = P.rastojanjeZaSumuX(z1, z2, o.mn, 0, 20, 0.35);
+      var k = P.oceniKombinaciju(a, z1, z2, o.mn, 0, 20, 50);
+      var prolazi = k.ostvarivo && !k.upozorenja.length && P.debljinaVenca(k.rez.zupcanici[0].df, 40) >= 2.5 * o.mn;
+      tacno(!prolazi, 'm ' + o.mn + ': z₁ = ' + z1 + ' bi takođe prošao');
+    }
+  });
+});
+
+test('od vratila: vratilo velikog zupčanika i zadato osno rastojanje se poštuju', function () {
+  var r = P.predlogOdVratila({ dv1: 40, u: 3.625, beta: 9, alfaN: 20, dv2: 70 });
+  tacno(r.ok && r.opcije.length > 0);
+  r.opcije.forEach(function (o) { tacno(o.venac2 >= 2.5 * o.mn - 1e-9, 'venac 2 m ' + o.mn); });
+  var s = P.predlogOdVratila({ dv1: 40, u: 3.625, beta: 9, alfaN: 20, a: 250 });
+  tacno(s.opcije.length > 0);
+  s.opcije.forEach(function (o) { jednako(o.rez.par.a, 250, 1e-9, 'a za m ' + o.mn + ':'); });
+  tacno(s.opcije.some(function (o) { return o.mn === 6.5 && o.z1 === 16 && o.z2 === 58; }), 'podrazumevani par 16/58 je među opcijama');
+});
+
+test('od vratila: neispravan unos daje poruku za tačno polje', function () {
+  var r = P.predlogOdVratila({ dv1: NaN, u: 3, beta: 0, alfaN: 20 });
+  tacno(!r.ok && r.greske[0].polje === 'dv1', JSON.stringify(r.greske));
+  var r2 = P.predlogOdVratila({ dv1: 40, u: 0.5, beta: 0, alfaN: 20 });
+  tacno(!r2.ok && r2.greske[0].polje === 'u');
+});
+
 console.log('Savetnik');
 
 test('povratni put: a iz proračuna → Σx = 1,09 i x₁ = 0,52', function () {

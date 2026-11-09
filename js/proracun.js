@@ -472,6 +472,96 @@
     return n;
   }
 
+  // ------------------------------------------------------------------
+  // Korak 0: od prečnika vratila do modula i broja zuba
+  // ------------------------------------------------------------------
+
+  /** Dubina žleba za klin u glavčini t₂ [mm] za prečnik vratila d — približno po DIN 6885-1. */
+  var DIN6885_T2 = [[6, 1.0], [8, 1.4], [10, 1.8], [12, 2.3], [17, 2.8], [22, 3.3], [30, 3.3], [38, 3.3], [44, 3.8], [50, 4.3],
+    [58, 4.4], [65, 4.9], [75, 5.4], [85, 5.4], [95, 6.4], [110, 7.4], [130, 8.4], [150, 9.4], [170, 10.4], [200, 11.4], [230, 12.4]];
+  function dubinaZlebaGlavcine(d) {
+    var t = DIN6885_T2[0][1];
+    for (var i = 0; i < DIN6885_T2.length; i++) if (d > DIN6885_T2[i][0]) t = DIN6885_T2[i][1];
+    return t;
+  }
+  /** Debljina venca između dna žleba i podnožne kružnice [mm]. */
+  function debljinaVenca(df, dv) { return (df - dv) / 2 - dubinaZlebaGlavcine(dv); }
+  var VENAC_FAKTOR = 2.5; // najmanja debljina venca = 2,5·mₙ (uobičajeno pravilo)
+
+  /** Osno rastojanje za ciljni zbir pomeranja Σx (preporuka 0,35), zaokruženo na 0,5 mm. */
+  function rastojanjeZaSumuX(z1, z2, mn, betaDeg, alfaNDeg, sumaX) {
+    var beta = betaDeg * DEG, alfaN = alfaNDeg * DEG;
+    var mt = mn / Math.cos(beta), alfaT = Math.atan(Math.tan(alfaN) / Math.cos(beta));
+    var awt = invInverse(inv(alfaT) + 2 * Math.tan(alfaN) * sumaX / (z1 + z2));
+    var a = mt * (z1 + z2) / 2 * Math.cos(alfaT) / Math.cos(awt);
+    return Math.round(a * 2) / 2;
+  }
+
+  /**
+   * Predlog modula i broja zuba polazeći od vratila.
+   * @param u { dv1, u, beta, alfaN, b, dv2?, a?, tol? }  (dv1, dv2, a u mm; u = z₂/z₁ ≥ 1)
+   * @returns { ok, greske[], opcije[], preporuka (indeks) }
+   */
+  function predlogOdVratila(u) {
+    var greske = [];
+    function proveri(k, v, min, max, naziv, obavezno) {
+      if (v === undefined || v === null || (typeof v === 'number' && isNaN(v) && !obavezno)) return;
+      if (typeof v !== 'number' || !isFinite(v)) greske.push({ polje: k, poruka: naziv + ': unesi broj.' });
+      else if (v < min || v > max) greske.push({ polje: k, poruka: naziv + ': mora biti između ' + formatBroja(min) + ' i ' + formatBroja(max) + '.' });
+    }
+    proveri('dv1', u.dv1, 5, 300, 'Prečnik vratila malog zupčanika', true);
+    proveri('u', u.u, 1, 12, 'Prenosni odnos', true);
+    proveri('dv2', u.dv2, 5, 400, 'Prečnik vratila velikog zupčanika', false);
+    proveri('a', u.a, 10, 5000, 'Željeno osno rastojanje', false);
+    ['beta', 'alfaN'].forEach(function (k) { var g = proveriPolje(k, u[k]); if (g) greske.push({ polje: k, poruka: g }); });
+    if (greske.length) return { ok: false, greske: greske, opcije: [] };
+    var imaDv2 = typeof u.dv2 === 'number' && isFinite(u.dv2);
+    var imaA = typeof u.a === 'number' && isFinite(u.a);
+    var tol = u.tol || 2;
+    var b = u.b || 50;
+    var moduli = DIN780_RED1.concat(DIN780_RED2).filter(function (m) { return m >= 0.5 && m <= 25; })
+      .sort(function (p, q) { return p - q; });
+    var opcije = [];
+    moduli.forEach(function (m) {
+      for (var z1 = 12; z1 <= 60; z1++) {
+        var z2 = Math.round(z1 * u.u);
+        var odst = (z2 / z1 - u.u) / u.u * 100;
+        if (Math.abs(odst) > tol + 1e-9) continue;
+        var a = imaA ? u.a : rastojanjeZaSumuX(z1, z2, m, u.beta, u.alfaN, 0.35);
+        var k = oceniKombinaciju(a, z1, z2, m, u.beta, u.alfaN, b);
+        if (!k.ostvarivo || k.upozorenja.length) continue;
+        var g1 = k.rez.zupcanici[0], g2 = k.rez.zupcanici[1];
+        var v1 = debljinaVenca(g1.df, u.dv1);
+        if (v1 < VENAC_FAKTOR * m) continue;
+        var v2 = imaDv2 ? debljinaVenca(g2.df, u.dv2) : NaN;
+        if (imaDv2 && v2 < VENAC_FAKTOR * m) continue;
+        opcije.push({
+          mn: m, z1: z1, z2: z2, odnos: z2 / z1, odstupanje: odst, a: a,
+          d1: g1.d, da1: g1.da, df1: g1.df, d2: g2.d, da2: g2.da, df2: g2.df,
+          venac1: v1, venac2: v2, t2_1: dubinaZlebaGlavcine(u.dv1), t2_2: imaDv2 ? dubinaZlebaGlavcine(u.dv2) : NaN,
+          sumaX: k.sumaX, x1: k.x1, x2: k.x2, epsA: k.epsA, rez: k.rez
+        });
+        break; // najmanji z₁ za ovaj modul
+      }
+    });
+    // Zadrži razumne opcije (z₁ od 14 do 45); prednost imaju moduli iz reda 1 (DIN 780), red 2 samo ako ih je malo
+    opcije.forEach(function (o) { o.red2 = DIN780_RED1.indexOf(o.mn) < 0; });
+    var razumne = opcije.filter(function (o) { return o.z1 >= 14 && o.z1 <= 45; });
+    if (!razumne.length) razumne = opcije.slice();
+    var red1 = razumne.filter(function (o) { return !o.red2; });
+    if (red1.length >= 3) razumne = red1;
+    if (razumne.length > 5) {
+      // ravnomerno po opsegu: oko preporuke (z₁ ≈ 20) i sa obe strane
+      razumne.sort(function (p, q) { return Math.abs(p.z1 - 20) - Math.abs(q.z1 - 20); });
+      razumne = razumne.slice(0, 5);
+    }
+    razumne.sort(function (p, q) { return p.mn - q.mn; });
+    // preporuka: z₁ najbliži 20 (dobar odnos mirnoće rada i čvrstoće zuba); kod jednakih — veći modul
+    var preporuka = -1, najbolje = Infinity;
+    razumne.forEach(function (o, i) { var d = Math.abs(o.z1 - 20) - o.mn * 1e-3; if (d < najbolje) { najbolje = d; preporuka = i; } });
+    return { ok: true, greske: [], opcije: razumne, preporuka: preporuka, imaDv2: imaDv2, imaA: imaA };
+  }
+
   return {
     DEG: DEG,
     inv: inv,
@@ -479,6 +569,10 @@
     parsirajBroj: parsirajBroj,
     proveriPolje: proveriPolje,
     proracunaj: proracunaj,
+    predlogOdVratila: predlogOdVratila,
+    dubinaZlebaGlavcine: dubinaZlebaGlavcine,
+    debljinaVenca: debljinaVenca,
+    rastojanjeZaSumuX: rastojanjeZaSumuX,
     kontrolneMere: kontrolneMere,
     preporucenaKuglica: preporucenaKuglica,
     sileUZahvatu: sileUZahvatu,
