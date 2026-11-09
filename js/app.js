@@ -590,7 +590,7 @@
     else cancelAnimationFrame(animacija.id);
   });
   $$('input[name="prikaz"]').forEach(function (r) {
-    r.addEventListener('change', function () { prikaz = this.value; crtajMastilom = true; crtaj(); });
+    r.addEventListener('change', function () { prikaz = this.value; crtaj(); });
   });
 
   // ------------------------------------------------------------------

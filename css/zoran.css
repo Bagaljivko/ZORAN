@@ -478,11 +478,11 @@ main.radni .ekran.aktivan { animation: none; }
 /* crtica postoji samo tokom animacije; posle nje linija je puna u svakom pregledaču */
 @keyframes zoran-mastilo { from { stroke-dasharray: 1 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1 1; stroke-dashoffset: 0; } }
 @keyframes zoran-pojava-crteza { from { opacity: 0; } to { opacity: 1; } }
-.crtez-svg.mastilo-crta .zub { animation: zoran-mastilo 1.1s cubic-bezier(0.45, 0.05, 0.25, 1) backwards; }
+.crtez-svg.mastilo-crta .zub { animation: zoran-mastilo 0.55s cubic-bezier(0.45, 0.05, 0.25, 1) backwards; }
 .crtez-svg.mastilo-crta .kotrljajna, .crtez-svg.mastilo-crta .osnovna, .crtez-svg.mastilo-crta .osa,
 .crtez-svg.mastilo-crta .zahvatna, .crtez-svg.mastilo-crta .aktivna, .crtez-svg.mastilo-crta .tc,
 .crtez-svg.mastilo-crta .oz, .crtez-svg.mastilo-crta .prodiranje-linija, .crtez-svg.mastilo-crta .prodiranje-krug {
-  opacity: 0; animation: zoran-pojava-crteza 0.45s ease-out 0.75s forwards;
+  opacity: 0; animation: zoran-pojava-crteza 0.3s ease-out 0.4s forwards;
 }
 
 /* Pečat se utiskuje pri pritisku */
