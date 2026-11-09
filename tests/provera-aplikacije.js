@@ -309,14 +309,13 @@ async function proveriDrive(b) {
     pg.on('pageerror', function (e) { konzola.push('pageerror: ' + e.message); });
     return { ctx: ctx, pg: pg };
   }
-  // bez probnog linka deo za Drive se ne vidi
+  // Drive je uključen za sve: vidi se bez posebnog linka; stari probni link se samo briše iz adrese
   var a = await uredjaj(Object.assign({}, devices['iPhone 13']));
   await a.pg.goto(URL + '#podesavanja'); await cekaj(3400);
-  var skriveno = await a.pg.evaluate(function () { return document.querySelector('#drive-sekcija').hidden; });
-  // telefon: probni link, poveži (nema kopije → šalje)
+  var vidljivoSvima = await a.pg.evaluate(function () { var s = document.querySelector('#drive-sekcija'); return !s.hidden && !!s.offsetParent; });
   await a.pg.goto(URL + '?drive=1#podesavanja'); await cekaj(3400);
-  var vidljivo = await a.pg.evaluate(function () { return { sekcija: !document.querySelector('#drive-sekcija').hidden, adresa: location.search }; });
-  stavka('Drive', 'Deo za Drive je skriven, a probni link ?drive=1 ga uključuje (i briše se iz adrese)', skriveno && vidljivo.sekcija && vidljivo.adresa === '', JSON.stringify({ skriveno: skriveno, vidljivo: vidljivo }));
+  var vidljivo = await a.pg.evaluate(function () { return { sekcija: !document.querySelector('#drive-sekcija').hidden, adresa: location.search, proba: localStorage.getItem('zoran.drive-proba') }; });
+  stavka('Drive', 'Deo za Drive se vidi svima, bez posebnog linka (stari link ?drive=1 se samo briše iz adrese)', vidljivoSvima && vidljivo.sekcija && vidljivo.adresa === '' && vidljivo.proba === null, JSON.stringify({ vidljivoSvima: vidljivoSvima, vidljivo: vidljivo }));
   await a.pg.evaluate(function () { location.hash = 'proracun'; }); await cekaj(300);
   await a.pg.fill('#u-z1', '23'); await cekaj(300);
   await a.pg.evaluate(function () { location.hash = 'podesavanja'; }); await cekaj(300);
@@ -333,7 +332,7 @@ async function proveriDrive(b) {
   stavka('Drive', 'Izmena se sama sačuva na Drive dok pristup važi (bez novog dodira)', drive.otpremanja.length >= 2 && /"z1":24/.test(posl.podaci['zoran.unos'] || ''), 'otpremanja: ' + drive.otpremanja.length);
   // drugi uređaj: prijava sama nađe kopiju i ponudi je
   var r = await uredjaj({ viewport: { width: 1440, height: 900 } });
-  await r.pg.goto(URL + '?drive=1#podesavanja'); await cekaj(3400);
+  await r.pg.goto(URL + '#podesavanja'); await cekaj(3400);
   await r.pg.click('#dugme-drive-povezi'); await cekaj(1500);
   var ponuda = await r.pg.evaluate(function () { var d = document.querySelector('#prozor-drive'); return { otvoren: d.open && d.matches(':modal'), opis: document.querySelector('#drive-kopija-opis').textContent }; });
   await Promise.all([r.pg.waitForNavigation({ timeout: 8000 }).catch(function () {}), r.pg.click('#drive-kopija-ucitaj')]);

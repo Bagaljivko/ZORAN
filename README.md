@@ -20,7 +20,7 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Varijante, štampa i link** — poređenje do 6 varijanti, štampa/PDF kao strana priručnika, link koji otvara isti proračun.
 - **Šta je novo** — detaljan opis svake verzije sa slikama (`novosti.html`); posle ažuriranja aplikacija sama ponudi link.
 - **Podešavanja** — mm ili inč, zarez ili tačka, 2–4 decimale, provera nove verzije, dijagnostika i **Podeli Zorana** (QR kod, sistemski meni za deljenje, kopiranje linka).
-- **Google Drive (u probi, link `?drive=1`)** — čuvanje proračuna, varijanti i podešavanja u skrivenoj fascikli aplikacije na Drive-u korisnika; na novom uređaju sam nađe kopiju i ponudi je.
+- **Google Drive** — čuvanje proračuna, varijanti i podešavanja u skrivenoj fascikli aplikacije na Drive-u korisnika; na novom uređaju sam nađe kopiju i ponudi je.
 - **Pošalji utisak** — poruka autoru (nešto ne radi / ideja / sviđa mi se) i slanje dijagnostike pravo u Google tabelu autora, i bez interneta (šalje se kad se veza vrati). Šta se šalje: [`privatnost.html`](privatnost.html); postavljanje tabele: [`tools/POVRATNE-UPUTSTVO.md`](tools/POVRATNE-UPUTSTVO.md).
 
 ## Instalacija na telefon
