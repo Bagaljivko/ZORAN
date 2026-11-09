@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.9.0';
+  var APP_VERSION = '1.10.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -46,7 +46,14 @@
   function citaj(kljuc, podr) {
     try { var v = localStorage.getItem(kljuc); return v ? JSON.parse(v) : podr; } catch (e) { return podr; }
   }
-  function pisi(kljuc, v) { try { localStorage.setItem(kljuc, JSON.stringify(v)); } catch (e) { /* privatni režim */ } }
+  var posleUpisa = null; // Google Drive: beleži izmene ključeva koji se sinhronizuju
+  var skladisteZakljucano = false; // posle učitavanja kopije sa Drive-a, do ponovnog učitavanja stranice
+  function pisi(kljuc, v) {
+    if (skladisteZakljucano) return;
+    var novo = JSON.stringify(v), staro = null;
+    try { staro = localStorage.getItem(kljuc); localStorage.setItem(kljuc, novo); } catch (e) { /* privatni režim */ }
+    if (posleUpisa && staro !== novo) posleUpisa(kljuc);
+  }
 
   var pod = Object.assign({ jedinice: 'mm', znak: ',', decimale: 3 }, citaj('zoran.podesavanja', {}));
 
@@ -1605,6 +1612,164 @@
     o.hidden = false;
     $('#zatvori-obavestenje').addEventListener('click', function () { o.hidden = true; });
     $('#link-novosti-baner').addEventListener('click', function () { o.hidden = true; });
+  })();
+
+  // ------------------------------------------------------------------
+  // Google Drive: čuvanje i sinhronizacija (dok je u probi, uključuje se linkom ?drive=1)
+  // ------------------------------------------------------------------
+  (function googleDrive() {
+    var D = window.ZoranDrive;
+    if (!D) return;
+    var sesija;
+    try { sesija = window.sessionStorage; } catch (e) { sesija = { getItem: function () { return null; }, setItem: function () {}, removeItem: function () {} }; }
+    var parametri = location.search;
+    if (/[?&]drive=1\b/.test(parametri)) pisi(D.KLJUC.proba, true);
+    if (/[?&]drive=0\b/.test(parametri)) { try { localStorage.removeItem(D.KLJUC.proba); } catch (e) { /* nema */ } }
+    if (/[?&]drive=[01]\b/.test(parametri) && !unosIzLinka()) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* bez čišćenja */ } }
+    var ukljuceno = !!citaj(D.KLJUC.proba, false) || !!window.ZORAN_DRIVE_ZA_SVE;
+    if (!ukljuceno) return;
+    $('#drive-sekcija').hidden = false;
+
+    var uToku = false, tajmerSlanja = 0;
+    function sada() { return Date.now(); }
+    function token() { return D.tokenIzSesije(sesija, sada()); }
+    function info() { return { verzija: APP_VERSION, uredjaj: sistem() + ', ' + pregledac() }; }
+    function vreme(ms) {
+      if (!ms) return '—';
+      var d = new Date(ms);
+      function dd(n) { return (n < 10 ? '0' : '') + n; }
+      return dd(d.getDate()) + '.' + dd(d.getMonth() + 1) + '.' + d.getFullYear() + '. u ' + dd(d.getHours()) + ':' + dd(d.getMinutes());
+    }
+    function osveziPrikaz(poruka) {
+      var s = D.stanje(localStorage);
+      var povezano = !!s.povezano;
+      $('#dugme-drive-povezi').hidden = povezano;
+      $('#dugme-drive-sinh').hidden = !povezano;
+      $('#dugme-drive-prekini').hidden = !povezano;
+      var tekst;
+      if (!povezano) tekst = 'Nije povezano.';
+      else {
+        tekst = 'Povezano' + (s.mejl ? ' sa ' + s.mejl : '') + '. ' + (s.poslednjaSinh ? 'Poslednja sinhronizacija: ' + vreme(s.poslednjaSinh) + '.' : 'Još nije sinhronizovano.');
+        if (D.imaNeposlato(localStorage)) tekst += token() ? ' Čuvam izmene…' : ' Ima izmena koje nisu na Drive-u — dodirni „Sinhronizuj“.';
+        else if (token()) tekst += ' Izmene se same čuvaju.';
+      }
+      $('#drive-stanje').textContent = poruka ? poruka + ' ' + tekst : tekst;
+      var baner = $('#drive-baner');
+      if (!povezano || token()) baner.hidden = true;
+    }
+
+    // Prozor „Pronađena kopija“
+    var prozorD = $('#prozor-drive');
+    var odgovorKopija = null;
+    function pitajZaKopiju(opis) {
+      var delovi = ['Sačuvana ' + vreme(opis.izmenjeno)];
+      if (opis.uredjaj) delovi.push('na uređaju ' + opis.uredjaj);
+      var sadrzaj = delovi.join(' ') + '.';
+      if (opis.par) sadrzaj += ' Poslednji par: z₁ = ' + opis.par.z1 + ', z₂ = ' + opis.par.z2 + ', mₙ = ' + fmt(opis.par.mn, 2).replace(/[,.]?0+$/, '') + '.';
+      sadrzaj += ' Varijanti: ' + opis.varijanti + '.';
+      $('#drive-kopija-opis').textContent = sadrzaj;
+      return new Promise(function (resolve) {
+        odgovorKopija = resolve;
+        if (prozor.open) zatvoriPodeli();
+        if (typeof prozorD.showModal === 'function') prozorD.showModal(); else prozorD.setAttribute('open', '');
+        document.documentElement.classList.add('prozor-otvoren');
+        $('#drive-kopija-ucitaj').focus();
+      });
+    }
+    function zavrsiKopiju(izbor) {
+      var r = odgovorKopija; odgovorKopija = null;
+      if (typeof prozorD.close === 'function' && prozorD.open) prozorD.close(); else prozorD.removeAttribute('open');
+      document.documentElement.classList.remove('prozor-otvoren');
+      if (r) r(izbor);
+    }
+    $('#drive-kopija-ucitaj').addEventListener('click', function () { zavrsiKopiju('ucitaj'); });
+    $('#drive-kopija-zadrzi').addEventListener('click', function () { zavrsiKopiju('zadrzi'); });
+    prozorD.addEventListener('close', function () { if (odgovorKopija) zavrsiKopiju('odustani'); });
+    prozorD.addEventListener('click', function (e) { if (e.target === prozorD && e.detail !== 0) zavrsiKopiju('odustani'); });
+
+    function obradiGresku(g) {
+      if (g && g.kod === 'token') { D.obrisiToken(sesija); osveziPrikaz('Pristup Drive-u je istekao.'); return; }
+      if (g && (g.kod === 'zatvoreno' || g.kod === 'odbijeno')) { osveziPrikaz('Google prozor je zatvoren — ništa nije promenjeno.'); return; }
+      if (g && g.kod === 'mreza') { osveziPrikaz(navigator.onLine ? 'Google Drive trenutno nije dostupan.' : 'Nema interneta — sinhronizacija kad se veza vrati.'); return; }
+      F.zabeleziGresku('Drive: ' + (g && g.message ? g.message : String(g)), g && g.stack);
+      osveziPrikaz('Sinhronizacija nije uspela.');
+    }
+    function zavrsi(r) {
+      if (r.rezultat === 'preuzeto') {
+        skladisteZakljucano = true; // stranica sa starim podacima ne sme da prepiše kopiju dok se ponovo učitava
+        try { sesija.setItem('zoran.drive-ucitano', '1'); } catch (e) { /* nema */ }
+        location.reload();
+        return;
+      }
+      if (r.rezultat === 'poslato') osveziPrikaz('Sačuvano na Drive.');
+      else if (r.rezultat === 'nista') osveziPrikaz('Sve je već usklađeno.');
+      else if (r.rezultat === 'odustao') osveziPrikaz('Ništa nije promenjeno.');
+      else if (r.rezultat === 'sukob') osveziPrikaz('Na Drive-u ima novijih izmena sa drugog uređaja.');
+    }
+    function sinhronizuj(t, auto) {
+      if (uToku) return Promise.resolve();
+      uToku = true;
+      return D.sinhronizuj({ sklad: localStorage, fetch: window.fetch.bind(window), token: t, info: info(), pitaj: pitajZaKopiju, auto: !!auto })
+        .then(zavrsi, obradiGresku).then(function () { uToku = false; }, function () { uToku = false; });
+    }
+    /** Dodir korisnika: uzmi pristup (ako je istekao), pa sinhronizuj. */
+    function dodirSinhronizuj(prviPut) {
+      var t = token();
+      if (t) return sinhronizuj(t, false);
+      if (!navigator.onLine) { osveziPrikaz('Nema interneta.'); return Promise.resolve(); }
+      var s = D.stanje(localStorage);
+      osveziPrikaz('Otvaram Google prijavu…');
+      return D.ucitajGIS(document).then(function (google) {
+        return D.zatraziToken(google, { prompt: prviPut ? 'consent' : '', mejl: s.mejl });
+      }).then(function (odg) {
+        D.sacuvajToken(sesija, odg.token, odg.trajanje, sada());
+        var st = D.stanje(localStorage);
+        var bilo = st.povezano;
+        st.povezano = true;
+        D.sacuvajStanje(localStorage, st);
+        if (!bilo || !st.mejl) {
+          D.mejlNaloga({ fetch: window.fetch.bind(window), token: odg.token }).then(function (m) {
+            if (!m) return;
+            var x = D.stanje(localStorage); x.mejl = m; D.sacuvajStanje(localStorage, x); osveziPrikaz();
+          });
+        }
+        return sinhronizuj(odg.token, false);
+      }).catch(obradiGresku);
+    }
+    function zakaziSlanje(odmah) {
+      clearTimeout(tajmerSlanja);
+      if (!D.imaNeposlato(localStorage)) return;
+      var t = token();
+      if (!t || !navigator.onLine) { osveziPrikaz(); return; }
+      tajmerSlanja = setTimeout(function () { sinhronizuj(token(), true); }, odmah ? 0 : 4000);
+    }
+
+    posleUpisa = function (kljuc) {
+      if (D.SINHRONIZUJ.indexOf(kljuc) < 0) return;
+      if (D.oznaciIzmenu(localStorage, sada())) zakaziSlanje(false);
+    };
+    window.addEventListener('online', function () { zakaziSlanje(true); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') zakaziSlanje(true); });
+
+    $('#dugme-drive-povezi').addEventListener('click', function () { dodirSinhronizuj(true); });
+    $('#dugme-drive-sinh').addEventListener('click', function () { dodirSinhronizuj(false); });
+    $('#dugme-drive-prekini').addEventListener('click', function () {
+      var t = token();
+      if (t && window.google) D.ponistiPristup(window.google, t);
+      D.obrisiToken(sesija);
+      D.sacuvajStanje(localStorage, {});
+      osveziPrikaz('Veza je prekinuta. Podaci na ovom uređaju i kopija na Drive-u ostaju.');
+    });
+    $('#drive-baner-sinh').addEventListener('click', function () { $('#drive-baner').hidden = true; dodirSinhronizuj(false); });
+    $('#drive-baner-zatvori').addEventListener('click', function () { $('#drive-baner').hidden = true; });
+
+    var ucitano = false;
+    try { ucitano = sesija.getItem('zoran.drive-ucitano') === '1'; sesija.removeItem('zoran.drive-ucitano'); } catch (e) { ucitano = false; }
+    if (ucitano) setTimeout(function () { tost('Učitani su podaci sa Google Drive-a.'); }, 400);
+    osveziPrikaz(ucitano ? 'Učitano sa Drive-a.' : '');
+    // podsetnik pri otvaranju: povezano, a pristup je istekao
+    if (D.stanje(localStorage).povezano && !token() && !prikazanoObavestenje) $('#drive-baner').hidden = false;
+    else if (token()) zakaziSlanje(true);
   })();
 
   proveriMolbu();

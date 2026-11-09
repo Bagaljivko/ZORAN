@@ -26,12 +26,14 @@ Budi pažljiv: cilj je da se **ništa ne pokvari**. Ne menjaj ono što nije deo 
 - `js/proracun.js` — proračun i savetnik (čiste funkcije, rade i u Node-u).
 - `js/crtez.js` — SVG crtež zahvata. `js/sldprt.js` — čitanje `.SLDPRT`.
 - `js/povratne.js` — „Pošalji utisak“ i dijagnostika (čiste funkcije, rade i u Node-u); adresa Apps Script-a je `ADRESA` u tom fajlu. `tools/zoran-povratne.gs` — prijem u Google tabelu.
+- `js/drive.js` — čuvanje na Google Drive (appDataFolder, Google Identity Services; Client ID je u fajlu). Dok je u probi, uključuje se linkom `?drive=1` (`?drive=0` isključuje).
 - `privatnost.html` — stranica o privatnosti.
 - `js/podeli.js` — QR kod za deljenje. `js/vendor/` — spoljne biblioteke (sa licencom).
 - `js/app.js` — interfejs; ovde je `APP_VERSION`.
 - `novosti.html` i `novosti/` — stranica „Šta je novo“ (otvara se u novom tabu) sa slikama izmena.
 - `sw.js` — service worker; ovde je `CACHE_VERSION` i spisak fajlova za keš.
 - `tests/proracun.test.js` — testovi proračuna (`node tests/proracun.test.js`, bez biblioteka).
+- `tests/drive.test.js` — testovi sinhronizacije sa lažnim Drive-om (`node tests/drive.test.js`).
 - `tests/povratne.test.js` — testovi za „Pošalji utisak“ i Apps Script (`node tests/povratne.test.js`, bez pravog slanja).
 - `tests/provera-aplikacije.js` — automatska provera celog spiska (uređaji, konzola, offline, ažuriranje, localStorage, keš, verzije, putanje). Koristi Playwright/Chromium iz okruženja; sama podiže server na `/ZORAN/` i ne menja fajlove. Izlaz 0 = sve prolazi.
 - `tools/` — SolidWorks makro i uputstvo.

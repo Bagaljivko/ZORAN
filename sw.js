@@ -1,7 +1,7 @@
 /* Zoran — service worker. Povećaj CACHE_VERSION pri svakoj promeni aplikacije. */
 'use strict';
 
-const CACHE_VERSION = 'zoran-v12';
+const CACHE_VERSION = 'zoran-v13';
 
 // Sve putanje su relativne u odnosu na sw.js (radi i na https://bagaljivko.github.io/ZORAN/)
 const FAJLOVI = [
@@ -27,6 +27,8 @@ const FAJLOVI = [
   './novosti/v180-osno.jpg',
   './novosti/v190-pitanje.jpg',
   './novosti/v190-utisak.jpg',
+  './novosti/v1100-drive.jpg',
+  './novosti/v1100-kopija.jpg',
   './manifest.json',
   './css/zoran.css',
   './js/proracun.js',
@@ -35,6 +37,7 @@ const FAJLOVI = [
   './js/vendor/qrcode-generator.js',
   './js/podeli.js',
   './js/povratne.js',
+  './js/drive.js',
   './js/app.js',
   './fonts/eb-garamond-latin-400-normal.woff2',
   './fonts/eb-garamond-latin-400-italic.woff2',

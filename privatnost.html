@@ -31,9 +31,19 @@
 
   <h2>Šta ostaje na tvom uređaju</h2>
   <ul>
-    <li>Uneti podaci, podešavanja i sačuvane varijante čuvaju se samo u pregledaču na tvom uređaju (localStorage) i nigde se ne šalju.</li>
+    <li>Uneti podaci, podešavanja i sačuvane varijante čuvaju se u pregledaču na tvom uređaju (localStorage) i nigde se ne šalju — osim ako sam povežeš Google Drive (vidi ispod).</li>
     <li>SolidWorks fajl (.SLDPRT) koji izabereš u „Uvozu“ čita se samo na tvom uređaju.</li>
     <li>Aplikacija se učitava sa GitHub Pages (GitHub, Inc.), koji kao i svaki veb-server može da beleži tehničke podatke o pristupu, npr. IP adresu.</li>
+  </ul>
+
+  <h2 id="drive">Google Drive (neobavezno)</h2>
+  <p>Ako u Podešavanjima povežeš Google Drive, ZORAN čuva kopiju tvog proračuna, varijanti i podešavanja na <b>tvom</b> Google Drive-u, u posebnoj skrivenoj fascikli aplikacije (Google je zove „appDataFolder“).</p>
+  <ul>
+    <li>ZORAN ima pristup <b>samo toj fascikli</b> — ne vidi i ne menja ostale fajlove na tvom Drive-u. Za prikaz u Podešavanjima čita i mejl naloga sa kojim si povezan.</li>
+    <li>Kopija ide direktno između tvog uređaja i Google-a; autor ZORAN-a je ne vidi i nema nikakav server.</li>
+    <li>Na Drive se ne šalju poruke koje čekaju slanje, anonimni broj korisnika ni brojači korišćenja.</li>
+    <li>Google daje pristup na sat vremena; on se čuva samo dok je aplikacija otvorena (sessionStorage).</li>
+    <li>„Prekini vezu“ poništava pristup na ovom uređaju. Kopiju možeš obrisati na drive.google.com › Podešavanja › Upravljanje aplikacijama › ZORAN › Izbriši skrivene podatke aplikacije.</li>
   </ul>
 
   <h2 id="povratne">Povratne informacije i dijagnostika</h2>

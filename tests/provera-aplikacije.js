@@ -260,11 +260,106 @@ async function proveriPovratne(b) {
   await ctx.close();
 }
 
+// Google Drive: lažni Google nalog (window.google) i lažni Drive koji presreće Playwright — pravi Google se ne dira.
+function napraviLazniDrive() {
+  var fajlovi = {}, brojac = 0, sat = Date.now();
+  var d = { fajlovi: fajlovi, otpremanja: [] };
+  var CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
+  d.obradi = function (route) {
+    var req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    var u = new (require('url').URL)(req.url());
+    function json(o) { return route.fulfill({ status: 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: JSON.stringify(o) }); }
+    if (!/^Bearer tok-/.test(req.headers().authorization || '')) return route.fulfill({ status: 401, headers: CORS, body: '{}' });
+    var m;
+    if (u.pathname === '/drive/v3/files' && req.method() === 'GET') return json({ files: Object.keys(fajlovi).map(function (id) { return { id: id, modifiedTime: fajlovi[id].vreme }; }) });
+    if ((m = u.pathname.match(/^\/drive\/v3\/files\/([^/]+)$/))) return route.fulfill({ status: 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS), body: fajlovi[m[1]].sadrzaj });
+    if (u.pathname === '/drive/v3/about') return json({ user: { emailAddress: 'proba@gmail.com' } });
+    if ((m = u.pathname.match(/^\/upload\/drive\/v3\/files(?:\/([^/]+))?$/))) {
+      var granica = (req.headers()['content-type'].match(/boundary=(.+)$/) || [])[1];
+      var delovi = req.postData().split('--' + granica).filter(function (x) { return x.trim() && x.trim() !== '--'; });
+      var sadrzaj = delovi[1].split('\r\n\r\n').slice(1).join('\r\n\r\n').replace(/\r\n$/, '');
+      var id = m[1] || ('f' + (++brojac));
+      sat += 1000;
+      fajlovi[id] = { sadrzaj: sadrzaj, vreme: new Date(sat).toISOString() };
+      d.otpremanja.push(JSON.parse(sadrzaj));
+      return json({ id: id, modifiedTime: fajlovi[id].vreme });
+    }
+    return route.fulfill({ status: 404, headers: CORS, body: '{}' });
+  };
+  return d;
+}
+function lazniGoogle() {
+  window.__googlePrijava = 0;
+  window.google = { accounts: { oauth2: {
+    initTokenClient: function (cfg) { return { requestAccessToken: function () { window.__googlePrijava++; setTimeout(function () { cfg.callback({ access_token: 'tok-proba', expires_in: 3599 }); }, 50); } }; },
+    revoke: function (t, cb) { if (cb) cb(); }
+  } } };
+}
+async function proveriDrive(b) {
+  var drive = napraviLazniDrive();
+  var konzola = [];
+  async function uredjaj(opcije) {
+    var ctx = await b.newContext(opcije);
+    await ctx.addInitScript(lazniGoogle);
+    await ctx.route('https://www.googleapis.com/**', drive.obradi);
+    await ctx.route('https://accounts.google.com/**', function (r) { r.abort(); });
+    var pg = await ctx.newPage();
+    pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.type() + ': ' + m.text()); });
+    pg.on('pageerror', function (e) { konzola.push('pageerror: ' + e.message); });
+    return { ctx: ctx, pg: pg };
+  }
+  // bez probnog linka deo za Drive se ne vidi
+  var a = await uredjaj(Object.assign({}, devices['iPhone 13']));
+  await a.pg.goto(URL + '#podesavanja'); await cekaj(3400);
+  var skriveno = await a.pg.evaluate(function () { return document.querySelector('#drive-sekcija').hidden; });
+  // telefon: probni link, poveži (nema kopije → šalje)
+  await a.pg.goto(URL + '?drive=1#podesavanja'); await cekaj(3400);
+  var vidljivo = await a.pg.evaluate(function () { return { sekcija: !document.querySelector('#drive-sekcija').hidden, adresa: location.search }; });
+  stavka('Drive', 'Deo za Drive je skriven, a probni link ?drive=1 ga uključuje (i briše se iz adrese)', skriveno && vidljivo.sekcija && vidljivo.adresa === '', JSON.stringify({ skriveno: skriveno, vidljivo: vidljivo }));
+  await a.pg.evaluate(function () { location.hash = 'proracun'; }); await cekaj(300);
+  await a.pg.fill('#u-z1', '23'); await cekaj(300);
+  await a.pg.evaluate(function () { location.hash = 'podesavanja'; }); await cekaj(300);
+  await a.pg.click('#dugme-drive-povezi'); await cekaj(1500);
+  var st1 = await a.pg.textContent('#drive-stanje');
+  var prvo = drive.otpremanja[0] || { podaci: {} };
+  stavka('Drive', 'Prvi uređaj: „Poveži“ otvara Google prijavu i šalje podatke na Drive (bez reda poruka i anonimnog ID-a)',
+    drive.otpremanja.length === 1 && /"z1":23/.test(prvo.podaci['zoran.unos'] || '') && !('zoran.povratne-red' in prvo.podaci) && !('zoran.povratne-id' in prvo.podaci) && /Povezano sa proba@gmail\.com/.test(st1),
+    st1 + ' | otpremanja: ' + drive.otpremanja.length);
+  // izmena se sama čuva dok pristup važi
+  await a.pg.evaluate(function () { location.hash = 'proracun'; }); await cekaj(200);
+  await a.pg.fill('#u-z1', '24'); await cekaj(5500);
+  var posl = drive.otpremanja[drive.otpremanja.length - 1] || { podaci: {} };
+  stavka('Drive', 'Izmena se sama sačuva na Drive dok pristup važi (bez novog dodira)', drive.otpremanja.length >= 2 && /"z1":24/.test(posl.podaci['zoran.unos'] || ''), 'otpremanja: ' + drive.otpremanja.length);
+  // drugi uređaj: prijava sama nađe kopiju i ponudi je
+  var r = await uredjaj({ viewport: { width: 1440, height: 900 } });
+  await r.pg.goto(URL + '?drive=1#podesavanja'); await cekaj(3400);
+  await r.pg.click('#dugme-drive-povezi'); await cekaj(1500);
+  var ponuda = await r.pg.evaluate(function () { var d = document.querySelector('#prozor-drive'); return { otvoren: d.open && d.matches(':modal'), opis: document.querySelector('#drive-kopija-opis').textContent }; });
+  await Promise.all([r.pg.waitForNavigation({ timeout: 8000 }).catch(function () {}), r.pg.click('#drive-kopija-ucitaj')]);
+  await cekaj(3600);
+  var posle = await r.pg.evaluate(function () { return { z1: document.querySelector('#u-z1').value, tost: document.querySelector('#tost').textContent }; });
+  stavka('Drive', 'Drugi uređaj: posle prijave sam nađe kopiju, ponudi je i „Učitaj kopiju“ prenosi podatke',
+    ponuda.otvoren && /Sačuvana .*z₁ = 24/.test(ponuda.opis) && posle.z1 === '24' && /Učitani su podaci sa Google Drive-a/.test(posle.tost),
+    JSON.stringify({ ponuda: ponuda, posle: posle }));
+  // pristup istekao (nova sesija): podsetnik „Sinhronizuj“ pri otvaranju
+  await r.pg.evaluate(function () { sessionStorage.clear(); }); await r.pg.reload(); await cekaj(3600);
+  var baner = await r.pg.evaluate(function () { return !document.querySelector('#drive-baner').hidden; });
+  await r.pg.click('#drive-baner-sinh'); await cekaj(1500);
+  var posleDodira = await r.pg.evaluate(function () { return { baner: !document.querySelector('#drive-baner').hidden, prijava: window.__googlePrijava, ponuda: document.querySelector('#prozor-drive').open }; });
+  stavka('Drive', 'Kad pristup istekne: pri otvaranju podsetnik, jedan dodir „Sinhronizuj“ obnavlja pristup bez nove ponude',
+    baner && !posleDodira.baner && posleDodira.prijava === 1 && !posleDodira.ponuda, JSON.stringify({ baner: baner, posleDodira: posleDodira }));
+  stavka('Drive', 'Konzola čista tokom povezivanja i sinhronizacije', !konzola.length, konzola.slice(0, 3).join(' | '));
+  await a.ctx.close(); await r.ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
   var red = (t.stdout.match(/Ukupno:.*$/m) || [''])[0];
   stavka('Proračun', 'node tests/proracun.test.js prolazi', t.status === 0, red);
+  var td = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'drive.test.js')], { encoding: 'utf8' });
+  stavka('Drive', 'node tests/drive.test.js prolazi (snimak, odluka, ponuda kopije, sukob, istekao pristup)', td.status === 0, (td.stdout.match(/Ukupno:.*$/m) || [''])[0]);
   var tp = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'povratne.test.js')], { encoding: 'utf8' });
   stavka('Povratne', 'node tests/povratne.test.js prolazi (unos, red bez mreže, čišćenje izveštaja, retko pitanje, Apps Script)', tp.status === 0, (tp.stdout.match(/Ukupno:.*$/m) || [''])[0]);
   // relativne putanje
@@ -319,13 +414,14 @@ function proveriStatiku() {
     await proveriUredjaj(b, 'Desktop (1440×900)', { viewport: { width: 1440, height: 900 } }, false);
     await proveriPWA(b);
     await proveriPovratne(b);
+    await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);
   } finally {
     await b.close();
     server.close();
   }
-  var REDOSLED = ['Proračun', 'Uređaji', 'PWA', 'Izgled', 'Povratne', 'Greška'];
+  var REDOSLED = ['Proračun', 'Uređaji', 'PWA', 'Izgled', 'Povratne', 'Drive', 'Greška'];
   rezultati.sort(function (p, q) { return REDOSLED.indexOf(p.grupa) - REDOSLED.indexOf(q.grupa); });
   var grupa = '';
   rezultati.forEach(function (r) {

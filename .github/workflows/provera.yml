@@ -32,6 +32,9 @@ jobs:
       - name: Testovi za „Pošalji utisak“ (bez pravog slanja)
         run: node tests/povratne.test.js
 
+      - name: Testovi za Google Drive (lažni Drive)
+        run: node tests/drive.test.js
+
       - name: Playwright i Chromium (samo za proveru, nisu deo aplikacije)
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0
