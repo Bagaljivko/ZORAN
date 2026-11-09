@@ -50,6 +50,13 @@
   </div>
 </div>
 
+<!-- Google Drive: podsetnik za sinhronizaciju -->
+<div class="obavestenje-verzija drive-baner" id="drive-baner" hidden>
+  <p id="drive-baner-tekst">Google Drive: sinhronizuj proračune sa ostalim uređajima.</p>
+  <button type="button" class="pecat" id="drive-baner-sinh">Sinhronizuj</button>
+  <button type="button" class="kopiraj" id="drive-baner-zatvori" aria-label="Zatvori podsetnik" title="Zatvori"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+</div>
+
 <!-- Obaveštenje posle ažuriranja -->
 <div class="obavestenje-verzija" id="obavestenje-verzija" hidden>
   <p>ZORAN je ažuriran na verziju <span data-verzija-broj></span>. <a href="./novosti.html" target="_blank" rel="noopener" id="link-novosti-baner">Pogledaj šta je novo</a></p>
@@ -310,6 +317,18 @@
     </div>
     <p id="stanje-verzije" aria-live="polite"></p>
 
+    <section id="drive-sekcija" class="drive-sekcija" aria-labelledby="naslov-drive" hidden>
+      <h3 id="naslov-drive">Google Drive</h3>
+      <p>Čuvaj proračun, varijante i podešavanja na svom Google Drive-u i imaj ih na svakom uređaju.</p>
+      <p class="drive-stanje" id="drive-stanje" aria-live="polite"></p>
+      <div class="dugmad">
+        <button type="button" class="pecat" id="dugme-drive-povezi">Poveži Google Drive</button>
+        <button type="button" class="pecat" id="dugme-drive-sinh" hidden>Sinhronizuj</button>
+        <button type="button" class="dugme" id="dugme-drive-prekini" hidden>Prekini vezu</button>
+      </div>
+      <p class="sitno">ZORAN vidi samo svoju skrivenu fasciklu na tvom Drive-u, ne i tvoje fajlove. Google daje pristup na sat vremena — posle toga dodirni „Sinhronizuj“ (prozor se sam otvori i zatvori). <a href="./privatnost.html#drive" target="_blank" rel="noopener">Privatnost</a></p>
+    </section>
+
     <h3>Podeli Zorana</h3>
     <p>Pošalji Zorana kolegi — telefonom, porukom ili QR kodom.</p>
     <div class="dugmad">
@@ -437,11 +456,25 @@
   </form>
 </dialog>
 
+<!-- Prozor: pronađena kopija na Google Drive-u -->
+<dialog id="prozor-drive" class="prozor prozor-drive" aria-labelledby="naslov-drive-kopija">
+  <div class="prozor-sadrzaj">
+    <h2 id="naslov-drive-kopija">Pronađena kopija na Google Drive-u</h2>
+    <p id="drive-kopija-opis"></p>
+    <p>Da li da je učitam? Podaci koji su sada na ovom uređaju biće zamenjeni kopijom.</p>
+    <div class="dugmad dugmad-prozor">
+      <button type="button" class="pecat" id="drive-kopija-ucitaj">Učitaj kopiju</button>
+      <button type="button" class="dugme" id="drive-kopija-zadrzi">Zadrži podatke sa ovog uređaja</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="tost" id="tost" role="status" aria-live="polite" hidden></div>
 
 <div class="sr-only" id="obavestenje" aria-live="polite"></div>
 
 <script src="./js/povratne.js"></script>
+<script src="./js/drive.js"></script>
 <script src="./js/proracun.js"></script>
 <script src="./js/crtez.js"></script>
 <script src="./js/app.js"></script>

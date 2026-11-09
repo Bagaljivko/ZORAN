@@ -553,3 +553,12 @@ main.radni .ekran.aktivan { animation: none; }
 .pitanje-utisak .palac:active svg { stroke: var(--papir); }
 .pitanje-utisak .palac-dole svg { transform: rotate(180deg); }
 @media print { .tost, .pitanje-utisak, .slanje-dijag { display: none !important; } }
+
+/* ---------- 1.10.0: Google Drive ---------- */
+.drive-stanje { font-style: italic; }
+.drive-stanje:empty { display: none; }
+.drive-baner { flex-wrap: wrap; }
+.drive-baner p { flex: 1 1 12rem; }
+.prozor-drive .prozor-sadrzaj { text-align: left; }
+.prozor-drive h2 { text-align: center; }
+.prozor-drive .dugmad-prozor { grid-template-columns: 1fr; }
