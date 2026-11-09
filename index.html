@@ -40,6 +40,16 @@
   <span class="desno" id="naziv-ekrana">Proračun</span>
 </header>
 
+<!-- Molba za deljenje (posle nekog vremena korišćenja) -->
+<div class="obavestenje-verzija molba-podeli" id="molba-podeli" hidden>
+  <p>Sviđa ti se ZORAN? Podeli ga sa kolegom kome bi koristio.</p>
+  <div class="molba-dugmad">
+    <button type="button" class="pecat" id="molba-da">Podeli</button>
+    <button type="button" class="dugme" id="molba-kasnije">Kasnije</button>
+    <button type="button" class="dugme" id="molba-ne">Ne pitaj više</button>
+  </div>
+</div>
+
 <!-- Obaveštenje posle ažuriranja -->
 <div class="obavestenje-verzija" id="obavestenje-verzija" hidden>
   <p>ZORAN je ažuriran na verziju <span data-verzija-broj></span>. <a href="./novosti.html" target="_blank" rel="noopener" id="link-novosti-baner">Pogledaj šta je novo</a></p>
@@ -126,6 +136,7 @@
             <label for="u-a">Osno rastojanje <i>a</i> <span class="jed" data-jed-duzina>[mm]</span></label>
             <input id="u-a" name="a" inputmode="decimal" enterkeyhint="done" aria-describedby="h-a p-a">
             <div class="pomoc pomoc-tekst" id="h-a">Iz njega se računa pomeranje profila.</div>
+            <div class="idealno-a" id="idealno-a" hidden><button type="button" class="dugme" id="dugme-idealno-a">Vrati idealno</button></div>
             <div class="poruka" id="p-a" role="alert"></div>
           </div>
         </fieldset>
@@ -161,7 +172,14 @@
         <span id="legenda-prodiranje" class="legenda-prodiranje" hidden><svg viewBox="0 0 44 10" aria-hidden="true"><line x1="0" y1="5" x2="44" y2="5" stroke-width="3"/></svg>prodiranje zuba (crveno)</span>
       </div>
       <section class="pomeranje-profila" aria-labelledby="naslov-pomeranja">
-        <h3 id="naslov-pomeranja">Pomeranje profila — izračunato</h3>
+        <div class="naslov-sa-izborom">
+          <h3 id="naslov-pomeranja">Pomeranje profila — izračunato</h3>
+          <div class="prekidac prekidac-mali" role="radiogroup" aria-label="Broj decimala">
+            <label><input type="radio" name="decimale-brzo" value="2"><span>0,00</span></label>
+            <label><input type="radio" name="decimale-brzo" value="3"><span>0,000</span></label>
+            <label><input type="radio" name="decimale-brzo" value="4"><span>0,0000</span></label>
+          </div>
+        </div>
         <div class="tablica" id="tablica-pomeranje"></div>
         <h3>Provera osnog rastojanja</h3>
         <div class="tablica" id="tablica-provera"></div>

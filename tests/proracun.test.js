@@ -267,6 +267,38 @@ test('lovački zub i napomene za konstrukciju', function () {
   tacno(s.vlastita.ocena === 'Prihvatljivo', 'ocena: ' + s.vlastita.ocena);
 });
 
+console.log('Poređenje sa nino.bplaced.net');
+
+test('nino.bplaced.net, z = 40/40, m = 2,5, α = 20°, a = 101 mm: iste vrednosti', function () {
+  // Referentne vrednosti sa sajta „Online-kinematika cilindričnih evolventnih zupčanika“ (nino.bplaced.net), kvalitet 7f25.
+  var r = P.proracunajIzRastojanja({ z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 });
+  var g = r.zupcanici[0], p = r.par;
+  jednako(p.sumaX, 2 * 0.2073, 1e-4, 'Σx:');
+  jednako(g.x, 0.2073, 1e-4, 'x:');
+  jednako(p.alfaWt / P.DEG, 21 + 30 / 60 + 16 / 3600, 1 / 3600, 'αw = 21° 30′ 16″:');
+  jednako(g.db, 93.9693, 1e-4, 'db:');
+  jednako(p.k * 2.5, 0.0365, 1e-4, 'skraćenje temena k·m:');
+  jednako(p.pbt, 7.3803, 1e-4, 'pbt:');
+  jednako(g.st, 4.3042, 1e-4, 'sₜ:');
+  var km = P.kontrolneMere(r, 0);
+  tacno(km.k === 5, 'k = ' + km.k);
+  jednako(km.W, 34.9665, 1e-4, 'Wk:');
+  jednako(P.kontrolneMere(r, 0, 4.5).Md, 107.5794, 1e-4, 'Md (DM = 4,5):');
+  // nino uračunava tanjenje zuba za toleranciju (Asne = −0,019 mm): alat se primakne za Asne/(2·tan α),
+  // pa su temeni i podnožni prečnik manji za 2·0,019/(2·tan 20°); ZORAN daje nazivnu geometriju.
+  var pomak = 2 * 0.019 / (2 * Math.tan(20 * P.DEG));
+  jednako(g.da - pomak, 105.9113, 2e-4, 'dₐ (nino, sa tolerancijom):');
+  jednako(g.df - pomak, 94.7343, 2e-4, 'd_f (nino, sa tolerancijom):');
+});
+
+test('idealno osno rastojanje: Σx ≈ 0,35, zaokruženo na 0,5 mm', function () {
+  var a = P.rastojanjeZaSumuX(16, 58, 6.5, 9, 20, 0.35);
+  jednako(a * 2, Math.round(a * 2), 1e-9, 'zaokruženo na 0,5 mm:');
+  var r = P.proracunajIzRastojanja({ z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: a });
+  tacno(r.ok && Math.abs(r.raspodela.sumaX - 0.35) < 0.05, 'Σx = ' + r.raspodela.sumaX);
+  tacno(r.upozorenja.length === 0, 'bez upozorenja');
+});
+
 console.log('Korak 0: od vratila');
 
 test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {
@@ -508,6 +540,33 @@ test('noviji format: heuristika nalazi PNG i svojstva u deflate bloku', function
     jednako(r.parametri.beta.vrednost, 9, 0, 'β:');
     tacno(!r.parametri.mn.pouzdano, 'heuristika je označena kao nepouzdana');
     tacno(!r.parametri.b, 'širina nije pronađena');
+  });
+});
+
+test('noviji format (kao pravi SW 2015+ fajl): kote iz modela i XML svojstva; nema lažnih nalaza iz formula', function () {
+  function blok(ime, sadrzaj) { // zaglavlje 14 00 06 00 08 00, ime kodirano zamenom polubajtova (kao u pravim fajlovima)
+    var komp = zlib.deflateRawSync(Buffer.from(sadrzaj, 'utf8'));
+    var im = Buffer.from(ime, 'latin1').map(function (c) { return ((c << 4) | (c >> 4)) & 255; });
+    var h = Buffer.alloc(26);
+    Buffer.from([0x14, 0, 0x06, 0, 0x08, 0]).copy(h, 0);
+    h.writeUInt32LE(komp.length, 14); h.writeUInt32LE(Buffer.byteLength(sadrzaj), 18); h.writeUInt16LE(im.length, 22);
+    return Buffer.concat([h, im, komp]);
+  }
+  var kote = '<Feature id="1" Name="Sketch5"><Dimension Name="Module pitches">1</Dimension><Dimension Name="Profile angle">20°</Dimension>' +
+    '<Dimension Name="Addend. mod. coef.">0.2</Dimension></Feature><Feature id="2" Name="CirPattern1"><Dimension Name="Number of teeth">40</Dimension>' +
+    '<Dimension Name="Face with">25</Dimension><Dimension Name="Pitch Diameter">&lt;MOD-DIAM&gt;100</Dimension></Feature>';
+  var custom = '<propertySection name="UserDefinedProperties"><property name="Material" pid="14" IsEquation="False" TypeID="0"><vt:lpstr>"SW-Material@x"</vt:lpstr>' +
+    '<FPVals><vt:lpstr>&lt;$0$Č1531$&gt;</vt:lpstr></FPVals></property><property name="Autor" pid="15" TypeID="0"><vt:lpstr>Pera</vt:lpstr></property></propertySection>';
+  var formula = Buffer.from('"Teta@Sketch5" = 90/"Number of teeth" + "Modul" = 5', 'utf16le').toString('latin1');
+  var fajl = Buffer.concat([Buffer.alloc(40, 9), blok('Contents/Config-0', formula), blok('docProps/custom.xml', custom), blok('swXmlContents/KeyWords', kote), Buffer.alloc(30, 1)]);
+  return S.analiziraj(new Uint8Array(fajl), { inflateRaw: inflateRaw }).then(function (r) {
+    jednako(r.parametri.z.vrednost, 40, 0, 'z (ne 90 iz formule):');
+    jednako(r.parametri.mn.vrednost, 2.5, 1e-9, 'modul = podeoni prečnik / broj zuba (ne 5 iz formule):');
+    jednako(r.parametri.alfaN.vrednost, 20, 0, 'α:');
+    jednako(r.parametri.b.vrednost, 25, 0, 'b:');
+    jednako(r.parametri.pom.vrednost, 0.5, 1e-9, 'pomeranje = x·m:');
+    tacno(r.svaSvojstva.some(function (s) { return s.ime === 'Material' && s.vrednost === 'Č1531'; }), 'izračunata vrednost svojstva');
+    tacno(r.svaSvojstva.some(function (s) { return s.ime === 'Autor' && s.vrednost === 'Pera'; }));
   });
 });
 

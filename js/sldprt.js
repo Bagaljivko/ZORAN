@@ -336,7 +336,8 @@
       if (rezultat[par.kljuc]) return;
       for (var i = 0; i < par.imena.length; i++) {
         var ime = par.imena[i];
-        if (ime.length < 5) continue; // kratka imena (z, b, mn…) daju lažna poklapanja
+        // samo imena koja upisuje ZORAN-ov makro; generička imena (Modul, Teeth…) u slobodnom tekstu daju lažne nalaze
+        if (ime.indexOf('ZORAN_') !== 0) continue;
         var re = new RegExp(ime.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[ _]?') + '[^0-9\\-+]{0,80}?([-+]?\\d+(?:[.,]\\d+)?)', 'i');
         var m = tekst.match(re);
         if (m) {
@@ -345,6 +346,79 @@
         }
       }
     });
+  }
+
+  function xmlDekodiraj(t) {
+    return String(t).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, function (m, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
+  }
+
+  /** Korisnička svojstva iz docProps/custom.xml ili Config-N-Properties.xml (noviji format): {ime: vrednost}. */
+  function svojstvaIzXml(xml) {
+    var out = {};
+    var re = /<property\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/property>/g, m;
+    while ((m = re.exec(xml))) {
+      var ime = xmlDekodiraj(m[1]), telo = m[2];
+      var izracunato = /<FPVals>[\s\S]*?&lt;\$\d+\$([\s\S]*?)\$&gt;/.exec(telo); // izračunata vrednost izraza
+      var sirovo = /<vt:(?:lpstr|lpwstr|r8|r4|i4|i2|bool)>([\s\S]*?)<\/vt:/.exec(telo);
+      var v = izracunato ? izracunato[1] : sirovo ? sirovo[1] : '';
+      if (ime && !(ime in out)) out[ime] = xmlDekodiraj(v).trim();
+    }
+    return out;
+  }
+
+  /** Imenovane kote iz swXmlContents/KeyWords (noviji format): {ime: vrednost-tekst}, prvo pojavljivanje. */
+  function koteIzXml(xml) {
+    var out = {};
+    var re = /<Dimension Name="([^"]+)">([^<]*)<\/Dimension>/g, m;
+    while ((m = re.exec(xml))) {
+      var ime = xmlDekodiraj(m[1]);
+      if (!(ime in out)) out[ime] = xmlDekodiraj(m[2]).replace(/<[^>]*>/g, '').trim();
+    }
+    return out;
+  }
+
+  var KOTE = {
+    z: ['Number of teeth', 'Broj zuba', 'Teeth', 'ZORAN_BrojZuba'],
+    alfaN: ['Profile angle', 'Pressure angle', 'Ugao profila', 'Ugao dodirnice'],
+    beta: ['Helix angle', 'Ugao nagiba'],
+    b: ['Face width', 'Face with', 'Sirina', 'Širina', 'Sirina ozubljenja', 'Širina ozubljenja'],
+    mn: ['Module', 'Modul', 'Normal module'],
+    x: ['Profile shift coefficient', 'Addend. mod. coef.', 'Koeficijent pomeranja'],
+    d: ['Pitch Diameter', 'Pitch diameter', 'Podeoni precnik', 'Podeoni prečnik']
+  };
+
+  /** Iz kota modela izvlači parametre koji nedostaju (modul iz podeonog prečnika ako nije zadat). */
+  function prepoznajKote(kote, rezultat) {
+    var norm = {};
+    Object.keys(kote).forEach(function (k) { norm[normalizuj(k)] = k; });
+    function nadji(lista) {
+      for (var i = 0; i < lista.length; i++) {
+        var orig = norm[normalizuj(lista[i])];
+        if (orig !== undefined) { var v = izvuciBroj(kote[orig]); if (isFinite(v)) return { ime: orig, v: v, sirovo: kote[orig] }; }
+      }
+      return null;
+    }
+    function upisi(kljuc, n, napomena) {
+      if (rezultat[kljuc] || !n) return;
+      rezultat[kljuc] = { vrednost: n.v, sirovo: n.sirovo, ime: n.ime, izvor: 'kota u modelu (skica)', pouzdano: true, napomena: napomena || 'kota iz modela — proveri' };
+    }
+    var z = nadji(KOTE.z), a = nadji(KOTE.alfaN), be = nadji(KOTE.beta), b = nadji(KOTE.b), m = nadji(KOTE.mn), x = nadji(KOTE.x), d = nadji(KOTE.d);
+    upisi('z', z); upisi('alfaN', a); upisi('beta', be); upisi('b', b); upisi('mn', m);
+    if (!rezultat.mn && d && z && z.v > 0) {
+      var beta = rezultat.beta && isFinite(rezultat.beta.vrednost) ? rezultat.beta.vrednost : 0;
+      var mn = d.v * Math.cos(beta * Math.PI / 180) / z.v;
+      rezultat.mn = { vrednost: Math.round(mn * 1e4) / 1e4, sirovo: d.sirovo + ' / ' + z.sirovo, ime: d.ime + ' / ' + z.ime,
+        izvor: 'izračunato iz kota modela (podeoni prečnik / broj zuba)', pouzdano: true, napomena: 'proveri' };
+    }
+    var mnV = rezultat.mn && isFinite(rezultat.mn.vrednost) ? rezultat.mn.vrednost : NaN;
+    if (!rezultat.pom && x && isFinite(mnV)) {
+      rezultat.pom = { vrednost: Math.round(x.v * mnV * 1e4) / 1e4, sirovo: x.sirovo + ' · mₙ', ime: x.ime, izvor: 'kota u modelu (koeficijent × modul)', pouzdano: true, napomena: 'kota iz modela — proveri' };
+    }
+  }
+
+  function utf8(b) {
+    if (typeof TextDecoder !== 'undefined') return new TextDecoder('utf-8').decode(b);
+    return latin1(b);
   }
 
   function latin1(b, max) {
@@ -463,16 +537,26 @@
     else beleske.push('Pronađeno komprimovanih blokova: ' + blokovi.length + '.');
 
     var raspakovano = 0;
+    var xmlSvojstva = {}, kote = {};
     var lanac = Promise.resolve();
     blokovi.forEach(function (bl) {
       lanac = lanac.then(function () {
-        return Promise.resolve(inflate(b.subarray(bl.start, bl.start + bl.csize))).then(function (out) {
+        // inflate može da baci grešku odmah (npr. zlib u Node-u) — i to mora da se uhvati, da jedan loš blok ne prekine čitanje
+        return new Promise(function (resolve) { resolve(inflate(b.subarray(bl.start, bl.start + bl.csize))); }).then(function (out) {
           if (!out || !out.length) return;
           raspakovano++;
           var izvor = 'blok' + (bl.ime ? ' „' + bl.ime + '“' : '');
           if (!slika) {
             var png = nadjiPNG(out);
             if (png) slika = { bajtovi: png, tip: 'image/png', izvor: 'PNG u komprimovanom ' + izvor };
+          }
+          if (/docProps\/(custom|Config-\d+-Properties)\.xml/i.test(bl.ime || '')) {
+            var sv = svojstvaIzXml(utf8(out));
+            Object.keys(sv).forEach(function (k) { if (!(k in xmlSvojstva)) xmlSvojstva[k] = sv[k]; });
+          }
+          if (/swXmlContents\/KeyWords/i.test(bl.ime || '')) {
+            var kk = koteIzXml(utf8(out));
+            Object.keys(kk).forEach(function (k) { if (!(k in kote)) kote[k] = kk[k]; });
           }
           if (PARAMETRI.some(function (q) { return !rezultat[q.kljuc]; })) {
             pretraziTekst(utf16Tekst(out, 4 * 1024 * 1024), 'tekst u komprimovanom ' + izvor, rezultat);
@@ -482,6 +566,19 @@
       });
     });
     return lanac.then(function () {
+      // prednost: korisnička svojstva (npr. iz ZORAN-ovog makroa), pa kote iz modela
+      var imenaSv = Object.keys(xmlSvojstva);
+      if (imenaSv.length) {
+        imenaSv.forEach(function (k) { if (xmlSvojstva[k] !== '') svaSvojstva.push({ ime: k, vrednost: xmlSvojstva[k] }); });
+        // svojstvo koje nađe pouzdan izvor zamenjuje nalaz iz slobodnog teksta
+        PARAMETRI.forEach(function (q) { if (rezultat[q.kljuc] && !rezultat[q.kljuc].pouzdano) delete rezultat[q.kljuc]; });
+        prepoznaj(xmlSvojstva, 'Custom Properties (XML)', rezultat);
+        beleske.push('Korisnička svojstva (XML): ' + imenaSv.length + '.');
+      }
+      if (Object.keys(kote).length) {
+        prepoznajKote(kote, rezultat);
+        beleske.push('Imenovane kote iz modela: ' + Object.keys(kote).length + '.');
+      }
       if (blokovi.length) beleske.push('Uspešno raspakovano: ' + raspakovano + '.');
       return { format: 'noviji format', parametri: rezultat, slika: slika, beleske: beleske, svaSvojstva: svaSvojstva };
     });
@@ -491,6 +588,8 @@
     PARAMETRI: PARAMETRI,
     citajCFB: citajCFB,
     citajSkupSvojstava: citajSkupSvojstava,
+    svojstvaIzXml: svojstvaIzXml,
+    koteIzXml: koteIzXml,
     nadjiPNG: nadjiPNG,
     dibUBmp: dibUBmp,
     normalizuj: normalizuj,

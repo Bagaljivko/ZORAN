@@ -478,7 +478,8 @@
 
   /** Dubina žleba za klin u glavčini t₂ [mm] za prečnik vratila d — približno po DIN 6885-1. */
   var DIN6885_T2 = [[6, 1.0], [8, 1.4], [10, 1.8], [12, 2.3], [17, 2.8], [22, 3.3], [30, 3.3], [38, 3.3], [44, 3.8], [50, 4.3],
-    [58, 4.4], [65, 4.9], [75, 5.4], [85, 5.4], [95, 6.4], [110, 7.4], [130, 8.4], [150, 9.4], [170, 10.4], [200, 11.4], [230, 12.4]];
+    [58, 4.4], [65, 4.9], [75, 5.4], [85, 5.4], [95, 6.4], [110, 7.4], [130, 8.4], [150, 9.4], [170, 10.4], [200, 11.4], [230, 12.4],
+    [260, 12.4], [290, 14.4], [330, 15.4], [380, 17.4], [440, 19.5]];
   function dubinaZlebaGlavcine(d) {
     var t = DIN6885_T2[0][1];
     for (var i = 0; i < DIN6885_T2.length; i++) if (d > DIN6885_T2[i][0]) t = DIN6885_T2[i][1];
@@ -509,9 +510,9 @@
       if (typeof v !== 'number' || !isFinite(v)) greske.push({ polje: k, poruka: naziv + ': unesi broj.' });
       else if (v < min || v > max) greske.push({ polje: k, poruka: naziv + ': mora biti između ' + formatBroja(min) + ' i ' + formatBroja(max) + '.' });
     }
-    proveri('dv1', u.dv1, 5, 300, 'Prečnik vratila malog zupčanika', true);
+    proveri('dv1', u.dv1, 5, 500, 'Prečnik vratila malog zupčanika', true);
     proveri('u', u.u, 1, 12, 'Prenosni odnos', true);
-    proveri('dv2', u.dv2, 5, 400, 'Prečnik vratila velikog zupčanika', false);
+    proveri('dv2', u.dv2, 5, 500, 'Prečnik vratila velikog zupčanika', false);
     proveri('a', u.a, 10, 5000, 'Željeno osno rastojanje', false);
     ['beta', 'alfaN'].forEach(function (k) { var g = proveriPolje(k, u[k]); if (g) greske.push({ polje: k, poruka: g }); });
     if (greske.length) return { ok: false, greske: greske, opcije: [] };

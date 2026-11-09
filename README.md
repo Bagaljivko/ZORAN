@@ -47,6 +47,8 @@ Fajl se čita **samo na tvom uređaju** — ništa se ne šalje na internet.
 
 Za svaki podatak vidiš izvor i potvrdno polje; ono što nije pronađeno je obeleženo sa „nije pronađeno, unesi ručno“. Ništa se ne menja dok ne pritisneš **Primeni u proračun**.
 
+Iz novijih fajlova (SolidWorks 2015 i dalje) Zoran čita i **kote iz modela** (broj zuba, ugao profila, širinu, podeoni prečnik → modul) i korisnička svojstva zapisana kao XML.
+
 Najsigurnije je da svojstva upiše makro [`tools/zoran-svojstva.bas`](tools/zoran-svojstva.bas) (uputstvo: [`tools/UPUTSTVO.md`](tools/UPUTSTVO.md)). Zoran traži svojstva `ZORAN_Modul`, `ZORAN_BrojZuba`, `ZORAN_UgaoNagiba`, `ZORAN_UgaoProfila`, `ZORAN_Sirina` i `ZORAN_PomeranjeProfila`, a prepoznaje i uobičajena imena (*Modul*, *Broj zuba*, *Module*, *Number of teeth*, *Helix angle*…).
 
 U `tests/primeri/primer-ole.sldprt` je mali veštački OLE fajl za probu uvoza.
