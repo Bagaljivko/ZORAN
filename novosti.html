@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-8-0"><span>Idealno osno rastojanje, decimale, pravi .SLDPRT fajlovi</span><span>1.8.0</span></a></li>
     <li><a href="#v1-7-0"><span>Korak 0: kreni od vratila, pošalji predlog</span><span>1.7.0</span></a></li>
     <li><a href="#v1-6-0"><span>Brže i lepše: iscrtavanje mastilom, listanje strana</span><span>1.6.0</span></a></li>
     <li><a href="#v1-5-0"><span>Kontrolne mere, sile, varijante, štampa</span><span>1.5.0</span></a></li>
@@ -60,6 +61,43 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.8.0 ================= -->
+  <h2 id="v1-8-0">Verzija 1.8.0 — po predlozima korisnika<span class="datum">9. novembar 2026.</span></h2>
+  <p>Sve izmene u ovoj verziji su došle iz povratnih informacija korisnika koji ZORAN koristi u radu.</p>
+
+  <h3>Osno rastojanje se samo izračuna</h3>
+  <p>„Da li može da mi se osno izračuna idealno kad unesem podatke iznad, sa mogućnošću da ga izmenim ako mi zatreba par milimetara?“ — Može. Kad uneseš broj zuba, modul i uglove, ZORAN sam upiše <b>idealno osno rastojanje</b> (zbir pomeranja Σ<i>x</i> ≈ 0,35, zaokruženo na 0,5 mm) i menja ga dok menjaš zupčanike. Ako upišeš svoje rastojanje, ono ostaje kako si ga zadao, a ispod piše koliko bi bilo idealno — dugme <b>Vrati idealno</b> vraća automatsko računanje.</p>
+  <figure class="usko">
+    <img src="./novosti/v180-osno.jpg" width="585" height="243" loading="lazy" alt="Polje Osno rastojanje sa napomenom o idealnoj vrednosti i dugmetom Vrati idealno">
+    <figcaption><span class="sl">Sl. 15.</span> Ručno zadato 247 mm; idealno bi bilo 245,5 mm.</figcaption>
+  </figure>
+  <p class="tehnicki">Ako si ranije već imao sačuvano osno rastojanje, ono se ne menja — automatsko računanje uključuješ dugmetom „Vrati idealno“.</p>
+
+  <h3>Pomeranje profila na tri decimale, decimale odmah pored</h3>
+  <p>Pomeranje profila se sada uvek prikazuje sa najmanje tri decimale (npr. 0,518 mm umesto 0,52 mm), jer je to mera za izradu. Broj decimala biraš i <b>odmah pored rezultata</b> (0,00 / 0,000 / 0,0000), bez odlaska u Podešavanja.</p>
+  <figure class="usko">
+    <img src="./novosti/v180-decimale.jpg" width="585" height="465" loading="lazy" alt="Izračunato pomeranje profila sa izborom broja decimala">
+    <figcaption><span class="sl">Sl. 16.</span> Izbor broja decimala pored izračunatog pomeranja.</figcaption>
+  </figure>
+
+  <h3>Korak 0: vratila do 500 mm</h3>
+  <p>Prečnik vratila (malog i velikog zupčanika) može biti do 500 mm (ranije 300 i 400 mm). Dubina žleba za klin je dopunjena za veće prečnike (približno po DIN 6885).</p>
+
+  <h3>Uvoz pravih SolidWorks fajlova</h3>
+  <p>Probali smo uvoz na pravom fajlu iz prakse (noviji SolidWorks format). Sada ZORAN iz takvog fajla čita:</p>
+  <ul>
+    <li><b>kote iz modela</b> — broj zuba, ugao profila, širinu, a <b>modul izračuna iz podeonog prečnika i broja zuba</b>;</li>
+    <li><b>korisnička svojstva</b> (Custom Properties) — u novijem formatu su zapisana kao XML;</li>
+    <li><b>sliku pregleda</b>.</li>
+  </ul>
+  <p>Ispravljena je i greška zbog koje je jedan neispravan deo fajla mogao da prekine čitanje, a uklonjena je pretraga slobodnog teksta za uobičajena imena — ona je u jednoj formuli iz modela „našla“ modul 5 i 90 zuba umesto stvarnih 2,5 i 40. Sada se slobodni tekst pretražuje samo za imena koja upisuje ZORAN-ov makro.</p>
+
+  <h3>Provereno sa drugim kalkulatorom</h3>
+  <p>Za par z = 40/40, m = 2,5, a = 101 mm ZORAN daje iste vrednosti kao poznati online kalkulator (nino.bplaced.net): pomeranje x = 0,2073, pogonski ugao 21° 30′ 16″, mera preko zuba W₅ = 34,9665 mm, mera preko kuglica 107,5794 mm. Temeni i podnožni prečnik se razlikuju za 0,05 mm jer drugi kalkulator uračunava tanjenje zuba za toleranciju (7f25), a ZORAN daje nazivne mere. Ovo poređenje je sada stalni test.</p>
+
+  <h3>Podeli ako ti se sviđa</h3>
+  <p>Posle nekog vremena korišćenja (bar pet otvaranja i dva dana), ZORAN jednom ponudi da ga podeliš sa kolegom. Možeš izabrati „Kasnije“ (pita ponovo tek za mesec dana) ili „Ne pitaj više“.</p>
 
   <!-- ================= 1.7.0 ================= -->
   <h2 id="v1-7-0">Verzija 1.7.0 — Korak 0: kreni od vratila<span class="datum">9. novembar 2026.</span></h2>
