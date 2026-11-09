@@ -53,6 +53,36 @@
   <section id="ekran-proracun" class="ekran" aria-label="Proračun">
     <div class="kol kol-ulaz">
       <h2><span class="par">§ 1.</span>Ulazni podaci</h2>
+      <details class="od-vratila" id="od-vratila">
+        <summary><span class="korak">Korak 0</span> Ne znaš modul? Kreni od vratila</summary>
+        <p class="sitno">Upiši prečnik vratila na koje ide mali zupčanik i prenosni odnos — Zoran predlaže modul i broj zuba tako da zupčanik stane na vratilo sa klinom. Izabranu opciju prenosiš u proračun dugmetom „Primeni“.</p>
+        <form id="forma-vratilo" autocomplete="off" novalidate onsubmit="return false">
+          <div class="polje">
+            <label for="v-dv1">Prečnik vratila malog zupčanika <i>d</i>v₁ <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="v-dv1" name="dv1" inputmode="decimal" enterkeyhint="next" aria-describedby="vp-dv1">
+            <div class="poruka" id="vp-dv1" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="v-u">Prenosni odnos <i>u</i> = <i>z</i>₂/<i>z</i>₁</label>
+            <input id="v-u" name="u" inputmode="decimal" enterkeyhint="next" aria-describedby="vp-u">
+            <div class="poruka" id="vp-u" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="v-dv2">Prečnik vratila velikog zupčanika <i>d</i>v₂ <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="v-dv2" name="dv2" inputmode="decimal" enterkeyhint="next" aria-describedby="vp-dv2">
+            <div class="pomoc pomoc-tekst">Neobavezno — ako ga upišeš, proverava se i veliki zupčanik.</div>
+            <div class="poruka" id="vp-dv2" role="alert"></div>
+          </div>
+          <div class="polje">
+            <label for="v-a">Željeno osno rastojanje <i>a</i> <span class="jed" data-jed-duzina>[mm]</span></label>
+            <input id="v-a" name="a" inputmode="decimal" enterkeyhint="next" aria-describedby="vp-a">
+            <div class="pomoc pomoc-tekst">Neobavezno — ako ga upišeš, nude se samo parovi za to rastojanje.</div>
+            <div class="poruka" id="vp-a" role="alert"></div>
+          </div>
+        </form>
+        <div id="vratilo-rezultat" aria-live="polite"></div>
+        <p class="sitno">Pravila: dubina žleba za klin u glavčini približno po DIN 6885; između dna žleba i podnožja zuba najmanje 2,5·<i>m</i>ₙ materijala; moduli po DIN 780 (prednost red 1); pomeranje profila bez upozorenja (Σ<i>x</i> ≈ 0,35 ako rastojanje nije zadato). Ugao nagiba i ugao profila uzimaju se iz Proračuna. Čvrstoća zuba se ovde još ne proverava.</p>
+      </details>
       <form id="forma-proracun" autocomplete="off" novalidate onsubmit="return false">
         <fieldset>
           <legend>Zupčanici</legend>
@@ -267,6 +297,13 @@
     <div class="dugmad">
       <button type="button" class="pecat" id="dugme-podeli" aria-haspopup="dialog">Podeli</button>
     </div>
+
+    <h3>Predlozi i greške</h3>
+    <p>Imaš ideju šta ZORAN-u nedostaje ili si našao grešku? Pošalji poruku — uz nju automatski idu verzija, uređaj i link do trenutnog proračuna.</p>
+    <div class="dugmad">
+      <button type="button" class="pecat" id="dugme-predlog">Pošalji predlog</button>
+    </div>
+    <p class="poruka-akcenat" id="poruka-predlog" aria-live="polite"></p>
 
     <h3>Prikaz brojeva</h3>
     <div class="izbor">
