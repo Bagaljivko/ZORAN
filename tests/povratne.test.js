@@ -68,6 +68,9 @@ test('anonimni ID se pravi jednom i ostaje isti', function () {
   var s2 = memorija();
   tacno(F.korisnikId(s2) !== a, 'drugi uređaj ima drugi ID');
 });
+test('adresa za slanje je Apps Script veb-aplikacija (…/exec, https)', function () {
+  tacno(/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(F.ADRESA), F.ADRESA);
+});
 test('red i ID se nikad ne prenose u rezervne kopije ni sinhronizaciju', function () {
   tacno(F.NE_SINHRONIZUJ.indexOf(F.KLJUC.red) >= 0 && F.NE_SINHRONIZUJ.indexOf(F.KLJUC.id) >= 0);
 });

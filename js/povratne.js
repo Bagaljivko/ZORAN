@@ -16,7 +16,7 @@
    * Adresa Apps Script veb-aplikacije (…/exec). Dok je prazna, „Pošalji“ nudi da se tekst
    * podeli ili kopira (kao ranije), pa se ništa ne gubi.
    */
-  var ADRESA = '';
+  var ADRESA = 'https://script.google.com/macros/s/AKfycbw1Tv1wHAQe62E2fuo3NIMkKtdYMR_km56fVQEyL5katDCRtQ47UEJP5_PRduIaa4Mv/exec';
 
   var JEZIK = 'sr';
   var MAX_TEKST = 5000;
