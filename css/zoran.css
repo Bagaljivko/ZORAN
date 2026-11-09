@@ -512,3 +512,44 @@ main.radni .ekran.aktivan { animation: none; }
   body::before { display: none; }
   .ekran.aktivan { animation: none; }
 }
+
+/* ---------- 1.9.0: Pošalji utisak, dijagnostika, retko pitanje ---------- */
+.prozor-utisak .prozor-sadrzaj { text-align: left; }
+.prozor-utisak h2 { text-align: center; }
+.izbor-vrste { display: flex; flex-wrap: wrap; margin: 0.3rem 0 0.6rem; }
+.izbor-vrste label { flex: 1 1 auto; }
+.izbor-vrste span { width: 100%; justify-content: center; text-align: center; }
+.natpis-polja { display: block; margin: 0.5rem 0 0.15rem; }
+.natpis-polja .jed, .slanje-dijag label .jed { color: var(--mastilo-blago); font-size: 0.9em; }
+.prozor-utisak textarea, .prozor-utisak input[type="email"], .slanje-dijag textarea {
+  display: block; width: 100%; font: inherit; font-size: 1rem; color: var(--mastilo);
+  background: rgba(255, 252, 242, 0.6); border: 1px solid var(--mastilo); border-radius: 0;
+  padding: 0.45rem 0.55rem; min-height: 44px; resize: vertical;
+}
+.prozor-utisak textarea:focus, .prozor-utisak input[type="email"]:focus, .slanje-dijag textarea:focus { outline: 2px solid var(--mastilo); outline-offset: 0; background: rgba(255, 252, 242, 0.9); }
+.prozor-utisak [aria-invalid="true"] { border-color: var(--akcenat); border-width: 2px; }
+.poruka-polja { color: var(--akcenat); font-size: 0.95rem; font-style: italic; margin: 0.15rem 0 0; }
+.poruka-polja:empty { display: none; }
+.potvrda-polje { display: flex; align-items: center; gap: 0.4rem; min-height: 44px; margin-top: 0.5rem; cursor: pointer; }
+.potvrda-polje input { width: 24px; height: 24px; margin: 0 0.2rem 0 0; accent-color: var(--mastilo); flex: none; }
+.prozor-utisak .sitno { margin: 0.25rem 0; }
+.prozor-utisak .sitno a { display: inline-block; padding: 0.35rem 0; }
+.prozor-utisak .dugmad-prozor { margin-top: 0.6rem; }
+.slanje-dijag { margin-top: 0.8rem; }
+.slanje-dijag label { display: block; margin-bottom: 0.15rem; }
+.tost {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 300;
+  bottom: calc(var(--dno-traka) + 12px + env(safe-area-inset-bottom, 0px));
+  max-width: min(calc(100vw - 32px), 460px); padding: 0.6rem 1rem;
+  background: var(--mastilo); color: var(--papir); border: 3px double var(--papir);
+  font-style: italic; text-align: center; box-shadow: 0 2px 10px rgba(43, 33, 23, 0.25);
+}
+.tost[hidden] { display: none; }
+@media (min-width: 1100px) { .tost { bottom: 24px; } }
+.pitanje-utisak { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.3rem 0 0.6rem; padding: 0.3rem 0.6rem; border: 1px dotted var(--mastilo-blago); background: var(--papir-svetlo); }
+.pitanje-utisak .pitanje-tekst { flex: 1 1 10rem; font-style: italic; }
+.pitanje-utisak .palac { width: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.pitanje-utisak .palac svg { width: 22px; height: 22px; fill: none; stroke: var(--mastilo); stroke-width: 1.5; stroke-linejoin: round; }
+.pitanje-utisak .palac:active svg { stroke: var(--papir); }
+.pitanje-utisak .palac-dole svg { transform: rotate(180deg); }
+@media print { .tost, .pitanje-utisak, .slanje-dijag { display: none !important; } }
