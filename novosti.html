@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-12-0"><span>Pomeranje samo na jednom zupčaniku (x = 0 na drugom)</span><span>1.12.0</span></a></li>
     <li><a href="#v1-11-0"><span>Google Drive za sve</span><span>1.11.0</span></a></li>
     <li><a href="#v1-10-0"><span>Čuvanje na Google Drive (u probi)</span><span>1.10.0</span></a></li>
     <li><a href="#v1-9-0"><span>Pošalji utisak direktno autoru, dijagnostika</span><span>1.9.0</span></a></li>
@@ -64,6 +65,27 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.12.0 ================= -->
+  <h2 id="v1-12-0">Verzija 1.12.0 — pomeranje samo na jednom zupčaniku<span class="datum">10. novembar 2026.</span></h2>
+  <p>Po želji korisnika: kad je jedan zupčanik već gotov („fiksni“, bez pomeranja profila), a osno rastojanje je zadato, ZORAN sada računa pomeranje samo za drugi zupčanik.</p>
+
+  <h3>Raspodela pomeranja</h3>
+  <p>U Proračunu, ispod osnog rastojanja, je novi izbor <b>Raspodela pomeranja</b>:</p>
+  <ul>
+    <li><b>DIN 3992</b> — kao do sada: zbir Σ<i>x</i> se deli na oba zupčanika (preporuka za nove parove);</li>
+    <li><b>zadajem <i>x</i>₁</b> ili <b>zadajem <i>x</i>₂</b> — upišeš koeficijent jednog zupčanika (<b>0 = bez pomeranja</b>), a drugi dobija ostatak Σ<i>x</i>, tako da se zadato osno rastojanje tačno ostvari.</li>
+  </ul>
+  <figure class="usko">
+    <img src="./novosti/v1120-raspodela.jpg" width="585" height="465" loading="lazy" alt="Izbor Raspodela pomeranja sa opcijama DIN 3992, zadajem x1 i zadajem x2, i polje Zadati koeficijent x1 sa vrednošću 0">
+    <figcaption><span class="sl">Sl. 22.</span> Mali zupčanik bez pomeranja (<i>x</i>₁ = 0).</figcaption>
+  </figure>
+  <p>Za par z = 40/40, m = 2,5, a = 101 mm: sa <i>x</i>₁ = 0 ceo zbir ide na veliki zupčanik — <i>x</i>₂ = 0,4146, pomeranje 1,036 mm — a provera daje tačno 101,000 mm. Upisana nula je prava nula, a ne „prazno polje“; ako polje ostane prazno, ZORAN to jasno kaže.</p>
+  <figure class="usko">
+    <img src="./novosti/v1120-rezultat.jpg" width="585" height="525" loading="lazy" alt="Izračunato pomeranje profila: x1 = 0, x2 = 0,4146, pomeranje 1,036 mm, sa napomenom da je x1 zadat">
+    <figcaption><span class="sl">Sl. 23.</span> Rezultat: <i>x</i>₁ = 0, <i>x</i>₂ = Σ<i>x</i>.</figcaption>
+  </figure>
+  <p class="tehnicki">Literatura i standardi preporučuju raspodelu po jednom od dva kriterijuma (izjednačena debljina u korenu ili izjednačeno specifično klizanje); sve pomeranje na jednom zupčaniku koristi se kad je drugi već izrađen. ZORAN i tada proverava podsecanje, zašiljen vrh, prodiranje i stepen sprezanja. Izbor se pamti, prenosi linkom i čuva u varijantama.</p>
 
   <!-- ================= 1.11.0 ================= -->
   <h2 id="v1-11-0">Verzija 1.11.0 — Google Drive za sve<span class="datum">9. novembar 2026.</span></h2>

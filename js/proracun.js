@@ -63,7 +63,8 @@
     b: { min: 0, minOtvoren: true, max: 10000, naziv: 'Širina ozubljenja b' },
     a: { min: 0, minOtvoren: true, max: 100000, naziv: 'Osno rastojanje a' },
     pom1: { naziv: 'Pomeranje profila (mali)' },
-    pom2: { naziv: 'Pomeranje profila (veliki)' }
+    pom2: { naziv: 'Pomeranje profila (veliki)' },
+    xz: { min: -1, max: 2, naziv: 'Zadati koeficijent pomeranja' }
   };
 
   function proveriPolje(kljuc, v) {
@@ -232,8 +233,27 @@
     return { x1: x1, x2: x2, xmin1: xmin1, xmin2: xmin2, pomereno: pomereno };
   }
 
+  /**
+   * Raspodela zbira pomeranja: po DIN 3992, ili je koeficijent jednog zupčanika zadat (npr. 0 = bez pomeranja),
+   * a drugi dobija ostatak Σx (tako da se zadato osno rastojanje tačno ostvari).
+   * rasp: {nacin: 'din' | 'x1' | 'x2', x: zadati koeficijent}
+   */
+  function raspodeliPomeranje(sumaX, z1, z2, betaDeg, alfaNDeg, rasp) {
+    if (rasp && (rasp.nacin === 'x1' || rasp.nacin === 'x2')) {
+      var xf = rasp.x;
+      var cb = Math.cos(betaDeg * DEG), s2 = Math.pow(Math.sin(alfaNDeg * DEG), 2);
+      var r = rasp.nacin === 'x1' ? { x1: xf, x2: sumaX - xf } : { x1: sumaX - xf, x2: xf };
+      r.xmin1 = 1 - z1 / (cb * cb * cb) * s2 / 2; r.xmin2 = 1 - z2 / (cb * cb * cb) * s2 / 2;
+      r.pomereno = false; r.nacin = rasp.nacin; r.zadato = xf;
+      return r;
+    }
+    var d = raspodelaDIN3992(sumaX, z1, z2, betaDeg, alfaNDeg);
+    d.nacin = 'din';
+    return d;
+  }
+
   /** Ocena jedne kombinacije za zadato osno rastojanje. */
-  function oceniKombinaciju(a, z1, z2, mn, betaDeg, alfaNDeg, b) {
+  function oceniKombinaciju(a, z1, z2, mn, betaDeg, alfaNDeg, b, rasp) {
     var beta = betaDeg * DEG, alfaN = alfaNDeg * DEG;
     var mt = mn / Math.cos(beta);
     var alfaT = Math.atan(Math.tan(alfaN) / Math.cos(beta));
@@ -244,7 +264,7 @@
     }
     var alfaWt = Math.acos(odnos);
     var sumaX = (inv(alfaWt) - inv(alfaT)) * (z1 + z2) / (2 * Math.tan(alfaN));
-    var r = raspodelaDIN3992(sumaX, z1, z2, betaDeg, alfaNDeg);
+    var r = raspodeliPomeranje(sumaX, z1, z2, betaDeg, alfaNDeg, rasp);
     var rez = proracunaj({ z1: z1, z2: z2, mn: mn, beta: betaDeg, alfaN: alfaNDeg, pom1: r.x1 * mn, pom2: r.x2 * mn, b: b || 10 * mn });
     var upozorenja = rez.ok ? rez.upozorenja.slice() : [{ kod: 'greska', poruka: rez.greske.map(function (g) { return g.poruka; }).join(' ') }];
     if (sumaX > 1.2) upozorenja.push({ kod: 'sumaX', poruka: 'Zbir koeficijenata pomeranja Σx = ' + formatBroja(sumaX.toFixed(3)) + ' je veći od 1,2.' });
@@ -256,7 +276,7 @@
     return {
       ostvarivo: true,
       a: a, a0: a0, razlika: a - a0, alfaWt: alfaWt, sumaX: sumaX,
-      x1: r.x1, x2: r.x2, pom1: r.x1 * mn, pom2: r.x2 * mn, pomereno: r.pomereno,
+      x1: r.x1, x2: r.x2, pom1: r.x1 * mn, pom2: r.x2 * mn, pomereno: r.pomereno, nacin: r.nacin,
       epsA: rez.ok ? rez.par.epsA : NaN,
       rez: rez, upozorenja: upozorenja, ocena: ocena,
       z1: z1, z2: z2, mn: mn
@@ -266,8 +286,8 @@
   /**
    * Proračun para iz ZADATOG osnog rastojanja: pomeranje profila se ne unosi, nego računa.
    * Σx iz a (inv αwt), raspodela po DIN 3992 (sa korekcijom na x_min), pa ceo proračun.
-   * @param {object} u {z1, z2, mn, beta, alfaN, b, a}
-   * @returns rezultat kao proracunaj(), uz polje `raspodela` {a, sumaX, x1, x2, pom1, pom2, pomereno, razlika}
+   * @param {object} u {z1, z2, mn, beta, alfaN, b, a, raspodela?: 'din'|'x1'|'x2', xz?: zadati koeficijent}
+   * @returns rezultat kao proracunaj(), uz polje `raspodela` {a, sumaX, x1, x2, pom1, pom2, pomereno, nacin, razlika}
    */
   function proracunajIzRastojanja(u) {
     var greske = [];
@@ -275,8 +295,14 @@
       var g = proveriPolje(k, u[k]);
       if (g) greske.push({ polje: k, poruka: g });
     });
+    var nacin = u.raspodela === 'x1' || u.raspodela === 'x2' ? u.raspodela : 'din';
+    if (nacin !== 'din') {
+      // 0 je ispravna vrednost (bez pomeranja), a prazno polje nije
+      var gx = typeof u.xz === 'number' && isFinite(u.xz) ? proveriPolje('xz', u.xz) : 'Zadati koeficijent pomeranja: upiši broj — za zupčanik bez pomeranja upiši 0.';
+      if (gx) greske.push({ polje: 'xz', poruka: gx });
+    }
     if (greske.length) return { ok: false, greske: greske, upozorenja: [] };
-    var k = oceniKombinaciju(u.a, u.z1, u.z2, u.mn, u.beta, u.alfaN, u.b);
+    var k = oceniKombinaciju(u.a, u.z1, u.z2, u.mn, u.beta, u.alfaN, u.b, { nacin: nacin, x: u.xz });
     if (!k.ostvarivo) {
       var alfaT = Math.atan(Math.tan(u.alfaN * DEG) / Math.cos(u.beta * DEG));
       var najmanje = k.a0 * Math.cos(alfaT);
@@ -288,14 +314,15 @@
     if (!rez.ok) {
       // pomeranja izračunata iz a daju nemoguć zub — greška pripada polju a
       return { ok: false, upozorenja: [], greske: rez.greske.map(function (g) {
-        return { polje: (g.polje === 'pom1' || g.polje === 'pom2') ? 'a' : g.polje, poruka: g.poruka };
+        var zadat = (nacin === 'x1' && g.polje === 'pom1') || (nacin === 'x2' && g.polje === 'pom2');
+        return { polje: zadat ? 'xz' : (g.polje === 'pom1' || g.polje === 'pom2') ? 'a' : g.polje, poruka: g.poruka };
       }) };
     }
     rez.upozorenja = k.upozorenja;
     rez.ulaz.a = u.a;
     rez.raspodela = {
       a: u.a, sumaX: k.sumaX, x1: k.x1, x2: k.x2, pom1: k.pom1, pom2: k.pom2,
-      pomereno: k.pomereno, razlika: rez.par.a - u.a
+      pomereno: k.pomereno, nacin: k.nacin, razlika: rez.par.a - u.a
     };
     return rez;
   }
@@ -583,10 +610,11 @@
     proracunajIzRastojanja: proracunajIzRastojanja,
     rastojanjeIzPomeranja: rastojanjeIzPomeranja,
     raspodelaDIN3992: raspodelaDIN3992,
+    raspodeliPomeranje: raspodeliPomeranje,
     oceniKombinaciju: oceniKombinaciju,
     savetnik: savetnik,
     DIN780_RED1: DIN780_RED1,
     DIN780_RED2: DIN780_RED2,
-    PODRAZUMEVANO: { z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, pom1: 3.380, pom2: 3.705, b: 88, a: 250 }
+    PODRAZUMEVANO: { z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, pom1: 3.380, pom2: 3.705, b: 88, a: 250, raspodela: 'din', xz: 0 }
   };
 });
