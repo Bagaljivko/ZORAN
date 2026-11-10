@@ -352,6 +352,34 @@ async function proveriDrive(b) {
   await a.ctx.close(); await r.ctx.close();
 }
 
+// Raspodela pomeranja: zadat koeficijent jednog zupčanika (0 = bez pomeranja)
+async function proveriRaspodelu(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['iPhone 13']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL + '?z1=40&z2=40&mn=2.5&beta=0&alfaN=20&b=40&a=101#proracun'); await cekaj(3400);
+  var pre = await pg.evaluate(function () { return { skriveno: document.querySelector('#polje-xz').hidden, din: document.querySelector('input[name="raspodela"]:checked').value }; });
+  await pg.click('label:has(input[name="raspodela"][value="x1"])'); await cekaj(400);
+  var x1 = await pg.evaluate(function () {
+    var redovi = Array.prototype.slice.call(document.querySelectorAll('#tablica-pomeranje .red')).map(function (r) { return r.querySelector('.naziv').textContent + '=' + r.querySelector('.vrednost').textContent; });
+    return { polje: !document.querySelector('#polje-xz').hidden, vrednost: document.querySelector('#u-xz').value, redovi: redovi, napomena: document.querySelector('#tablica-pomeranje .sitno') ? document.querySelector('#tablica-pomeranje .sitno').textContent : '', status: document.querySelector('#provera-status').textContent };
+  });
+  var ok1 = pre.skriveno && pre.din === 'din' && x1.polje && x1.vrednost === '0' &&
+    x1.redovi.some(function (r) { return /x₁ \(mali\)=0,0000/.test(r); }) && x1.redovi.some(function (r) { return /x₂ \(veliki\)=0,4146/.test(r); }) && /bez pomeranja/.test(x1.napomena);
+  stavka('Proračun', 'Raspodela „zadajem x₁“: polje sa 0, x₁ = 0, x₂ = Σx = 0,4146, napomena „bez pomeranja“', ok1, JSON.stringify(x1).slice(0, 300));
+  // prazno polje → poruka; posle ponovnog otvaranja izbor ostaje
+  await pg.fill('#u-xz', ''); await cekaj(300);
+  var poruka = await pg.textContent('#p-xz');
+  await pg.fill('#u-xz', '0'); await cekaj(600);
+  await pg.goto(URL + '#proracun'); await cekaj(3400);
+  var posle = await pg.evaluate(function () { return { nacin: document.querySelector('input[name="raspodela"]:checked').value, xz: document.querySelector('#u-xz').value, vidljivo: !document.querySelector('#polje-xz').hidden }; });
+  stavka('Proračun', 'Prazno polje daje poruku „upiši 0“; izbor raspodele ostaje sačuvan posle ponovnog otvaranja', /upiši 0/.test(poruka) && posle.nacin === 'x1' && posle.xz === '0' && posle.vidljivo, JSON.stringify({ poruka: poruka, posle: posle }));
+  stavka('Proračun', 'Raspodela: konzola čista', !konzola.length, konzola.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -413,6 +441,7 @@ function proveriStatiku() {
     await proveriUredjaj(b, 'Desktop (1440×900)', { viewport: { width: 1440, height: 900 } }, false);
     await proveriPWA(b);
     await proveriPovratne(b);
+    await proveriRaspodelu(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

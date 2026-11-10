@@ -146,6 +146,20 @@
             <div class="idealno-a" id="idealno-a" hidden><button type="button" class="dugme" id="dugme-idealno-a">Vrati idealno</button></div>
             <div class="poruka" id="p-a" role="alert"></div>
           </div>
+          <div class="izbor izbor-raspodele">
+            <span class="natpis-izbora" id="natpis-raspodele">Raspodela pomeranja</span>
+            <div class="prekidac" role="radiogroup" aria-labelledby="natpis-raspodele">
+              <label><input type="radio" name="raspodela" value="din" checked><span>DIN 3992</span></label>
+              <label><input type="radio" name="raspodela" value="x1"><span>zadajem&nbsp;<i>x</i>₁</span></label>
+              <label><input type="radio" name="raspodela" value="x2"><span>zadajem&nbsp;<i>x</i>₂</span></label>
+            </div>
+          </div>
+          <div class="polje" id="polje-xz" hidden>
+            <label for="u-xz">Zadati koeficijent <i>x</i><span id="xz-indeks">₁</span></label>
+            <input id="u-xz" name="xz" enterkeyhint="done" aria-describedby="h-xz p-xz">
+            <div class="pomoc pomoc-tekst" id="h-xz">0 = bez pomeranja. Drugi zupčanik dobija ostatak Σ<i>x</i>, pa se osno rastojanje tačno ostvaruje.</div>
+            <div class="poruka" id="p-xz" role="alert"></div>
+          </div>
         </fieldset>
       </form>
       <p class="sitno" data-napomena-inc hidden>Modul i uglovi su uvek u mm i stepenima; u inčima su širina, osno rastojanje, pomeranje i dužine u rezultatima.</p>

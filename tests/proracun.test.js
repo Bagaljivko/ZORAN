@@ -299,6 +299,47 @@ test('idealno osno rastojanje: Σx ≈ 0,35, zaokruženo na 0,5 mm', function ()
   tacno(r.upozorenja.length === 0, 'bez upozorenja');
 });
 
+console.log('Raspodela pomeranja: zadat koeficijent jednog zupčanika');
+
+var NINO = { z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 };
+test('bez izbora raspodele: po DIN 3992, kao do sada', function () {
+  var d = P.proracunajIzRastojanja(NINO), x = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'din', xz: 0 }));
+  jednako(d.raspodela.x1, 0.2073, 5e-5); jednako(d.raspodela.x2, 0.2073, 5e-5);
+  tacno(d.raspodela.nacin === 'din' && x.raspodela.x1 === d.raspodela.x1, 'isti rezultat');
+});
+test('x₁ = 0 (bez pomeranja): ceo Σx ide na z₂ i zadato a se tačno ostvaruje', function () {
+  var r = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x1', xz: 0 }));
+  tacno(r.ok, 'proračun ispravan');
+  jednako(r.raspodela.x1, 0, 1e-15); jednako(r.raspodela.pom1, 0, 1e-15);
+  jednako(r.raspodela.x2, 0.4146, 5e-5); jednako(r.raspodela.sumaX, r.raspodela.x2, 1e-12);
+  jednako(r.zupcanici[0].x, 0, 1e-15);
+  jednako(r.par.a, 101, 1e-9);
+  jednako(P.rastojanjeIzPomeranja(NINO, 0, r.raspodela.pom2), 101, 1e-9, 'provera iz pomeranja:');
+  tacno(r.raspodela.nacin === 'x1', 'način: ' + r.raspodela.nacin);
+});
+test('x₂ = 0: ceo Σx ide na z₁', function () {
+  var r = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x2', xz: 0 }));
+  jednako(r.raspodela.x2, 0, 1e-15); jednako(r.raspodela.x1, 0.4146, 5e-5); jednako(r.par.a, 101, 1e-9);
+});
+test('zadati koeficijent različit od 0 (x₁ = 0,1 → x₂ = Σx − 0,1)', function () {
+  var r = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x1', xz: 0.1 }));
+  jednako(r.raspodela.x1, 0.1, 1e-12); jednako(r.raspodela.x1 + r.raspodela.x2, r.raspodela.sumaX, 1e-12); jednako(r.par.a, 101, 1e-9);
+});
+test('upisana 0 je broj, a ne prazno polje (greška nino kalkulatora)', function () {
+  jednako(P.parsirajBroj('0'), 0, 0); jednako(P.parsirajBroj('0,0'), 0, 0);
+  tacno(P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x1', xz: P.parsirajBroj('0') })).ok, '0 prolazi');
+  var prazno = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x1', xz: P.parsirajBroj('') }));
+  tacno(!prazno.ok && prazno.greske[0].polje === 'xz' && /upiši 0/.test(prazno.greske[0].poruka), 'prazno polje: jasna poruka');
+});
+test('zadati koeficijent van opsega (−1 … 2) daje grešku na tom polju', function () {
+  var r = P.proracunajIzRastojanja(Object.assign({}, NINO, { raspodela: 'x2', xz: 3 }));
+  tacno(!r.ok && r.greske[0].polje === 'xz');
+});
+test('x₁ = 0 na malom zupčaniku sa malo zuba → upozorenje za podsecanje', function () {
+  var r = P.proracunajIzRastojanja({ z1: 12, z2: 40, mn: 3, beta: 0, alfaN: 20, b: 30, a: 79, raspodela: 'x1', xz: 0 });
+  tacno(r.ok && r.upozorenja.some(function (w) { return w.kod === 'podsecanje' && w.zupcanik === 0; }), JSON.stringify(r.upozorenja));
+});
+
 console.log('Korak 0: od vratila');
 
 test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {
