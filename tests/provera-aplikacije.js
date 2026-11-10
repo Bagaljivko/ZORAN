@@ -83,6 +83,29 @@ async function proveriUredjaj(b, ime, opcije, dodir) {
     await pg.touchscreen.tap(200, 400); await cekaj(80); await pg.touchscreen.tap(200, 400); await cekaj(400);
     var zum = await pg.evaluate(function () { return visualViewport.scale; });
     stavka('Uređaji', ime + ': dvostruki dodir ne zumira', zum === 1, 'scale = ' + zum);
+    // dva prsta i dugi dodir: ništa se ne zumira, tekst se ne označava i ne otvara se meni (osim u poljima)
+    var dva = await pg.evaluate(function () {
+      function dodir(id, x) { return new Touch({ identifier: id, target: document.body, clientX: x, clientY: 300 }); }
+      var t2 = [dodir(1, 100), dodir(2, 250)];
+      var start = new TouchEvent('touchstart', { touches: t2, targetTouches: t2, changedTouches: [t2[1]], cancelable: true, bubbles: true });
+      document.body.dispatchEvent(start);
+      var jedan = [dodir(3, 100)];
+      var start1 = new TouchEvent('touchstart', { touches: jedan, targetTouches: jedan, changedTouches: jedan, cancelable: true, bubbles: true });
+      document.body.dispatchEvent(start1);
+      var naslov = document.querySelector('.tekuce-zaglavlje .levo'), polje = document.querySelector('#u-z1');
+      var sel1 = new Event('selectstart', { bubbles: true, cancelable: true }); naslov.dispatchEvent(sel1);
+      var sel2 = new Event('selectstart', { bubbles: true, cancelable: true }); polje.dispatchEvent(sel2);
+      var meni = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); naslov.dispatchEvent(meni);
+      return {
+        dvaPrsta: start.defaultPrevented, jedanPrst: start1.defaultPrevented,
+        tekst: getComputedStyle(naslov).userSelect || getComputedStyle(naslov).webkitUserSelect, polje: getComputedStyle(polje).userSelect || getComputedStyle(polje).webkitUserSelect,
+        oznacavanje: sel1.defaultPrevented, oznacavanjePolja: sel2.defaultPrevented, meni: meni.defaultPrevented,
+        touchAction: getComputedStyle(document.documentElement).touchAction
+      };
+    });
+    stavka('Uređaji', ime + ': dva prsta ne rade ništa, dugi dodir ne označava tekst i ne otvara meni (polja za kucanje rade)',
+      dva.dvaPrsta && !dva.jedanPrst && dva.tekst === 'none' && dva.polje !== 'none' && dva.oznacavanje && !dva.oznacavanjePolja && dva.meni && !/pinch|manipulation|auto/.test(dva.touchAction),
+      JSON.stringify(dva));
     await pg.evaluate(function () { location.hash = 'proracun'; });
     await cekaj(200);
     var poslednje = await pg.evaluate(function () { var p = document.querySelectorAll('#forma-proracun input'); return '#' + p[p.length - 1].id; });
@@ -380,6 +403,39 @@ async function proveriRaspodelu(b) {
   await ctx.close();
 }
 
+// Kao prava aplikacija: Android „Nazad“ zatvara prozor i vraća na Proračun, bez povlačenja za osvežavanje
+async function proveriNazad(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['Pixel 7']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL); await cekaj(3400);
+  function ekran() { return pg.evaluate(function () { var a = document.querySelector('.ekran.aktivan'); return a ? a.id.replace('ekran-', '') : ''; }); }
+  await pg.click('.donja-traka [data-idi="tablica"]'); await cekaj(250);
+  await pg.click('.donja-traka [data-idi="savetnik"]'); await cekaj(250);
+  await pg.click('.donja-traka [data-idi="podesavanja"]'); await cekaj(250);
+  var e1 = await ekran();
+  await pg.click('#dugme-podeli'); await cekaj(300);
+  var otvoren = await pg.evaluate(function () { return document.querySelector('#prozor-podeli').open; });
+  await pg.goBack(); await cekaj(400);
+  var posleNazadProzor = await pg.evaluate(function () { return { otvoren: document.querySelector('#prozor-podeli').open, ekran: document.querySelector('.ekran.aktivan').id }; });
+  // prozor zatvoren dugmetom: ne ostaje „prazan“ korak u istoriji
+  await pg.click('#dugme-utisak'); await cekaj(300);
+  await pg.click('#utisak-odustani'); await cekaj(400);
+  var e2 = await ekran();
+  await pg.goBack(); await cekaj(400);
+  var e3 = await ekran();
+  var izlaz = await pg.evaluate(function () { return history.state && (history.state.zoranKorak || history.state.zoranProzor) ? 'ima još koraka' : 'početni korak'; });
+  var stil = await pg.evaluate(function () { return getComputedStyle(document.documentElement).overscrollBehaviorY; });
+  stavka('Uređaji', 'Android „Nazad“: prvo zatvara prozor, pa vraća na Proračun; sa Proračuna izlazi (bez praznih koraka)',
+    e1 === 'podesavanja' && otvoren && !posleNazadProzor.otvoren && posleNazadProzor.ekran === 'ekran-podesavanja' && e2 === 'podesavanja' && e3 === 'proracun' && izlaz === 'početni korak',
+    JSON.stringify({ e1: e1, otvoren: otvoren, posleNazadProzor: posleNazadProzor, e2: e2, e3: e3, izlaz: izlaz }));
+  stavka('Uređaji', 'Bez „povuci za osvežavanje“ i elastičnog odskakanja (overscroll-behavior: none)', stil === 'none', stil);
+  stavka('Uređaji', '„Nazad“: konzola čista', !konzola.length, konzola.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -442,6 +498,7 @@ function proveriStatiku() {
     await proveriPWA(b);
     await proveriPovratne(b);
     await proveriRaspodelu(b);
+    await proveriNazad(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

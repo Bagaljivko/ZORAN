@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.12.0';
+  var APP_VERSION = '1.12.1';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -169,7 +169,14 @@
     });
     document.title = 'Zoran — ' + (radni ? 'Proračun' : EKRANI[ime].naziv);
     if (!bezIstorije && location.hash !== '#' + ime) {
-      try { history.replaceState(null, '', '#' + ime); } catch (e) { location.hash = ime; }
+      // kao kartice u aplikaciji: sa Proračuna na drugi ekran ide novi korak u istoriji, pa „Nazad“ vraća na Proračun;
+      // između ostalih ekrana korak se zamenjuje, a sa Proračuna „Nazad“ izlazi iz aplikacije
+      var naProracunu = !location.hash || location.hash === '#proracun';
+      try {
+        if (ime === 'proracun' && history.state && history.state.zoranKorak) history.back();
+        else if (naProracunu && ime !== 'proracun') history.pushState({ zoranKorak: true }, '', '#' + ime);
+        else history.replaceState(history.state, '', '#' + ime);
+      } catch (e) { location.hash = ime; }
     }
     if (ime === 'podesavanja') osveziDijagnostiku();
     osveziVidljivo();
@@ -179,7 +186,33 @@
     var b = e.target.closest('[data-idi]');
     if (b) prikaziEkran(b.getAttribute('data-idi'));
   });
-  window.addEventListener('hashchange', function () { prikaziEkran(location.hash.slice(1), true); });
+  function premaAdresi() {
+    var ime = location.hash.slice(1) || 'proracun';
+    if (EKRANI[ime] && ime !== trenutni) prikaziEkran(ime, true);
+  }
+  window.addEventListener('hashchange', premaAdresi);
+  window.addEventListener('popstate', function () {
+    // Android „Nazad“: prvo zatvara otvoren prozor, pa tek onda menja ekran
+    var otvoren = document.querySelector('dialog.prozor[open]');
+    if (otvoren && otvoren._uIstoriji) {
+      otvoren._uIstoriji = false;
+      if (typeof otvoren.close === 'function') otvoren.close(); else otvoren.removeAttribute('open');
+      return;
+    }
+    premaAdresi();
+  });
+  // svaki prozor (Podeli, Pošalji utisak, kopija sa Drive-a) dobija korak u istoriji, da ga „Nazad“ zatvori
+  $$('dialog.prozor').forEach(function (d) {
+    if (!window.MutationObserver) return;
+    new MutationObserver(function () {
+      if (d.hasAttribute('open')) {
+        if (!d._uIstoriji) { try { history.pushState(Object.assign({}, history.state, { zoranProzor: d.id }), '', location.href); d._uIstoriji = true; } catch (e) { /* bez istorije */ } }
+      } else if (d._uIstoriji) {
+        d._uIstoriji = false;
+        if (history.state && history.state.zoranProzor === d.id) history.back();
+      }
+    }).observe(d, { attributes: true, attributeFilter: ['open'] });
+  });
   (sirokUpit.addEventListener ? sirokUpit.addEventListener.bind(sirokUpit, 'change') : sirokUpit.addListener.bind(sirokUpit))(function () { prikaziEkran(trenutni, true); });
 
   // ------------------------------------------------------------------
@@ -1185,9 +1218,30 @@
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
     document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
   });
-  document.addEventListener('touchmove', function (e) {
+  // dva ili više prstiju: gest se zaustavlja već kad drugi prst dotakne ekran (posle toga pregledač ga više ne pušta da se otkaže)
+  document.addEventListener('touchstart', function (e) {
     if (e.touches && e.touches.length > 1) e.preventDefault();
   }, { passive: false });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length > 1 && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  // dugi dodir na telefonu: bez menija (Copy / Web search / Share), osim u poljima za kucanje
+  document.addEventListener('contextmenu', function (e) {
+    var dodir = (e.pointerType === 'touch') || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && !e.pointerType);
+    if (dodir && !jePoljeZaKucanje(e.target)) e.preventDefault();
+  });
+  document.addEventListener('selectstart', function (e) {
+    if (!jePoljeZaKucanje(e.target) && !(e.target.closest && e.target.closest('.link-deljenja'))) e.preventDefault();
+  });
+  // ako je pregledač ipak zumirao (npr. „uvek dozvoli zumiranje“ u podešavanjima pristupačnosti), vrati na 100 %
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      if (window.visualViewport.scale > 1.01) {
+        var meta = document.querySelector('meta[name="viewport"]');
+        if (meta) { var c = meta.getAttribute('content'); meta.setAttribute('content', c + ', minimum-scale=1'); setTimeout(function () { meta.setAttribute('content', c); }, 50); }
+      }
+    });
+  }
   var poslednjiDodir = 0;
   document.addEventListener('touchend', function (e) {
     var sada = Date.now();
@@ -1793,6 +1847,38 @@
     // podsetnik pri otvaranju: povezano, a pristup je istekao
     if (D.stanje(localStorage).povezano && !token() && !prikazanoObavestenje) $('#drive-baner').hidden = false;
     else if (token()) zakaziSlanje(true);
+  })();
+
+  // ------------------------------------------------------------------
+  // Instaliraj kao aplikaciju (preko celog ekrana, bez trake pregledača)
+  // ------------------------------------------------------------------
+  (function instalacija() {
+    var sekcija = $('#instalacija'), dugme = $('#dugme-instaliraj'), tekst = $('#instalacija-tekst');
+    var samostalno = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    if (samostalno) return; // već je instalirana
+    var ua = navigator.userAgent;
+    var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var ponuda = null;
+    if (ios) {
+      sekcija.hidden = false;
+      tekst.innerHTML = 'ZORAN se tada otvara preko celog ekrana, bez trake pregledača, sa svojom ikonicom — i radi bez interneta. U Safariju dodirni <b>Deli</b> (kvadrat sa strelicom) › <b>Dodaj na početni ekran</b> › <b>Dodaj</b>.';
+    }
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); // dugme u Podešavanjima umesto nasumičnog sistemskog baloncića
+      ponuda = e;
+      sekcija.hidden = false;
+      dugme.hidden = false;
+    });
+    dugme.addEventListener('click', function () {
+      if (!ponuda) return;
+      var p = ponuda; ponuda = null;
+      p.prompt();
+      Promise.resolve(p.userChoice).then(function (izbor) {
+        if (izbor && izbor.outcome === 'accepted') { sekcija.hidden = true; tost('ZORAN je instaliran — otvaraj ga sa početnog ekrana.'); }
+        else dugme.hidden = true;
+      });
+    });
+    window.addEventListener('appinstalled', function () { sekcija.hidden = true; });
   })();
 
   proveriMolbu();
