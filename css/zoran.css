@@ -140,7 +140,7 @@ main { max-width: 1600px; margin: 0 auto; padding: 0.5rem 16px 1rem; }
 }
 .pecat { border: 3px double var(--mastilo); }
 .dugme { border: 1px solid var(--mastilo); }
-.pecat:hover, .dugme:hover { background: rgba(43, 33, 23, 0.06); }
+@media (hover: hover) { .pecat:hover, .dugme:hover { background: rgba(43, 33, 23, 0.06); } }
 .pecat:active, .dugme:active { background: var(--mastilo); color: var(--papir); }
 .pecat[disabled], .dugme[disabled] { opacity: 0.55; cursor: default; }
 .dugmad { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.8rem 0; }
@@ -285,7 +285,7 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
     font: inherit; min-height: 44px; min-width: 44px; padding: 0 0.8rem; cursor: pointer; letter-spacing: 0.03em;
   }
   .gornja-traka button[aria-current="page"] { font-style: italic; border-bottom-color: var(--mastilo); }
-  .gornja-traka button:hover { background: rgba(43, 33, 23, 0.06); }
+  @media (hover: hover) { .gornja-traka button:hover { background: rgba(43, 33, 23, 0.06); } }
   .samo-telefon { display: none !important; }
   .samo-sirok { display: initial; }
 
@@ -314,12 +314,14 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
 
 
 /* ---------- Ponašanje kao aplikacija ---------- */
-html { touch-action: pan-x pan-y; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
+html { touch-action: pan-x pan-y; overscroll-behavior: none; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
 body { touch-action: pan-x pan-y; overscroll-behavior-y: none; }
 /* Aplikacija: dugi dodir ne označava tekst i ne otvara meni (Copy / Web search); kucanje u poljima radi normalno */
 body.aplikacija { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body.aplikacija input, body.aplikacija textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 body.aplikacija .link-deljenja { -webkit-user-select: all; user-select: all; }
+body.aplikacija img, body.aplikacija svg { -webkit-user-drag: none; user-drag: none; }
+.instalacija[hidden] { display: none; }
 /* dok se kuca, donja traka se sklanja da ne prekrije polje iznad tastature */
 @media (max-width: 1099px) and (pointer: coarse) {
   html.kucanje .donja-traka { display: none; }

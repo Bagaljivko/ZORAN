@@ -403,6 +403,39 @@ async function proveriRaspodelu(b) {
   await ctx.close();
 }
 
+// Kao prava aplikacija: Android „Nazad“ zatvara prozor i vraća na Proračun, bez povlačenja za osvežavanje
+async function proveriNazad(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['Pixel 7']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL); await cekaj(3400);
+  function ekran() { return pg.evaluate(function () { var a = document.querySelector('.ekran.aktivan'); return a ? a.id.replace('ekran-', '') : ''; }); }
+  await pg.click('.donja-traka [data-idi="tablica"]'); await cekaj(250);
+  await pg.click('.donja-traka [data-idi="savetnik"]'); await cekaj(250);
+  await pg.click('.donja-traka [data-idi="podesavanja"]'); await cekaj(250);
+  var e1 = await ekran();
+  await pg.click('#dugme-podeli'); await cekaj(300);
+  var otvoren = await pg.evaluate(function () { return document.querySelector('#prozor-podeli').open; });
+  await pg.goBack(); await cekaj(400);
+  var posleNazadProzor = await pg.evaluate(function () { return { otvoren: document.querySelector('#prozor-podeli').open, ekran: document.querySelector('.ekran.aktivan').id }; });
+  // prozor zatvoren dugmetom: ne ostaje „prazan“ korak u istoriji
+  await pg.click('#dugme-utisak'); await cekaj(300);
+  await pg.click('#utisak-odustani'); await cekaj(400);
+  var e2 = await ekran();
+  await pg.goBack(); await cekaj(400);
+  var e3 = await ekran();
+  var izlaz = await pg.evaluate(function () { return history.state && (history.state.zoranKorak || history.state.zoranProzor) ? 'ima još koraka' : 'početni korak'; });
+  var stil = await pg.evaluate(function () { return getComputedStyle(document.documentElement).overscrollBehaviorY; });
+  stavka('Uređaji', 'Android „Nazad“: prvo zatvara prozor, pa vraća na Proračun; sa Proračuna izlazi (bez praznih koraka)',
+    e1 === 'podesavanja' && otvoren && !posleNazadProzor.otvoren && posleNazadProzor.ekran === 'ekran-podesavanja' && e2 === 'podesavanja' && e3 === 'proracun' && izlaz === 'početni korak',
+    JSON.stringify({ e1: e1, otvoren: otvoren, posleNazadProzor: posleNazadProzor, e2: e2, e3: e3, izlaz: izlaz }));
+  stavka('Uređaji', 'Bez „povuci za osvežavanje“ i elastičnog odskakanja (overscroll-behavior: none)', stil === 'none', stil);
+  stavka('Uređaji', '„Nazad“: konzola čista', !konzola.length, konzola.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -465,6 +498,7 @@ function proveriStatiku() {
     await proveriPWA(b);
     await proveriPovratne(b);
     await proveriRaspodelu(b);
+    await proveriNazad(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

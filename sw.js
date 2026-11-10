@@ -33,6 +33,7 @@ const FAJLOVI = [
   './novosti/v1120-raspodela.jpg',
   './novosti/v1120-rezultat.jpg',
   './novosti/v1121-dodir.jpg',
+  './novosti/v1121-instalacija.jpg',
   './manifest.json',
   './css/zoran.css',
   './js/proracun.js',
