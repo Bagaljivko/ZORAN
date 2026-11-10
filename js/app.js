@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.12.0';
+  var APP_VERSION = '1.12.1';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -1185,9 +1185,30 @@
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
     document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
   });
-  document.addEventListener('touchmove', function (e) {
+  // dva ili više prstiju: gest se zaustavlja već kad drugi prst dotakne ekran (posle toga pregledač ga više ne pušta da se otkaže)
+  document.addEventListener('touchstart', function (e) {
     if (e.touches && e.touches.length > 1) e.preventDefault();
   }, { passive: false });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length > 1 && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  // dugi dodir na telefonu: bez menija (Copy / Web search / Share), osim u poljima za kucanje
+  document.addEventListener('contextmenu', function (e) {
+    var dodir = (e.pointerType === 'touch') || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && !e.pointerType);
+    if (dodir && !jePoljeZaKucanje(e.target)) e.preventDefault();
+  });
+  document.addEventListener('selectstart', function (e) {
+    if (!jePoljeZaKucanje(e.target) && !(e.target.closest && e.target.closest('.link-deljenja'))) e.preventDefault();
+  });
+  // ako je pregledač ipak zumirao (npr. „uvek dozvoli zumiranje“ u podešavanjima pristupačnosti), vrati na 100 %
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      if (window.visualViewport.scale > 1.01) {
+        var meta = document.querySelector('meta[name="viewport"]');
+        if (meta) { var c = meta.getAttribute('content'); meta.setAttribute('content', c + ', minimum-scale=1'); setTimeout(function () { meta.setAttribute('content', c); }, 50); }
+      }
+    });
+  }
   var poslednjiDodir = 0;
   document.addEventListener('touchend', function (e) {
     var sada = Date.now();

@@ -83,6 +83,29 @@ async function proveriUredjaj(b, ime, opcije, dodir) {
     await pg.touchscreen.tap(200, 400); await cekaj(80); await pg.touchscreen.tap(200, 400); await cekaj(400);
     var zum = await pg.evaluate(function () { return visualViewport.scale; });
     stavka('Uređaji', ime + ': dvostruki dodir ne zumira', zum === 1, 'scale = ' + zum);
+    // dva prsta i dugi dodir: ništa se ne zumira, tekst se ne označava i ne otvara se meni (osim u poljima)
+    var dva = await pg.evaluate(function () {
+      function dodir(id, x) { return new Touch({ identifier: id, target: document.body, clientX: x, clientY: 300 }); }
+      var t2 = [dodir(1, 100), dodir(2, 250)];
+      var start = new TouchEvent('touchstart', { touches: t2, targetTouches: t2, changedTouches: [t2[1]], cancelable: true, bubbles: true });
+      document.body.dispatchEvent(start);
+      var jedan = [dodir(3, 100)];
+      var start1 = new TouchEvent('touchstart', { touches: jedan, targetTouches: jedan, changedTouches: jedan, cancelable: true, bubbles: true });
+      document.body.dispatchEvent(start1);
+      var naslov = document.querySelector('.tekuce-zaglavlje .levo'), polje = document.querySelector('#u-z1');
+      var sel1 = new Event('selectstart', { bubbles: true, cancelable: true }); naslov.dispatchEvent(sel1);
+      var sel2 = new Event('selectstart', { bubbles: true, cancelable: true }); polje.dispatchEvent(sel2);
+      var meni = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); naslov.dispatchEvent(meni);
+      return {
+        dvaPrsta: start.defaultPrevented, jedanPrst: start1.defaultPrevented,
+        tekst: getComputedStyle(naslov).userSelect || getComputedStyle(naslov).webkitUserSelect, polje: getComputedStyle(polje).userSelect || getComputedStyle(polje).webkitUserSelect,
+        oznacavanje: sel1.defaultPrevented, oznacavanjePolja: sel2.defaultPrevented, meni: meni.defaultPrevented,
+        touchAction: getComputedStyle(document.documentElement).touchAction
+      };
+    });
+    stavka('Uređaji', ime + ': dva prsta ne rade ništa, dugi dodir ne označava tekst i ne otvara meni (polja za kucanje rade)',
+      dva.dvaPrsta && !dva.jedanPrst && dva.tekst === 'none' && dva.polje !== 'none' && dva.oznacavanje && !dva.oznacavanjePolja && dva.meni && !/pinch|manipulation|auto/.test(dva.touchAction),
+      JSON.stringify(dva));
     await pg.evaluate(function () { location.hash = 'proracun'; });
     await cekaj(200);
     var poslednje = await pg.evaluate(function () { var p = document.querySelectorAll('#forma-proracun input'); return '#' + p[p.length - 1].id; });

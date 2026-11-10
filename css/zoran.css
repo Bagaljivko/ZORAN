@@ -314,8 +314,12 @@ figcaption .sl { font-variant: small-caps; letter-spacing: 0.04em; }
 
 
 /* ---------- Ponašanje kao aplikacija ---------- */
-html { touch-action: manipulation; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
+html { touch-action: pan-x pan-y; scroll-padding-top: 72px; scroll-padding-bottom: calc(var(--dno-traka) + 24px); }
 body { touch-action: pan-x pan-y; overscroll-behavior-y: none; }
+/* Aplikacija: dugi dodir ne označava tekst i ne otvara meni (Copy / Web search); kucanje u poljima radi normalno */
+body.aplikacija { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body.aplikacija input, body.aplikacija textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+body.aplikacija .link-deljenja { -webkit-user-select: all; user-select: all; }
 /* dok se kuca, donja traka se sklanja da ne prekrije polje iznad tastature */
 @media (max-width: 1099px) and (pointer: coarse) {
   html.kucanje .donja-traka { display: none; }
