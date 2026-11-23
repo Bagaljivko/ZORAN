@@ -40,6 +40,15 @@
   <span class="desno" id="naziv-ekrana">Proračun</span>
 </header>
 
+<!-- Poruka autora korisnicima (jednokratna) -->
+<div class="obavestenje-verzija poruka-autora" id="poruka-autora" role="region" aria-label="Poruka autora" hidden>
+  <p id="poruka-autora-tekst"></p>
+  <div class="molba-dugmad">
+    <button type="button" class="pecat" id="poruka-autora-vise">Kako?</button>
+    <button type="button" class="dugme" id="poruka-autora-zatvori">Zatvori</button>
+  </div>
+</div>
+
 <!-- Molba za deljenje (posle nekog vremena korišćenja) -->
 <div class="obavestenje-verzija molba-podeli" id="molba-podeli" hidden>
   <p>Sviđa ti se ZORAN? Podeli ga sa kolegom kome bi koristio.</p>
@@ -640,6 +649,18 @@
     <div class="dugmad dugmad-prozor">
       <button type="button" class="pecat" id="drive-kopija-ucitaj">Učitaj kopiju</button>
       <button type="button" class="dugme" id="drive-kopija-zadrzi">Zadrži podatke sa ovog uređaja</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Prozor: poruka autora, sa koracima -->
+<dialog id="prozor-poruka" class="prozor prozor-poruka" aria-labelledby="naslov-poruka">
+  <div class="prozor-sadrzaj">
+    <h2 id="naslov-poruka"></h2>
+    <div id="poruka-sadrzaj"></div>
+    <div class="dugmad dugmad-prozor">
+      <button type="button" class="pecat" id="poruka-odgovori">Pošalji utisak</button>
+      <button type="button" class="dugme" id="poruka-zatvori">Zatvori</button>
     </div>
   </div>
 </dialog>

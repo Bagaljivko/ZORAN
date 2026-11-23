@@ -523,6 +523,28 @@ async function proveriCvrstocu(b) {
   await ctx.close();
 }
 
+// Poruka autora: prikaže se, „Kako?“ otvara korake, „Pošalji utisak“ ima pripremljen tekst, posle zatvaranja se ne vraća
+async function proveriPoruku(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['iPhone 13']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL); await cekaj(3400);
+  var vidljiv = await pg.evaluate(function () { var b = document.querySelector('#poruka-autora'); return !b.hidden && /SolidWorks/.test(b.textContent); });
+  await pg.click('#poruka-autora-vise'); await cekaj(300);
+  var prozor = await pg.evaluate(function () { var d = document.querySelector('#prozor-poruka'); return { otvoren: d.open && d.matches(':modal'), koraci: d.querySelectorAll('ol li').length, baner: !document.querySelector('#poruka-autora').hidden }; });
+  await pg.click('#poruka-odgovori'); await cekaj(400);
+  var utisak = await pg.evaluate(function () { return { otvoren: document.querySelector('#prozor-utisak').open, tekst: document.querySelector('#utisak-tekst').value, vrsta: document.querySelector('input[name="vrsta-utiska"]:checked').value }; });
+  await pg.click('#utisak-odustani'); await cekaj(300);
+  await pg.reload(); await cekaj(3400);
+  var posle = await pg.evaluate(function () { return document.querySelector('#poruka-autora').hidden; });
+  stavka('Uređaji', 'Poruka autora: vidi se jednom, „Kako?“ otvara korake, „Pošalji utisak“ sa pripremljenim tekstom, posle se ne vraća',
+    vidljiv && prozor.otvoren && prozor.koraci === 5 && !prozor.baner && utisak.otvoren && /Makro za SolidWorks/.test(utisak.tekst) && utisak.vrsta === 'idea' && posle && !konzola.length,
+    JSON.stringify({ vidljiv: vidljiv, prozor: prozor, utisak: { otvoren: utisak.otvoren, vrsta: utisak.vrsta }, posle: posle, konzola: konzola.slice(0, 2) }));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -588,6 +610,7 @@ function proveriStatiku() {
     await proveriNazad(b);
     await proveriCrtez(b);
     await proveriCvrstocu(b);
+    await proveriPoruku(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);
