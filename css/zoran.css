@@ -577,3 +577,10 @@ main.radni .ekran.aktivan { animation: none; }
 .polje-tekst input { text-align: left; font-family: var(--serif); font-size: 1rem; }
 .crtez-sekcija .izbor[hidden] { display: none; }
 @media print { #forma-crtez, .crtez-sekcija > .sitno { display: none !important; } .crtez-sekcija h4 { break-after: avoid; } }
+
+/* ---------- 1.14.0: Čvrstoća zuba ---------- */
+.polje select { font: inherit; font-size: 1rem; color: var(--mastilo); background: rgba(255, 252, 242, 0.45); border: 0; border-bottom: 1px solid var(--mastilo); border-radius: 0; min-height: 44px; padding: 0.3rem 0.4rem; width: 100%; }
+.polje[hidden] { display: none; }
+#cvrstoca-status:empty { display: none; }
+#cvrstoca-status.u-redu { border-left-color: var(--mastilo); color: var(--mastilo); font-style: italic; }
+@media print { #forma-cvrstoca, .cvrstoca-sekcija > .sitno { display: none !important; } }

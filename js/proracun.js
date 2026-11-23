@@ -556,6 +556,104 @@
   }
 
   // ------------------------------------------------------------------
+  // Čvrstoća zuba — pojednostavljeno po ISO 6336 (DIN 3990), čelik/čelik
+  // ------------------------------------------------------------------
+
+  /** Orijentacione trajne dinamičke čvrstoće [MPa] (ISO 6336-5, srednji kvalitet materijala). */
+  var MATERIJALI = [
+    { kljuc: 'c45n', naziv: 'C45, normalizovan', sHlim: 470, sFlim: 200 },
+    { kljuc: 'c45v', naziv: 'C45, poboljšan', sHlim: 590, sFlim: 230 },
+    { kljuc: '42crmo4v', naziv: '42CrMo4, poboljšan', sHlim: 720, sFlim: 300 },
+    { kljuc: '42crmo4i', naziv: '42CrMo4, indukciono kaljen', sHlim: 1150, sFlim: 350 },
+    { kljuc: '16mncr5', naziv: '16MnCr5, cementiran i kaljen', sHlim: 1450, sFlim: 430 },
+    { kljuc: '18crnimo', naziv: '18CrNiMo7-6, cementiran i kaljen', sHlim: 1500, sFlim: 500 }
+  ];
+  // K1 za faktor dinamičkog opterećenja Kv (ISO 6336-1, metoda B, pojednostavljeno), po kvalitetu 5–12
+  var KV_K1 = {
+    pravi: { 5: 7.5, 6: 14.9, 7: 26.8, 8: 39.1, 9: 52.8, 10: 76.6, 11: 102.6, 12: 146.3 },
+    kosi: { 5: 6.7, 6: 13.3, 7: 23.9, 8: 34.8, 9: 47.0, 10: 68.2, 11: 91.4, 12: 130.3 }
+  };
+  var ZE_CELIK = 189.8;      // √MPa, čelik/čelik
+  var SH_MIN = 1.0, SF_MIN = 1.4;
+
+  /**
+   * Faktor oblika Y_Fa i faktor koncentracije napona Y_Sa (opterećenje na vrhu zuba, kao u DIN 3990),
+   * iz geometrije kritičnog preseka po ISO 6336-3 (tangenta pod 30°). Osnovni profil alata: h_fP = 1,25·mₙ, ρ_fP = 0,38·mₙ.
+   * zn: ekvivalentni broj zuba, x: koeficijent pomeranja, haUkupno: (dₐ − d)/(2·mₙ).
+   */
+  function faktoriKorena(zn, x, alfaN, haUkupno) {
+    var hfP = 1.25, rhofP = 0.38;
+    var E = PI / 4 - hfP * Math.tan(alfaN) - (1 - Math.sin(alfaN)) * rhofP / Math.cos(alfaN);
+    var G = rhofP - hfP + x;
+    var H = 2 / zn * (PI / 2 - E) - PI / 3;
+    var th = PI / 6;
+    for (var j = 0; j < 60; j++) th = 2 * G / zn * Math.tan(th) - H;
+    var sFn = zn * Math.sin(PI / 3 - th) + Math.sqrt(3) * (G / Math.cos(th) - rhofP);
+    var rhoF = rhofP + 2 * G * G / (Math.cos(th) * (zn * Math.cos(th) * Math.cos(th) - 2 * G));
+    var dbn = zn * Math.cos(alfaN), den = zn + 2 * haUkupno;
+    var aen = Math.acos(dbn / den);
+    var ge = (PI / 2 + 2 * x * Math.tan(alfaN)) / zn + inv(alfaN) - inv(aen);
+    var aFen = aen - ge;
+    var hFe = 0.5 * ((Math.cos(ge) - Math.sin(ge) * Math.tan(aFen)) * den - zn * Math.cos(PI / 3 - th) - G / Math.cos(th) + rhofP);
+    var YFa = 6 * hFe * Math.cos(aFen) / (sFn * sFn * Math.cos(alfaN));
+    var L = sFn / hFe, qs = sFn / (2 * rhoF);
+    var YSa = (1.2 + 0.13 * L) * Math.pow(qs, 1 / (1.21 + 2.3 / L));
+    return { YFa: YFa, YSa: YSa, YFS: YFa * YSa };
+  }
+
+  /**
+   * Pojednostavljena provera nosivosti boka (površinski pritisak) i korena zuba (savijanje).
+   * o: {T1 [N·m], n1 [o/min] (opciono), KA, KHb, Q (kvalitet 5–12), mat: [{sHlim, sFlim}, {sHlim, sFlim}]}
+   * KHα = KFα = 1; Z_NT = Y_NT = 1 (trajna čvrstoća); Y_ST = 2.
+   */
+  function cvrstocaZuba(rez, o) {
+    var u = rez.ulaz, p = rez.par, g1 = rez.zupcanici[0];
+    var b = u.b, mn = u.mn, beta = p.beta, alfaT = p.alfaT, alfaWt = p.alfaWt, uu = p.u;
+    var KA = o.KA || 1, KHb = o.KHb || 1, Q = Math.min(12, Math.max(5, Math.round(o.Q || 7)));
+    var Ft = 2000 * o.T1 / g1.d;
+    var betaB = Math.atan(Math.tan(beta) * Math.cos(alfaT));
+    var epsA = p.epsA, epsB = p.epsB, epsB1 = Math.min(1, epsB);
+    // dinamički faktor
+    var v = isFinite(o.n1) && o.n1 > 0 ? PI * g1.d * o.n1 / 60000 : NaN;
+    var Kv = 1;
+    if (isFinite(v)) {
+      var K1 = KV_K1.pravi[Q] + (KV_K1.kosi[Q] - KV_K1.pravi[Q]) * epsB1;
+      var K2 = 0.0193 + (0.0087 - 0.0193) * epsB1;
+      var opter = Math.max(KA * Ft / b, 100);
+      Kv = 1 + (K1 / opter + K2) * (v * g1.z / 100) * Math.sqrt(uu * uu / (1 + uu * uu));
+    }
+    // raspodela po širini: K_Fβ = K_Hβ^N
+    var bh = b / (2.25 * mn);
+    var N = bh * bh / (1 + bh + bh * bh);
+    var KFb = Math.pow(KHb, N);
+    // bok
+    var ZH = Math.sqrt(2 * Math.cos(betaB) * Math.cos(alfaWt) / (Math.pow(Math.cos(alfaT), 2) * Math.sin(alfaWt)));
+    var Ze = epsB < 1 ? Math.sqrt((4 - epsA) / 3 * (1 - epsB) + epsB / epsA) : Math.sqrt(1 / epsA);
+    var Zb = Math.sqrt(Math.cos(beta));
+    var sH0 = ZH * ZE_CELIK * Ze * Zb * Math.sqrt(Ft / (g1.d * b) * (uu + 1) / uu);
+    var sH = sH0 * Math.sqrt(KA * Kv * KHb);
+    // koren
+    var epsAn = epsA / Math.pow(Math.cos(betaB), 2);
+    var Ye = 0.25 + 0.75 / epsAn;
+    var Yb = Math.max(0.75, 1 - epsB1 * Math.min(beta / DEG, 30) / 120);
+    var zup = rez.zupcanici.map(function (g, i) {
+      var m = (o.mat && o.mat[i]) || {};
+      var fk = faktoriKorena(g.zn, g.x, p.alfaN, (g.da - g.d) / (2 * mn));
+      var YFS = fk.YFS;
+      var sF = Ft / (b * mn) * YFS * Ye * Yb * KA * Kv * KFb;
+      var SH = m.sHlim / sH, SF = m.sFlim * 2 / sF;
+      return { YFa: fk.YFa, YSa: fk.YSa, YFS: YFS, sF: sF, SH: SH, SF: SF, sHlim: m.sHlim, sFlim: m.sFlim, okH: SH >= SH_MIN, okF: SF >= SF_MIN };
+    });
+    return {
+      Ft: Ft, v: v, Kv: Kv, KA: KA, KHb: KHb, KFb: KFb, Q: Q,
+      ZH: ZH, ZE: ZE_CELIK, Ze: Ze, Zb: Zb, sH0: sH0, sH: sH, Ye: Ye, Yb: Yb,
+      zupcanici: zup, SHmin: SH_MIN, SFmin: SF_MIN,
+      ok: zup.every(function (z) { return z.okH && z.okF; }),
+      podkriticno: !isFinite(v) || (v * g1.z / 100) * Math.sqrt(uu * uu / (1 + uu * uu)) < 3
+    };
+  }
+
+  // ------------------------------------------------------------------
   // Napomene za konstrukciju (ne utiču na ocenu u Savetniku)
   // ------------------------------------------------------------------
 
@@ -714,6 +812,9 @@
     iso286Odstupanja: iso286Odstupanja,
     granicneMere: granicneMere,
     tablicaZaCrtez: tablicaZaCrtez,
+    MATERIJALI: MATERIJALI,
+    faktoriKorena: faktoriKorena,
+    cvrstocaZuba: cvrstocaZuba,
     oceniKombinaciju: oceniKombinaciju,
     savetnik: savetnik,
     DIN780_RED1: DIN780_RED1,
