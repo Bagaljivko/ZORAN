@@ -31,7 +31,7 @@
     anketa: 'zoran.povratne-anketa'  // brojači retkog pitanja „Kako ti se sviđa ZORAN?“
   };
   /** Ključevi koji se nikad ne prenose u rezervne kopije ni sinhronizaciju (da se ništa ne pošalje dvaput). */
-  var NE_SINHRONIZUJ = [KLJUC.red, KLJUC.id, KLJUC.anketa];
+  var NE_SINHRONIZUJ = [KLJUC.red, KLJUC.id, KLJUC.anketa, 'zoran.anketa'];
 
   /** Sav tekst ovog dela interfejsa, na jednom mestu (za prevod). */
   var TEKST = {
@@ -133,10 +133,42 @@
       time: new Date(o.vreme || Date.now()).toISOString()
     };
   }
+  /**
+   * Odgovori iz ankete. o: {pomaze (1–5), cesto, koristi: [..], zelje, preporuka, mejl, uid, verzija, ekran, uredjaj}
+   * Ide kao kind: 'anketa' (list „Survey“); polje text je kratak sažetak, pa i starija Apps Script skripta
+   * (bez lista za anketu) odgovor upiše među povratne informacije.
+   */
+  function napraviAnketu(o) {
+    var odg = {
+      pomaze: (function (n) { n = Math.round(Number(n)); return n >= 1 ? Math.min(5, n) : null; })(o.pomaze),
+      cesto: String(o.cesto || '').slice(0, 40),
+      koristi: (Array.isArray(o.koristi) ? o.koristi : []).map(function (x) { return String(x).slice(0, 60); }).slice(0, 12),
+      zelje: String(o.zelje || '').trim().slice(0, MAX_TEKST),
+      preporuka: String(o.preporuka || '').slice(0, 20)
+    };
+    var tekst = 'ANKETA — pomaže: ' + (odg.pomaze || '—') + '/5; koristi: ' + (odg.cesto || '—') + '; najviše: ' + (odg.koristi.join(', ') || '—') +
+      '; preporučio bi: ' + (odg.preporuka || '—') + (odg.zelje ? '\nŽelje: ' + odg.zelje : '');
+    return {
+      kind: 'anketa', type: 'idea', text: tekst.slice(0, MAX_TEKST), answers: odg,
+      email: String(o.mejl || '').trim(), uid: o.uid, lang: o.jezik || JEZIK, version: o.verzija, screen: o.ekran, device: o.uredjaj,
+      time: new Date(o.vreme || Date.now()).toISOString()
+    };
+  }
+  /** Da li anketu ponuditi pri otvaranju. s: {ne, poslato, kasnije: ms, ponudjeno: broj}; otvaranja: ukupan broj otvaranja. */
+  function ponuditiAnketu(s, otvaranja, sada) {
+    s = s && typeof s === 'object' ? s : {};
+    if (s.ne || s.poslato) return false;
+    if ((otvaranja || 0) < 3) return false;
+    if ((s.ponudjeno || 0) >= 3) return false;
+    if (s.kasnije && sada - s.kasnije < 14 * DAN) return false;
+    return true;
+  }
+
   /** Tekst poruke za deljenje/kopiranje kad adresa za slanje još nije podešena. */
   function tekstZaDeljenje(p) {
     var r = [];
     if (p.kind === 'diag') r.push('ZORAN — dijagnostika (verzija ' + p.version + ')');
+    else if (p.kind === 'anketa') r.push('ZORAN — anketa (verzija ' + p.version + ')');
     else r.push('ZORAN — ' + (t('vrste')[p.type] || p.type) + ' (verzija ' + p.version + ')');
     r.push('');
     r.push(p.kind === 'diag' ? (p.note || '') : p.text);
@@ -315,6 +347,8 @@
     korisnikId: korisnikId,
     napraviPoruku: napraviPoruku,
     napraviDijagnostiku: napraviDijagnostiku,
+    napraviAnketu: napraviAnketu,
+    ponuditiAnketu: ponuditiAnketu,
     tekstZaDeljenje: tekstZaDeljenje,
     procitajRed: procitajRed,
     dodajURed: dodajURed,
