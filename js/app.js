@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.12.1';
+  var APP_VERSION = '1.13.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -435,6 +435,7 @@
     prikaziNapomene('#napomene-tablica', rez);
     prikaziSile();
     prikaziVarijante();
+    prikaziCrtez();
     var puna = $('#tablica-puna');
     puna.innerHTML = '';
     if (!rez) {
@@ -520,6 +521,127 @@
     if (nap.length) { linije.push('', 'Napomene za konstrukciju'); nap.forEach(function (w) { linije.push(w.poruka); }); }
     return linije.join('\n');
   }
+
+  // ------------------------------------------------------------------
+  // Tablica za radionički crtež (tolerancije, granične mere, izvoz)
+  // ------------------------------------------------------------------
+  var CRTEZ_KLJUC = 'zoran.crtez';
+  var CRTEZ_POLJA = ['asne', 'asni', 'kval', 'crtez', 'mat'];
+  function izborCrteza(ime, podr) { var r = $('input[name="c-' + ime + '"]:checked'); return r ? r.value : podr; }
+  function procitajCrtez() {
+    var o = { smer: izborCrteza('smer', 'desni'), tolDa: izborCrteza('tolDa', 'h11'), tolA: izborCrteza('tolA', 'js7') };
+    CRTEZ_POLJA.forEach(function (k) { o[k] = ['', '']; });
+    $$('[data-crtez]').forEach(function (inp) { o[inp.getAttribute('data-crtez')][+inp.getAttribute('data-i')] = inp.value; });
+    return o;
+  }
+  function upisiCrtez(o) {
+    if (!o || typeof o !== 'object') return;
+    [['smer', o.smer], ['tolDa', o.tolDa], ['tolA', o.tolA]].forEach(function (p) {
+      if (typeof p[1] !== 'string') return;
+      $$('input[name="c-' + p[0] + '"]').forEach(function (r) { r.checked = r.value === p[1]; });
+    });
+    $$('[data-crtez]').forEach(function (inp) {
+      var niz = o[inp.getAttribute('data-crtez')];
+      var v = Array.isArray(niz) ? niz[+inp.getAttribute('data-i')] : undefined;
+      if (typeof v === 'string') inp.value = v;
+    });
+  }
+  /** Opcije za P.tablicaZaCrtez; odstupanja se prihvataju samo kad su oba upisana i gornje ≥ donje. */
+  function opcijeCrteza() {
+    var s = procitajCrtez();
+    var o = { smer: s.smer, tolDa: s.tolDa, tolA: s.tolA, asne: [NaN, NaN], asni: [NaN, NaN], kval: s.kval.map(function (x) { return x.trim(); }), crtez: s.crtez.map(function (x) { return x.trim(); }), mat: s.mat.map(function (x) { return x.trim(); }) };
+    var poruke = ['', ''];
+    [0, 1].forEach(function (i) {
+      var e = s.asne[i].trim(), d = s.asni[i].trim();
+      if (!e && !d) return;
+      var ve = P.parsirajBroj(e), vd = P.parsirajBroj(d);
+      if (!isFinite(ve) || !isFinite(vd)) poruke[i] = 'Upiši oba odstupanja (u mm, npr. −0,019 i −0,059).';
+      else if (ve < vd) poruke[i] = 'Gornje odstupanje Asne mora biti veće od donjeg Asni (npr. −0,019 > −0,059).';
+      else if (Math.abs(ve) > 2 || Math.abs(vd) > 2) poruke[i] = 'Odstupanja su u milimetrima — proveri vrednost (obično nekoliko stotih delova mm).';
+      else { o.asne[i] = ve; o.asni[i] = vd; }
+    });
+    o.poruke = poruke;
+    return o;
+  }
+  function specCrteza(r) {
+    var broj = typeof r.v === 'number';
+    return {
+      naziv: r.naziv, tekst: r.tekst, upozorenje: r.upozorenje,
+      v: broj && r.duz ? duz(r.v) : r.v,
+      dec: broj ? (r.duz ? (r.dec !== undefined ? Math.max(r.dec, pod.decimale) : undefined) : r.dec) : undefined,
+      jed: r.duz ? jedDuz() : (r.jed || '')
+    };
+  }
+  function redoviCrteza() {
+    var rez = poslednjiRez;
+    if (!rez) return null;
+    var o = opcijeCrteza();
+    return { o: o, zup: [0, 1].map(function (i) { return P.tablicaZaCrtez(rez, i, o).map(specCrteza); }) };
+  }
+  function prikaziCrtez() {
+    var box = $('#tablice-crtez');
+    box.innerHTML = '';
+    var rez = poslednjiRez;
+    $('#izbor-smer').hidden = !rez || rez.ulaz.beta < 1e-9;
+    var rc = redoviCrteza();
+    [0, 1].forEach(function (i) { $('#cp-tol' + (i + 1)).textContent = rc ? rc.o.poruke[i] : ''; });
+    if (!rc) return;
+    [0, 1].forEach(function (i) {
+      box.appendChild(el('h4', { html: 'Crtež ' + (i === 0 ? 'malog' : 'velikog') + ' zupčanika, <i>z</i>' + (i === 0 ? '₁' : '₂') + ' = ' + rez.zupcanici[i].z }));
+      var t = el('div', { class: 'tablica' });
+      rc.zup[i].forEach(function (s) { t.appendChild(redTablice(s)); });
+      box.appendChild(t);
+    });
+  }
+  function vrednostZaIzvoz(s) { return typeof s.v === 'number' ? zaKopiju(s.v, s.dec) : String(s.v); }
+  function tekstCrteza() {
+    var rc = redoviCrteza();
+    if (!rc) return '';
+    var rez = poslednjiRez, linije = ['Zoran ' + APP_VERSION + ' — tablica za radionički crtež'];
+    [0, 1].forEach(function (i) {
+      linije.push('', 'Crtež ' + (i === 0 ? 'malog' : 'velikog') + ' zupčanika (z' + (i + 1) + ' = ' + rez.zupcanici[i].z + ')');
+      rc.zup[i].forEach(function (s) { linije.push(s.tekst + '\t' + vrednostZaIzvoz(s) + (s.jed ? '\t' + s.jed : '')); });
+    });
+    return linije.join('\n');
+  }
+  function csvCrteza() {
+    var rc = redoviCrteza();
+    if (!rc) return '';
+    var sep = pod.znak === ',' ? ';' : ',';
+    function polje(t) { t = String(t); return (t.indexOf(sep) >= 0 || /["\r\n]/.test(t)) ? '"' + t.replace(/"/g, '""') + '"' : t; }
+    var rez = poslednjiRez, redovi = [];
+    [0, 1].forEach(function (i) {
+      if (i) redovi.push('');
+      redovi.push([polje('Crtež ' + (i === 0 ? 'malog' : 'velikog') + ' zupčanika (z' + (i + 1) + ' = ' + rez.zupcanici[i].z + ')'), polje('Vrednost'), polje('Jedinica')].join(sep));
+      rc.zup[i].forEach(function (s) { redovi.push([polje(s.tekst), polje(vrednostZaIzvoz(s)), polje(s.jed || '')].join(sep)); });
+    });
+    return '﻿' + redovi.join('\r\n') + '\r\n';
+  }
+  $('#forma-crtez').addEventListener('input', function () { pisi(CRTEZ_KLJUC, procitajCrtez()); prikaziCrtez(); });
+  $('#forma-crtez').addEventListener('change', function () { pisi(CRTEZ_KLJUC, procitajCrtez()); prikaziCrtez(); });
+  $('#dugme-kopiraj-crtez').addEventListener('click', function () {
+    var b = this, tekst = tekstCrteza();
+    if (!tekst) return;
+    kopirajTekst(tekst).then(function (ok) {
+      $('#poruka-crtez').textContent = ok ? 'Obe tablice su kopirane — nalepi ih u Excel ili u tablicu na crtežu (kolone su odvojene tabulatorom).' : 'Kopiranje nije uspelo.';
+      if (ok) oznaciKopirano(b);
+    });
+  });
+  $('#dugme-csv').addEventListener('click', function () {
+    var csv = csvCrteza();
+    if (!csv) return;
+    var u = poslednjiRez.ulaz;
+    var ime = 'zoran-crtez-z' + u.z1 + '-z' + u.z2 + '.csv';
+    try {
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = el('a', { href: url, download: ime, style: 'display:none' });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      $('#poruka-crtez').textContent = 'Preuzet je fajl ' + ime + ' — otvara se u Excel-u.';
+    } catch (e) { $('#poruka-crtez').textContent = 'Preuzimanje nije uspelo.'; }
+  });
+  upisiCrtez(citaj(CRTEZ_KLJUC, null));
 
   // ------------------------------------------------------------------
   // Sile u zahvatu
