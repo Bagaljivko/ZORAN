@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.15.0';
+  var APP_VERSION = '1.15.1';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -1772,8 +1772,9 @@
     g.textContent = tekst || '';
     if (tekst) polje.setAttribute('aria-invalid', 'true'); else polje.removeAttribute('aria-invalid');
   }
-  function otvoriUtisak(tip, otvarac) {
+  function otvoriUtisak(tip, otvarac, tekst) {
     if (prozor.open) zatvoriPodeli();
+    if (typeof tekst === 'string') $('#utisak-tekst').value = tekst;
     otvaracUtiska = otvarac || document.activeElement;
     var t = F.TEKST[F.JEZIK].vrste;
     $$('[data-vrsta]', prozorUtisak).forEach(function (s) { s.textContent = t[s.getAttribute('data-vrsta')]; });
@@ -1891,7 +1892,7 @@
     if (k.otvaranja < 5 || sada - k.prvi < 2 * DAN) return;
     if (k.pitano && sada - k.pitano < 30 * DAN) return;
     setTimeout(function () {
-      if (!$('#obavestenje-verzija').hidden) return;
+      if (!$('#obavestenje-verzija').hidden || !$('#poruka-autora').hidden) return;
       var m = $('#molba-podeli');
       m.hidden = false;
       function zapamti(polje) { var x = citaj('zoran.koriscenje', {}) || {}; x[polje] = polje === 'pitano' ? Date.now() : true; x.pitano = Date.now(); pisi('zoran.koriscenje', x); m.hidden = true; }
@@ -1915,6 +1916,66 @@
     o.hidden = false;
     $('#zatvori-obavestenje').addEventListener('click', function () { o.hidden = true; });
     $('#link-novosti-baner').addEventListener('click', function () { o.hidden = true; });
+  })();
+
+  // ------------------------------------------------------------------
+  // Poruka autora korisnicima: jednokratna, dok ne istekne
+  // ------------------------------------------------------------------
+  var PORUKE = [{
+    id: 'solidworks-makro-2026-11',
+    vaziDo: '2027-02-01',
+    kratko: 'Imaš SolidWorks? Pomozi da proverimo novi izvoz parametara zupčanika u SolidWorks.',
+    naslov: 'Proba: makro za SolidWorks',
+    sadrzaj: '<p>U verziji 1.15.0 ZORAN pravi makro koji izračunate parametre upiše u svojstva dela u SolidWorks-u. Autor nema SolidWorks, pa mu treba neko da proba:</p>' +
+      '<ol><li>Unesi zupčanik › <b>Tablica</b> › dole „Tablica za radionički crtež“ › <b>Makro za SolidWorks — <i>z</i>₁</b>. Preuzme se fajl .bas.</li>' +
+      '<li>U SolidWorks-u otvori deo zupčanika › <b>Tools › Macro › New</b> › sačuvaj pod bilo kojim imenom.</li>' +
+      '<li>U VBA editoru: <b>File › Import File</b> › izaberi preuzeti .bas fajl.</li>' +
+      '<li>Pokreni ga (<b>F5</b>, izaberi „main“). Treba da iskoči „Upisano 15 svojstava…“.</li>' +
+      '<li>Proveri <b>File › Properties › Custom</b>: tu su ZORAN_Modul, ZORAN_BrojZuba… sa vrednostima iz ZORAN-a.</li></ol>' +
+      '<p>Javi da li je radilo ili koja je greška iskočila — dugmetom ispod. Ako imaš i <b>tablice DIN 3967</b> (odstupanja debljine zuba), napiši to: ugradiće se u ZORAN da ih ne upisuješ ručno.</p>',
+    odgovor: 'Makro za SolidWorks: \n(radi / ne radi — koja greška, koja verzija SolidWorks-a)\n\nTablice DIN 3967: '
+  }];
+  (function porukaAutora() {
+    var KLJUC = 'zoran.poruke';
+    var stanje = citaj(KLJUC, null);
+    stanje = stanje && typeof stanje === 'object' ? stanje : {};
+    var danas = new Date().toISOString().slice(0, 10);
+    var p = PORUKE.filter(function (x) { return x.vaziDo > danas && !(stanje[x.id] && (stanje[x.id].procitano || stanje[x.id].prikaza >= 3)); })[0];
+    if (!p) return;
+    var baner = $('#poruka-autora'), pr = $('#prozor-poruka');
+    function zapamti() { var s = citaj(KLJUC, {}) || {}; s[p.id] = Object.assign({}, s[p.id], { procitano: true }); pisi(KLJUC, s); }
+    function prikazi() {
+      if (!baner.hidden) return;
+      $('#poruka-autora-tekst').textContent = p.kratko;
+      baner.hidden = false;
+      var s = citaj(KLJUC, {}) || {}; s[p.id] = Object.assign({}, s[p.id]); s[p.id].prikaza = (s[p.id].prikaza || 0) + 1; pisi(KLJUC, s);
+    }
+    function otvoriPoruku() {
+      zapamti(); baner.hidden = true;
+      $('#naslov-poruka').textContent = p.naslov;
+      $('#poruka-sadrzaj').innerHTML = p.sadrzaj;
+      if (typeof pr.showModal === 'function') pr.showModal(); else pr.setAttribute('open', '');
+      document.documentElement.classList.add('prozor-otvoren');
+      $('#poruka-odgovori').focus();
+    }
+    function zatvoriPoruku() {
+      if (typeof pr.close === 'function' && pr.open) pr.close(); else { pr.removeAttribute('open'); document.documentElement.classList.remove('prozor-otvoren'); }
+    }
+    pr.addEventListener('close', function () { document.documentElement.classList.remove('prozor-otvoren'); });
+    pr.addEventListener('click', function (e) { if (e.target === pr && e.detail !== 0) zatvoriPoruku(); });
+    $('#poruka-autora-vise').addEventListener('click', otvoriPoruku);
+    $('#poruka-autora-zatvori').addEventListener('click', function () { zapamti(); baner.hidden = true; });
+    $('#poruka-zatvori').addEventListener('click', zatvoriPoruku);
+    $('#poruka-odgovori').addEventListener('click', function () {
+      zatvoriPoruku();
+      setTimeout(function () { otvoriUtisak('idea', $('#dugme-utisak'), p.odgovor.replace(/\\n/g, '\n')); }, 50);
+    });
+    // ne preko obaveštenja o novoj verziji: tada se pokaže kad se ono zatvori
+    var ver = $('#obavestenje-verzija');
+    if (!ver.hidden) {
+      $('#zatvori-obavestenje').addEventListener('click', function () { setTimeout(prikazi, 300); });
+      $('#link-novosti-baner').addEventListener('click', function () { setTimeout(prikazi, 300); });
+    } else prikazi();
   })();
 
   // ------------------------------------------------------------------

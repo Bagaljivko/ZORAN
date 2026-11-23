@@ -593,3 +593,11 @@ main.radni .ekran.aktivan { animation: none; }
 .izbor-raspodele .prekidac { width: 100%; max-width: 30rem; }
 .izbor-raspodele .prekidac label { display: flex; }
 .izbor-raspodele .prekidac label span { flex: 1 1 auto; }
+
+/* ---------- 1.15.1: poruka autora ---------- */
+.poruka-autora { flex-wrap: wrap; }
+.poruka-autora .molba-dugmad { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.3rem 0; }
+.prozor-poruka .prozor-sadrzaj { text-align: left; }
+.prozor-poruka h2 { text-align: center; }
+.prozor-poruka ol { padding-left: 1.3rem; margin: 0.4rem 0; }
+.prozor-poruka li { margin: 0.3rem 0; }
