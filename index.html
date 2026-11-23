@@ -249,6 +249,95 @@
         </div>
         <div class="varijante-okvir" id="varijante"></div>
       </section>
+      <section class="crtez-sekcija" aria-labelledby="naslov-crtez">
+        <h3 id="naslov-crtez">Tablica za radionički crtež</h3>
+        <p class="sitno">Podaci koje kooperant treba da ima na crtežu svakog zupčanika. Odstupanja debljine zuba upiši iz DIN 3967 za izabrani kvalitet (npr. za 7f25 i <i>d</i> ≈ 100 mm: −0,019 / −0,059 mm) — tada se računaju gornja i donja mera preko zuba i preko kuglica.</p>
+        <form id="forma-crtez" autocomplete="off" novalidate onsubmit="return false">
+          <fieldset>
+            <legend>Zajedničko</legend>
+            <div class="izbor" id="izbor-smer">
+              <span class="natpis-izbora" id="natpis-smer">Smer zavojnice <i>z</i>₁</span>
+              <div class="prekidac" role="radiogroup" aria-labelledby="natpis-smer">
+                <label><input type="radio" name="c-smer" value="desni" checked><span>desni</span></label>
+                <label><input type="radio" name="c-smer" value="levi"><span>levi</span></label>
+              </div>
+            </div>
+            <div class="izbor">
+              <span class="natpis-izbora" id="natpis-tol-da">Tolerancija temenog prečnika <i>d</i>ₐ</span>
+              <div class="prekidac" role="radiogroup" aria-labelledby="natpis-tol-da">
+                <label><input type="radio" name="c-tolDa" value=""><span>bez</span></label>
+                <label><input type="radio" name="c-tolDa" value="h8"><span>h8</span></label>
+                <label><input type="radio" name="c-tolDa" value="h9"><span>h9</span></label>
+                <label><input type="radio" name="c-tolDa" value="h11" checked><span>h11</span></label>
+              </div>
+            </div>
+            <div class="izbor">
+              <span class="natpis-izbora" id="natpis-tol-a">Tolerancija osnog rastojanja <i>a</i></span>
+              <div class="prekidac" role="radiogroup" aria-labelledby="natpis-tol-a">
+                <label><input type="radio" name="c-tolA" value=""><span>bez</span></label>
+                <label><input type="radio" name="c-tolA" value="js6"><span>js6</span></label>
+                <label><input type="radio" name="c-tolA" value="js7" checked><span>js7</span></label>
+                <label><input type="radio" name="c-tolA" value="js8"><span>js8</span></label>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset class="crtez-zupcanik">
+            <legend>Mali zupčanik <i>z</i>₁</legend>
+            <div class="polje">
+              <label for="c-asne1">Gornje odstupanje debljine zuba <i>A</i>sne <span class="jed">[mm]</span></label>
+              <input id="c-asne1" data-crtez="asne" data-i="0" inputmode="text" placeholder="npr. −0,019" aria-describedby="cp-tol1">
+            </div>
+            <div class="polje">
+              <label for="c-asni1">Donje odstupanje debljine zuba <i>A</i>sni <span class="jed">[mm]</span></label>
+              <input id="c-asni1" data-crtez="asni" data-i="0" inputmode="text" placeholder="npr. −0,059" aria-describedby="cp-tol1">
+              <div class="poruka" id="cp-tol1" role="alert"></div>
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-kval1">Kvalitet i tolerancija</label>
+              <input id="c-kval1" data-crtez="kval" data-i="0" placeholder="npr. 7f25 DIN 3967">
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-crtez1">Broj crteža</label>
+              <input id="c-crtez1" data-crtez="crtez" data-i="0" placeholder="npr. D1107999">
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-mat1">Materijal i termička obrada</label>
+              <input id="c-mat1" data-crtez="mat" data-i="0" placeholder="npr. 16MnCr5, cementirano">
+            </div>
+          </fieldset>
+          <fieldset class="crtez-zupcanik">
+            <legend>Veliki zupčanik <i>z</i>₂</legend>
+            <div class="polje">
+              <label for="c-asne2">Gornje odstupanje debljine zuba <i>A</i>sne <span class="jed">[mm]</span></label>
+              <input id="c-asne2" data-crtez="asne" data-i="1" inputmode="text" placeholder="npr. −0,019" aria-describedby="cp-tol2">
+            </div>
+            <div class="polje">
+              <label for="c-asni2">Donje odstupanje debljine zuba <i>A</i>sni <span class="jed">[mm]</span></label>
+              <input id="c-asni2" data-crtez="asni" data-i="1" inputmode="text" placeholder="npr. −0,059" aria-describedby="cp-tol2">
+              <div class="poruka" id="cp-tol2" role="alert"></div>
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-kval2">Kvalitet i tolerancija</label>
+              <input id="c-kval2" data-crtez="kval" data-i="1" placeholder="npr. 7f25 DIN 3967">
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-crtez2">Broj crteža</label>
+              <input id="c-crtez2" data-crtez="crtez" data-i="1" placeholder="npr. D1107999">
+            </div>
+            <div class="polje polje-tekst">
+              <label for="c-mat2">Materijal i termička obrada</label>
+              <input id="c-mat2" data-crtez="mat" data-i="1" placeholder="npr. 16MnCr5, cementirano">
+            </div>
+          </fieldset>
+        </form>
+        <div id="tablice-crtez"></div>
+        <div class="dugmad">
+          <button type="button" class="pecat" id="dugme-kopiraj-crtez">Kopiraj obe tablice</button>
+          <button type="button" class="dugme" id="dugme-csv">Preuzmi za Excel (CSV)</button>
+        </div>
+        <p class="poruka-akcenat" id="poruka-crtez" aria-live="polite"></p>
+        <p class="sitno">Tolerancije temenog prečnika i osnog rastojanja su po ISO 286 (do 1000 mm). Gornja i donja mera preko zuba: <i>W</i> + <i>A</i>sn·cos <i>α</i>ₙ; preko kuglica: za koeficijent <i>x</i> + <i>A</i>sn/(2·<i>m</i>ₙ·tg <i>α</i>ₙ), istom kuglicom (DIN 3960).</p>
+      </section>
       <p class="kolofon">Izračunao Zoran — <i><b>Z</b>et <b>O</b>bično <b>R</b>ačuna <b>A</b>psolutno <b>N</b>epogrešivo</i>.</p>
     </div>
   </section>

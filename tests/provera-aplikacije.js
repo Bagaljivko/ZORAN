@@ -436,6 +436,44 @@ async function proveriNazad(b) {
   await ctx.close();
 }
 
+// Tablica za radionički crtež: odstupanja → gornja/donja mera, izvoz u CSV, čuvanje unosa
+async function proveriCrtez(b) {
+  var ctx = await b.newContext(Object.assign({ acceptDownloads: true }, devices['iPhone 13']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL + '?z1=40&z2=40&mn=2.5&beta=0&alfaN=20&b=40&a=101#tablica'); await cekaj(3400);
+  await pg.fill('#c-asne1', '-0,019'); await pg.fill('#c-asni1', '-0,059'); await pg.fill('#c-kval1', '7f25 DIN 3967'); await pg.fill('#c-crtez2', 'D-2'); await cekaj(400);
+  var t = await pg.evaluate(function () {
+    var o = {};
+    Array.prototype.slice.call(document.querySelectorAll('#tablice-crtez .tablica')).forEach(function (tb, i) {
+      Array.prototype.slice.call(tb.querySelectorAll('.red')).forEach(function (r) { o[i + ':' + r.querySelector('.naziv').textContent.trim()] = r.querySelector('.vrednost').textContent.trim(); });
+    });
+    return { o: o, smerSkriven: document.querySelector('#izbor-smer').hidden };
+  });
+  var o = t.o;
+  var ok = o['0:Mera preko zuba — gornja'] === '34,949' && o['0:Mera preko zuba — donja'] === '34,911' && !('1:Mera preko zuba — gornja' in o) &&
+    o['0:Osno rastojanje a js7'] === '101,000' && /±0,0175/.test(o['0:Odstupanje osnog rastojanja'] || '') && o['0:Kvalitet i tolerancija'] === '7f25 DIN 3967' &&
+    o['0:Spregnuti zupčanik — broj crteža'] === 'D-2' && o['0:Smer zavojnice'] === 'pravi zubi' && t.smerSkriven;
+  stavka('Proračun', 'Tablica za crtež: W_k gornja/donja 34,949 / 34,911 (7f25), a js7 ±0,0175, kvalitet, broj crteža spregnutog', ok,
+    JSON.stringify({ g: o['0:Mera preko zuba — gornja'], d: o['0:Mera preko zuba — donja'], a: o['0:Odstupanje osnog rastojanja'], smer: o['0:Smer zavojnice'] }));
+  // pogrešan redosled odstupanja → poruka
+  await pg.fill('#c-asne2', '-0,08'); await pg.fill('#c-asni2', '-0,02'); await cekaj(300);
+  var poruka = await pg.textContent('#cp-tol2');
+  await pg.fill('#c-asne2', ''); await pg.fill('#c-asni2', ''); await cekaj(300);
+  // CSV
+  var dl = await Promise.all([pg.waitForEvent('download', { timeout: 5000 }).catch(function () { return null; }), pg.click('#dugme-csv')]);
+  var csv = '';
+  if (dl[0]) { var put = await dl[0].path(); csv = fs.readFileSync(put, 'utf8'); }
+  stavka('Proračun', 'Pogrešan redosled odstupanja daje poruku; „Preuzmi za Excel“ daje CSV sa obe tablice', /mora biti veće/.test(poruka) && /^\ufeff/.test(csv) && /Mera preko zuba Wk gornja;34,949;mm/.test(csv) && /velikog zupčanika/.test(csv) && dl[0] && /zoran-crtez-z40-z40\.csv/.test(dl[0].suggestedFilename()),
+    JSON.stringify({ poruka: poruka, ime: dl[0] && dl[0].suggestedFilename(), csv: csv.slice(0, 80) }));
+  await pg.reload(); await cekaj(3400);
+  var sacuvano = await pg.evaluate(function () { return document.querySelector('#c-asne1').value + '|' + document.querySelector('#c-kval1').value; });
+  stavka('Proračun', 'Unos za tablicu crteža ostaje posle ponovnog otvaranja; konzola čista', sacuvano === '-0,019|7f25 DIN 3967' && !konzola.length, sacuvano + ' ' + konzola.slice(0, 2).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -499,6 +537,7 @@ function proveriStatiku() {
     await proveriPovratne(b);
     await proveriRaspodelu(b);
     await proveriNazad(b);
+    await proveriCrtez(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

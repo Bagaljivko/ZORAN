@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-13-0"><span>Tablica za radionički crtež, tolerancije, Excel</span><span>1.13.0</span></a></li>
     <li><a href="#v1-12-1"><span>Kao prava aplikacija: Nazad, bez zumiranja, instalacija</span><span>1.12.1</span></a></li>
     <li><a href="#v1-12-0"><span>Pomeranje samo na jednom zupčaniku (x = 0 na drugom)</span><span>1.12.0</span></a></li>
     <li><a href="#v1-11-0"><span>Google Drive za sve</span><span>1.11.0</span></a></li>
@@ -66,6 +67,28 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.13.0 ================= -->
+  <h2 id="v1-13-0">Verzija 1.13.0 — tablica za radionički crtež<span class="datum">23. novembar 2026.</span></h2>
+  <p>Na pitanje „šta mi je bitno da unesem na tablicu da bi kooperant mogao da napravi zupčanik“ ZORAN sada odgovara gotovom tablicom — posebno za svaki zupčanik, jer svaki ima svoj crtež.</p>
+
+  <h3>Šta je u tablici</h3>
+  <p>Na dnu Tablice je novi deo <b>Tablica za radionički crtež</b>: modul, broj zuba, osnovni profil (DIN 867), ugao profila, ugao nagiba i smer zavojnice, koeficijent i pomeranje profila, podeoni, temeni (sa tolerancijom) i podnožni prečnik, mera preko zuba sa brojem zuba <i>k</i>, mera preko kuglica sa prečnikom kuglice, kvalitet, širina, spregnuti zupčanik (broj zuba i broj crteža), osno rastojanje sa tolerancijom i materijal.</p>
+  <figure class="usko">
+    <img src="./novosti/v1130-tablica.jpg" width="585" height="760" loading="lazy" alt="Tablica za crtež malog zupčanika sa modulom, brojem zuba, osnovnim profilom, uglovima, pomeranjem i prečnicima">
+    <figcaption><span class="sl">Sl. 26.</span> Početak tablice za crtež malog zupčanika.</figcaption>
+  </figure>
+
+  <h3>Tolerancije: gornja i donja mera</h3>
+  <p>Upišeš odstupanja debljine zuba <i>A</i>sne i <i>A</i>sni iz DIN 3967 za svoj kvalitet (npr. za 7f25 i <i>d</i> ≈ 100 mm: −0,019 / −0,059 mm), a ZORAN izračuna <b>gornju i donju meru preko zuba i preko kuglica</b> — ono što se u radionici stvarno meri. Za par z = 40/40, m = 2,5, a = 101 mm to je <i>W</i>₅ = 34,949 / 34,911 mm, isto kao kod drugog kalkulatora. Tolerancija temenog prečnika (h8, h9, h11) i osnog rastojanja (js6, js7, js8) računa se po ISO 286 — npr. 101 js7 = ±0,0175 mm.</p>
+  <figure class="usko">
+    <img src="./novosti/v1130-unos.jpg" width="585" height="650" loading="lazy" alt="Unos tolerancija: temeni prečnik h11, osno rastojanje js7, odstupanja debljine zuba −0,019 i −0,059 i kvalitet 7f25 DIN 3967">
+    <figcaption><span class="sl">Sl. 27.</span> Unos tolerancija za mali zupčanik.</figcaption>
+  </figure>
+
+  <h3>Kopiraj ili preuzmi za Excel</h3>
+  <p><b>Kopiraj obe tablice</b> — nalepiš ih u Excel ili u tablicu na crtežu (kolone su odvojene tabulatorom). <b>Preuzmi za Excel (CSV)</b> — fajl koji se otvara u Excel-u. Unos se pamti i, ako si povezao Google Drive, prenosi na ostale uređaje.</p>
+  <p class="tehnicki">Mera preko zuba za odstupanje: <i>W</i> + <i>A</i>sn·cos <i>α</i>ₙ. Mera preko kuglica se računa kao za koeficijent <i>x</i> + <i>A</i>sn/(2·<i>m</i>ₙ·tg <i>α</i>ₙ), istom kuglicom; slaže se sa formulom iz DIN 3960 na manje od 1 µm.</p>
 
   <!-- ================= 1.12.1 ================= -->
   <h2 id="v1-12-1">Verzija 1.12.1 — radi kao prava aplikacija<span class="datum">10. novembar 2026.</span></h2>

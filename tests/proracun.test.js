@@ -340,6 +340,57 @@ test('x₁ = 0 na malom zupčaniku sa malo zuba → upozorenje za podsecanje', f
   tacno(r.ok && r.upozorenja.some(function (w) { return w.kod === 'podsecanje' && w.zupcanik === 0; }), JSON.stringify(r.upozorenja));
 });
 
+console.log('Tolerancije i tablica za radionički crtež');
+
+test('ISO 286: osnovne tolerancije (101 js7 = ±0,0175; 105,96 h11 = 0/−0,22; 20 h8 = 0/−0,033)', function () {
+  var js7 = P.iso286Odstupanja('js7', 101), h11 = P.iso286Odstupanja('h11', 105.96), h8 = P.iso286Odstupanja('h8', 20);
+  jednako(js7.gornje, 0.0175, 1e-12); jednako(js7.donje, -0.0175, 1e-12);
+  jednako(h11.gornje, 0, 0); jednako(h11.donje, -0.22, 1e-12);
+  jednako(h8.donje, -0.033, 1e-12);
+  jednako(P.iso286IT(7, 250), 0.046, 1e-12); jednako(P.iso286IT(7, 250.01), 0.052, 1e-12, 'granica opsega:');
+  tacno(isNaN(P.iso286IT(7, 1500)) && P.iso286Odstupanja('js7', 1500) === null && P.iso286Odstupanja('', 100) === null, 'van tablice / bez oznake');
+});
+test('granične mere preko zuba za 7f25 (Asne −0,019, Asni −0,059): kao nino — 34,949 / 34,911', function () {
+  var r = P.proracunajIzRastojanja({ z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 });
+  var g = P.granicneMere(r, 0, -0.019, -0.059, 4.5);
+  jednako(g.W, 34.9665, 5e-5); jednako(g.Wg, 34.9487, 5e-5); jednako(g.Wd, 34.9111, 5e-5); jednako(g.k, 5, 0);
+  tacno(g.Mdg < g.Md && g.Mdd < g.Mdg, 'tanji zub → manja mera preko kuglica');
+});
+test('granična mera preko kuglica se slaže sa formulom DIN 3960 (A_M = A_sn·cos αt / (sin αMt·cos βb))', function () {
+  [{ z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 }, { z1: 16, z2: 58, mn: 6.5, beta: 9, alfaN: 20, b: 88, a: 250 }, { z1: 17, z2: 41, mn: 3, beta: 12, alfaN: 20, b: 40, a: 90 }].forEach(function (u) {
+    var r = P.proracunajIzRastojanja(u);
+    [0, 1].forEach(function (i) {
+      var km = P.kontrolneMere(r, i), A = -0.03;
+      var bb = Math.atan(Math.tan(r.par.beta) * Math.cos(r.par.alfaT));
+      var faktor = r.zupcanici[i].z % 2 === 0 ? 1 : Math.cos(Math.PI / (2 * r.zupcanici[i].z));
+      var formula = km.Md + faktor * A * Math.cos(r.par.alfaT) / (Math.sin(km.alfaMt) * Math.cos(bb));
+      jednako(P.granicneMere(r, i, A, A).Mdg, formula, 1e-3, 'z = ' + r.zupcanici[i].z + ':'); // formula je linearizovana; razlika ispod 1 µm
+    });
+  });
+});
+test('tablica za crtež: osnovni podaci, smer zavojnice suprotan na z₂, tolerancije samo kad su zadate', function () {
+  var r = P.proracunajIzRastojanja(P.PODRAZUMEVANO);
+  var t0 = P.tablicaZaCrtez(r, 0, { smer: 'levi', tolDa: 'h11', tolA: 'js7', asne: [-0.03, NaN], asni: [-0.08, NaN], kval: ['8e25 DIN 3967', ''], crtez: ['C-1', 'C-2'], mat: ['', ''] });
+  var t1 = P.tablicaZaCrtez(r, 1, { smer: 'levi', tolDa: '', tolA: '', asne: [-0.03, NaN], asni: [-0.08, NaN], kval: ['', ''], crtez: ['C-1', 'C-2'], mat: ['', ''] });
+  function nadji(t, tekst) { return t.filter(function (x) { return x.tekst === tekst; })[0]; }
+  jednako(nadji(t0, 'Modul mn').v, 6.5, 0); jednako(nadji(t0, 'Broj zuba z').v, 16, 0);
+  tacno(nadji(t0, 'Smer zavojnice').v === 'levi' && nadji(t1, 'Smer zavojnice').v === 'desni', 'suprotni smerovi');
+  tacno(nadji(t0, 'Osnovni profil').v === 'DIN 867');
+  tacno(nadji(t0, 'Mera preko zuba Wk gornja') && !nadji(t1, 'Mera preko zuba Wk gornja'), 'granice samo za zupčanik sa odstupanjima');
+  tacno(nadji(t0, 'Temeni prečnik da min') && !nadji(t1, 'Temeni prečnik da min'), 'tolerancija dₐ samo kad je izabrana');
+  tacno(nadji(t0, 'Spregnuti zupčanik - broj crteža').v === 'C-2' && nadji(t1, 'Spregnuti zupčanik - broj crteža').v === 'C-1', 'broj crteža drugog zupčanika');
+  tacno(nadji(t0, 'Kvalitet i tolerancija').v === '8e25 DIN 3967' && !nadji(t1, 'Kvalitet i tolerancija'));
+  jednako(nadji(t0, 'Spregnuti zupčanik - broj zuba').v, 58, 0);
+  tacno(/±0,023 mm/.test(nadji(t0, 'Odstupanje osnog rastojanja').v), nadji(t0, 'Odstupanje osnog rastojanja').v);
+  var prav = P.tablicaZaCrtez(P.proracunajIzRastojanja({ z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 }), 1, {});
+  tacno(nadji(prav, 'Smer zavojnice').v === 'pravi zubi');
+});
+test('obrnuta odstupanja (Asne < Asni) se ne koriste', function () {
+  var r = P.proracunajIzRastojanja(P.PODRAZUMEVANO);
+  var t = P.tablicaZaCrtez(r, 0, { asne: [-0.08, NaN], asni: [-0.03, NaN] });
+  tacno(!t.some(function (x) { return x.tekst === 'Mera preko zuba Wk gornja'; }));
+});
+
 console.log('Korak 0: od vratila');
 
 test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {

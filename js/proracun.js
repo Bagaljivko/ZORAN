@@ -410,10 +410,10 @@
     }
     return kontrolneMereRacun(rez, i, DM);
   }
-  function kontrolneMereRacun(rez, i, DM) {
+  function kontrolneMereRacun(rez, i, DM, dx) {
     var p = rez.par, g = rez.zupcanici[i];
     var mn = rez.ulaz.mn, alfaN = p.alfaN, beta = p.beta, alfaT = p.alfaT, invAt = p.invAt;
-    var z = g.z, x = g.x;
+    var z = g.z, x = g.x + (dx || 0); // dx: tanjenje zuba za toleranciju, izraženo kao promena koeficijenta
     var betaB = Math.atan(Math.tan(beta) * Math.cos(alfaT));
     // broj zuba preko kojih se meri
     var cosAx = g.d * Math.cos(alfaT) / (g.d + 2 * x * mn);
@@ -435,6 +435,105 @@
       DM: DM, dK: dK, Md: Md, alfaMt: alfaMt, rDodir: rDodir,
       kuglicaDobra: isFinite(Md) && rDodir > g.rb && rDodir < g.ra
     };
+  }
+
+  // ------------------------------------------------------------------
+  // Tolerancije (ISO 286) i granične kontrolne mere
+  // ------------------------------------------------------------------
+
+  // Osnovne tolerancije ISO 286-1 [µm] po opsezima nazivne mere (gornja granica opsega, mm)
+  var ISO286_OPSEZI = [3, 6, 10, 18, 30, 50, 80, 120, 180, 250, 315, 400, 500, 630, 800, 1000];
+  var ISO286_IT = {
+    6: [6, 8, 9, 11, 13, 16, 19, 22, 25, 29, 32, 36, 40, 44, 50, 56],
+    7: [10, 12, 15, 18, 21, 25, 30, 35, 40, 46, 52, 57, 63, 70, 80, 90],
+    8: [14, 18, 22, 27, 33, 39, 46, 54, 63, 72, 81, 89, 97, 110, 125, 140],
+    9: [25, 30, 36, 43, 52, 62, 74, 87, 100, 115, 130, 140, 155, 175, 200, 230],
+    11: [60, 75, 90, 110, 130, 160, 190, 220, 250, 290, 320, 360, 400, 440, 500, 560]
+  };
+  /** Osnovna tolerancija IT [mm] za stepen i nazivnu meru d [mm]; NaN van tablice (d > 1000 mm). */
+  function iso286IT(stepen, d) {
+    var red = ISO286_IT[stepen];
+    if (!red || !(d > 0)) return NaN;
+    for (var j = 0; j < ISO286_OPSEZI.length; j++) if (d <= ISO286_OPSEZI[j]) return red[j] / 1000;
+    return NaN;
+  }
+  /** Odstupanja za oznaku tolerancije ('h8', 'h9', 'h11', 'js6', 'js7', 'js8'): {oznaka, gornje, donje} u mm, ili null. */
+  function iso286Odstupanja(oznaka, d) {
+    var m = /^(h|js)(\d+)$/.exec(String(oznaka || ''));
+    if (!m) return null;
+    var it = iso286IT(Number(m[2]), d);
+    if (!isFinite(it)) return null;
+    return m[1] === 'h' ? { oznaka: oznaka, gornje: 0, donje: -it } : { oznaka: oznaka, gornje: it / 2, donje: -it / 2 };
+  }
+
+  /**
+   * Granične kontrolne mere za tanjenje zuba Asne (gornje) i Asni (donje odstupanje debljine zuba u normalnom preseku, mm; obično ≤ 0).
+   * W_k: W + Asn·cos αₙ (isti broj zuba k). M_d: računa se kao za koeficijent x + Asn / (2·mₙ·tg αₙ), istom kuglicom.
+   */
+  function granicneMere(rez, i, Asne, Asni, DM) {
+    var nom = kontrolneMere(rez, i, DM);
+    var mn = rez.ulaz.mn, alfaN = rez.par.alfaN;
+    function zaA(A) {
+      var m = kontrolneMereRacun(rez, i, nom.DM, A / (2 * mn * Math.tan(alfaN)));
+      return { W: nom.W + A * Math.cos(alfaN), Md: m.Md };
+    }
+    var g = zaA(Asne), d = zaA(Asni);
+    return { k: nom.k, W: nom.W, Wg: g.W, Wd: d.W, DM: nom.DM, Md: nom.Md, Mdg: g.Md, Mdd: d.Md, kuglicaDobra: nom.kuglicaDobra, mozeW: nom.mozeW };
+  }
+
+  /**
+   * Redovi tablice za radionički crtež jednog zupčanika (i = 0 mali, 1 veliki). Dužine su u mm (duz: true).
+   * o: {smer: 'desni'|'levi' (za z₁), tolDa: 'h11'…|'', tolA: 'js7'…|'', asne: [n, n], asni: [n, n], kval: [s, s], crtez: [s, s], mat: [s, s]}
+   */
+  function tablicaZaCrtez(rez, i, o) {
+    o = o || {};
+    var u = rez.ulaz, g = rez.zupcanici[i], drugi = rez.zupcanici[1 - i], p = rez.par;
+    var ix = i === 0 ? '₁' : '₂';
+    var r = [];
+    function red(naziv, v, dodatno) { r.push(Object.assign({ naziv: naziv, v: v }, dodatno || {})); }
+    red('Modul <i>m</i>ₙ', u.mn, { jed: 'mm', dec: 3, tekst: 'Modul mn' });
+    red('Broj zuba <i>z</i>', g.z, { dec: 0, tekst: 'Broj zuba z' });
+    red('Osnovni profil', Math.abs(u.alfaN - 20) < 1e-9 ? 'DIN 867' : 'αₙ = ' + formatBroja(u.alfaN) + '°, hₐ* = 1, h_f* = 1,25', { tekst: 'Osnovni profil' });
+    red('Ugao profila <i>α</i>ₙ', u.alfaN, { jed: '°', dec: 2, tekst: 'Ugao profila αn' });
+    red('Ugao nagiba <i>β</i>', u.beta, { jed: '°', dec: 2, tekst: 'Ugao nagiba β' });
+    var smer1 = o.smer === 'levi' ? 'levi' : 'desni';
+    var smer = u.beta < 1e-9 ? 'pravi zubi' : (i === 0 ? smer1 : (smer1 === 'levi' ? 'desni' : 'levi'));
+    red('Smer zavojnice', smer, { tekst: 'Smer zavojnice' });
+    red('Koeficijent pomeranja <i>x</i>', g.x, { dec: 4, tekst: 'Koeficijent pomeranja x' });
+    red('Pomeranje profila <i>x</i>·<i>m</i>ₙ', g.pomeranje, { jed: 'mm', duz: true, dec: 3, tekst: 'Pomeranje profila x·mn' });
+    red('Podeoni prečnik <i>d</i>', g.d, { jed: 'mm', duz: true, tekst: 'Podeoni prečnik d' });
+    var tDa = iso286Odstupanja(o.tolDa, g.da);
+    red('Temeni prečnik <i>d</i>ₐ' + (tDa ? ' ' + tDa.oznaka : ''), g.da, { jed: 'mm', duz: true, tekst: 'Temeni prečnik da' + (tDa ? ' ' + tDa.oznaka : '') });
+    if (tDa) {
+      red('Temeni prečnik — najveći', g.da + tDa.gornje, { jed: 'mm', duz: true, tekst: 'Temeni prečnik da max' });
+      red('Temeni prečnik — najmanji', g.da + tDa.donje, { jed: 'mm', duz: true, tekst: 'Temeni prečnik da min' });
+    }
+    red('Podnožni prečnik <i>d</i>f (informativno)', g.df, { jed: 'mm', duz: true, tekst: 'Podnožni prečnik df (informativno)' });
+    var asne = o.asne ? o.asne[i] : NaN, asni = o.asni ? o.asni[i] : NaN;
+    var imaTol = isFinite(asne) && isFinite(asni) && asne >= asni;
+    var gm = granicneMere(rez, i, imaTol ? asne : 0, imaTol ? asni : 0);
+    red('Broj zuba preko kojih se meri <i>k</i>', gm.k, { dec: 0, tekst: 'Broj zuba preko kojih se meri k' });
+    red('Mera preko zuba <i>W</i><sub>' + gm.k + '</sub> (nazivna)', gm.W, { jed: 'mm', duz: true, upozorenje: !gm.mozeW, tekst: 'Mera preko zuba Wk (nazivna)' });
+    if (imaTol) {
+      red('Mera preko zuba — gornja', gm.Wg, { jed: 'mm', duz: true, tekst: 'Mera preko zuba Wk gornja' });
+      red('Mera preko zuba — donja', gm.Wd, { jed: 'mm', duz: true, tekst: 'Mera preko zuba Wk donja' });
+    }
+    red('Prečnik kuglice <i>D</i>M', gm.DM, { jed: 'mm', duz: true, tekst: 'Prečnik kuglice DM' });
+    red('Mera preko kuglica <i>M</i>d (nazivna)', gm.Md, { jed: 'mm', duz: true, upozorenje: !gm.kuglicaDobra, tekst: 'Mera preko kuglica Md (nazivna)' });
+    if (imaTol) {
+      red('Mera preko kuglica — gornja', gm.Mdg, { jed: 'mm', duz: true, tekst: 'Mera preko kuglica Md gornja' });
+      red('Mera preko kuglica — donja', gm.Mdd, { jed: 'mm', duz: true, tekst: 'Mera preko kuglica Md donja' });
+      red('Odstupanja debljine zuba <i>A</i>sne / <i>A</i>sni', formatBroja(asne.toFixed(3)) + ' / ' + formatBroja(asni.toFixed(3)) + ' mm', { tekst: 'Odstupanja debljine zuba Asne / Asni' });
+    }
+    if (o.kval && o.kval[i]) red('Kvalitet i tolerancija', String(o.kval[i]), { tekst: 'Kvalitet i tolerancija' });
+    red('Širina ozubljenja <i>b</i>', u.b, { jed: 'mm', duz: true, tekst: 'Širina ozubljenja b' });
+    red('Spregnuti zupčanik — broj zuba', drugi.z, { dec: 0, tekst: 'Spregnuti zupčanik - broj zuba' });
+    if (o.crtez && o.crtez[1 - i]) red('Spregnuti zupčanik — broj crteža', String(o.crtez[1 - i]), { tekst: 'Spregnuti zupčanik - broj crteža' });
+    var tA = iso286Odstupanja(o.tolA, p.a);
+    red('Osno rastojanje <i>a</i>' + (tA ? ' ' + tA.oznaka : ''), p.a, { jed: 'mm', duz: true, tekst: 'Osno rastojanje a' + (tA ? ' ' + tA.oznaka : '') });
+    if (tA) red('Odstupanje osnog rastojanja', '±' + formatBroja((tA.gornje).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')) + ' mm', { tekst: 'Odstupanje osnog rastojanja' });
+    if (o.mat && o.mat[i]) red('Materijal i termička obrada', String(o.mat[i]), { tekst: 'Materijal i termička obrada' });
+    return r;
   }
 
   // ------------------------------------------------------------------
@@ -611,6 +710,10 @@
     rastojanjeIzPomeranja: rastojanjeIzPomeranja,
     raspodelaDIN3992: raspodelaDIN3992,
     raspodeliPomeranje: raspodeliPomeranje,
+    iso286IT: iso286IT,
+    iso286Odstupanja: iso286Odstupanja,
+    granicneMere: granicneMere,
+    tablicaZaCrtez: tablicaZaCrtez,
     oceniKombinaciju: oceniKombinaciju,
     savetnik: savetnik,
     DIN780_RED1: DIN780_RED1,

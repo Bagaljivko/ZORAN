@@ -569,3 +569,11 @@ main.radni .ekran.aktivan { animation: none; }
 .prozor-drive h2 { text-align: center; }
 .prozor-drive .dugmad-prozor { grid-template-columns: 1fr; }
 .drive-sekcija .sitno a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ---------- 1.13.0: Tablica za radionički crtež ---------- */
+.crtez-sekcija h4 { font-weight: 400; font-size: 1.02rem; font-style: italic; margin: 1rem 0 0.2rem; }
+.crtez-sekcija fieldset { margin-top: 0.6rem; }
+.polje-tekst { grid-template-columns: 1fr; }
+.polje-tekst input { text-align: left; font-family: var(--serif); font-size: 1rem; }
+.crtez-sekcija .izbor[hidden] { display: none; }
+@media print { #forma-crtez, .crtez-sekcija > .sitno { display: none !important; } .crtez-sekcija h4 { break-after: avoid; } }
