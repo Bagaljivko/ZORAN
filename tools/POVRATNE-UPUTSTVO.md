@@ -39,6 +39,9 @@ preko Google Apps Script veb-aplikacije. Server nije potreban. Dok adresa nije u
 | --- | --- |
 | Feedback – Srpski / English | Time, Type, Text, Email, User ID, Screen, Version, Device, Tech data |
 | Diagnostics | Time, Email, User ID, Version, Language, Device, Note, Report |
+| Survey (anketa, od 1.16.0) | Time, Email, User ID, Version, Helps (1-5), How often, Uses most, Wishes, Would recommend, Device |
+
+Ako skripta nije ažurirana na verziju sa listom **Survey**, odgovori iz ankete i dalje stižu — u list „Feedback – Srpski“, kao „Idea“, sa sažetkom koji počinje sa „ANKETA —“.
 
 Svaka ćelija je skraćena, a vrednost koja počinje sa `=`, `+`, `-` ili `@` dobija `'` ispred, pa nikad ne postaje formula.
 Zahtev za brisanje: pronađi redove po mejlu ili po „User ID“ i obriši ih.

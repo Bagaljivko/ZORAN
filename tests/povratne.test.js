@@ -230,6 +230,23 @@ test('otvaranje aplikacije bez radnje se broji kao dan korišćenja', function (
   tacno(F.posleAktivnosti(s, POCETAK + 15 * DAN).prikazi);
 });
 
+console.log('Anketa');
+
+test('anketa: odgovori, sažetak u tekstu (radi i sa starijom skriptom), ocena ograničena na 1–5', function () {
+  var a = F.napraviAnketu(Object.assign({ pomaze: 4, cesto: 'nedeljno', koristi: ['Proračun i crtež zahvata', 'Čvrstoća zuba'], zelje: ' konusni zupčanici ', preporuka: 'da' }, OSNOVA));
+  jednako(a.kind, 'anketa'); jednako(a.type, 'idea'); jednako(a.answers.pomaze, 4); jednako(a.answers.zelje, 'konusni zupčanici');
+  tacno(/ANKETA — pomaže: 4\/5/.test(a.text) && /Čvrstoća zuba/.test(a.text) && /konusni/.test(a.text), a.text);
+  jednako(F.napraviAnketu({ pomaze: 9 }).answers.pomaze, 5); jednako(F.napraviAnketu({ pomaze: 0 }).answers.pomaze, null);
+});
+test('anketa se nudi posle 3 otvaranja, ne posle „Ne pitaj više“ ili slanja, „Kasnije“ = 14 dana, najviše 3 puta', function () {
+  var D = 86400000, t = Date.now();
+  tacno(!F.ponuditiAnketu({}, 2, t) && F.ponuditiAnketu({}, 3, t));
+  tacno(!F.ponuditiAnketu({ ne: true }, 9, t) && !F.ponuditiAnketu({ poslato: t }, 9, t));
+  tacno(!F.ponuditiAnketu({ kasnije: t - 13 * D }, 9, t) && F.ponuditiAnketu({ kasnije: t - 15 * D }, 9, t));
+  tacno(!F.ponuditiAnketu({ ponudjeno: 3 }, 9, t));
+  tacno(F.NE_SINHRONIZUJ.indexOf('zoran.anketa') >= 0, 'stanje ankete ne ide na Drive');
+});
+
 console.log('Google tabela (Apps Script)');
 
 function apsScript() {
@@ -269,7 +286,7 @@ function apsScript() {
 test('setup() pravi listove sa podebljanim, zamrznutim zaglavljem', function () {
   var g = apsScript();
   g.setup(); g.setup(); // drugi put ne dupli zaglavlje
-  ['Feedback – English', 'Feedback – Srpski', 'Diagnostics'].forEach(function (n) {
+  ['Feedback – English', 'Feedback – Srpski', 'Diagnostics', 'Survey'].forEach(function (n) {
     var l = g._tabela.listovi[n];
     tacno(l, 'nema lista ' + n);
     tacno(l.podebljano && l.zamrznuto === 1, n + ': zaglavlje');
@@ -288,6 +305,15 @@ test('poruka ide u list prema jeziku, dijagnostika u „Diagnostics“', functio
   jednako(sr.length, 2); jednako(sr[1][2], 'srpski'); jednako(sr[1][1], 'Idea'); jednako(sr[1][5], 'podesavanja'); jednako(sr[1][6], '9.9.9');
   jednako(en.length, 2); jednako(en[1][2], 'english');
   jednako(di.length, 2); jednako(di[1][6], 'nap'); jednako(di[1][7], 'IZV'); jednako(di[1][4], 'sr');
+});
+test('anketa ide u list „Survey“ sa svim odgovorima', function () {
+  var g = apsScript();
+  g.setup();
+  tacno(g._tabela.listovi.Survey && g._tabela.listovi.Survey.podebljano, 'list Survey');
+  g.posalji(F.napraviAnketu(Object.assign({ pomaze: 5, cesto: 'svaki dan', koristi: ['Savetnik', 'Varijante i poređenje'], zelje: '=zlo', preporuka: 'možda', mejl: 'a@b.rs' }, OSNOVA)));
+  var r = g._tabela.listovi.Survey.redovi[1];
+  jednako(r.slice(1, 10).join('|'), "a@b.rs|test-uid-1234|9.9.9|5|svaki dan|Savetnik, Varijante i poređenje|'=zlo|možda|" + OSNOVA.uredjaj);
+  jednako(g._tabela.listovi['Feedback – Srpski'].redovi.length, 1, 'anketa ne ide u povratne informacije:');
 });
 test('ćelija nikad ne postaje formula i skraćuje se', function () {
   var g = apsScript();

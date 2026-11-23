@@ -545,6 +545,45 @@ async function proveriPoruku(b) {
   await ctx.close();
 }
 
+// Anketa: ponudi se posle nekoliko otvaranja, šalje odgovore (lažna adresa), ne nudi se ponovo; dostupna u Podešavanjima
+async function proveriAnketu(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['Pixel 7']));
+  await ctx.addInitScript(function (a) {
+    window.ZORAN_ADRESA_POVRATNIH = a;
+    if (!localStorage.getItem('zoran.koriscenje')) {
+      localStorage.setItem('zoran.koriscenje', JSON.stringify({ prvi: Date.now(), otvaranja: 4 }));
+      localStorage.setItem('zoran.poruke', JSON.stringify({ 'solidworks-makro-2026-11': { procitano: true } }));
+    }
+  }, LAZNA_ADRESA);
+  var poslato = [];
+  await ctx.route(LAZNA_ADRESA, function (route) { poslato.push(JSON.parse(route.request().postData() || '{}')); route.fulfill({ status: 200, body: 'ok' }); });
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL); await cekaj(5000);
+  var ponudjena = await pg.evaluate(function () { return !document.querySelector('#molba-anketa').hidden; });
+  await pg.click('#anketa-da'); await cekaj(300);
+  await pg.click('#anketa-posalji'); await cekaj(200);
+  var greska = await pg.textContent('#an-pomaze-greska');
+  await pg.click('#prozor-anketa label:has(input[name="an-pomaze"][value="4"])');
+  await pg.click('#prozor-anketa label:has(input[name="an-cesto"][value="nedeljno"])');
+  await pg.click('#prozor-anketa label:has(input[value="Čvrstoća zuba"])');
+  await pg.fill('#an-zelje', 'konusni zupčanici');
+  await pg.click('#prozor-anketa label:has(input[name="an-preporuka"][value="da"])');
+  await pg.click('#anketa-posalji'); await cekaj(1200);
+  var p = poslato[0] || {};
+  await pg.reload(); await cekaj(5000);
+  var ponovo = await pg.evaluate(function () { return !document.querySelector('#molba-anketa').hidden; });
+  await pg.evaluate(function () { location.hash = 'podesavanja'; }); await cekaj(300);
+  await pg.click('#dugme-anketa'); await cekaj(300);
+  var izPodesavanja = await pg.evaluate(function () { return document.querySelector('#prozor-anketa').open; });
+  stavka('Povratne', 'Anketa: ponudi se posle 3+ otvaranja, traži ocenu, šalje odgovore (kind: anketa), ne nudi se ponovo, otvara se iz Podešavanja',
+    ponudjena && /ocenu/.test(greska) && p.kind === 'anketa' && p.answers && p.answers.pomaze === 4 && p.answers.cesto === 'nedeljno' && p.answers.koristi.join() === 'Čvrstoća zuba' && /konusni/.test(p.answers.zelje) && p.answers.preporuka === 'da' && !ponovo && izPodesavanja && !konzola.length,
+    JSON.stringify({ ponudjena: ponudjena, greska: greska, answers: p.answers, ponovo: ponovo, izPodesavanja: izPodesavanja, konzola: konzola.slice(0, 2) }));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -611,6 +650,7 @@ function proveriStatiku() {
     await proveriCrtez(b);
     await proveriCvrstocu(b);
     await proveriPoruku(b);
+    await proveriAnketu(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

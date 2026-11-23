@@ -49,6 +49,16 @@
   </div>
 </div>
 
+<!-- Ponuda ankete (jednom, posle nekoliko otvaranja) -->
+<div class="obavestenje-verzija molba-podeli" id="molba-anketa" hidden>
+  <p>Imaš minut? Reci koliko ti ZORAN pomaže i šta bi još voleo.</p>
+  <div class="molba-dugmad">
+    <button type="button" class="pecat" id="anketa-da">Popuni anketu</button>
+    <button type="button" class="dugme" id="anketa-kasnije">Kasnije</button>
+    <button type="button" class="dugme" id="anketa-ne">Ne pitaj više</button>
+  </div>
+</div>
+
 <!-- Molba za deljenje (posle nekog vremena korišćenja) -->
 <div class="obavestenje-verzija molba-podeli" id="molba-podeli" hidden>
   <p>Sviđa ti se ZORAN? Podeli ga sa kolegom kome bi koristio.</p>
@@ -523,6 +533,7 @@
     <p>Našao si grešku, imaš ideju šta ZORAN-u nedostaje ili ti se nešto posebno sviđa? Piši direktno autoru.</p>
     <div class="dugmad">
       <button type="button" class="pecat" id="dugme-utisak" aria-haspopup="dialog">Pošalji utisak</button>
+      <button type="button" class="dugme" id="dugme-anketa" aria-haspopup="dialog">Popuni anketu (1 minut)</button>
     </div>
 
     <h3>Prikaz brojeva</h3>
@@ -651,6 +662,53 @@
       <button type="button" class="dugme" id="drive-kopija-zadrzi">Zadrži podatke sa ovog uređaja</button>
     </div>
   </div>
+</dialog>
+
+<!-- Prozor: anketa -->
+<dialog id="prozor-anketa" class="prozor prozor-utisak prozor-anketa" aria-labelledby="naslov-anketa">
+  <form class="prozor-sadrzaj" id="forma-anketa" novalidate autocomplete="off">
+    <h2 id="naslov-anketa">Anketa — 1 minut</h2>
+    <p class="natpis-polja" id="an-natpis-pomaze">Koliko ti ZORAN pomaže u radu? <span class="jed">(1 = malo, 5 = mnogo)</span></p>
+    <div class="prekidac izbor-vrste" role="radiogroup" aria-labelledby="an-natpis-pomaze" aria-describedby="an-pomaze-greska">
+      <label><input type="radio" name="an-pomaze" value="1"><span>1</span></label>
+      <label><input type="radio" name="an-pomaze" value="2"><span>2</span></label>
+      <label><input type="radio" name="an-pomaze" value="3"><span>3</span></label>
+      <label><input type="radio" name="an-pomaze" value="4"><span>4</span></label>
+      <label><input type="radio" name="an-pomaze" value="5"><span>5</span></label>
+    </div>
+    <div class="poruka-polja" id="an-pomaze-greska" role="alert"></div>
+    <p class="natpis-polja" id="an-natpis-cesto">Koliko često ga koristiš?</p>
+    <div class="prekidac izbor-vrste mreza-2" role="radiogroup" aria-labelledby="an-natpis-cesto">
+      <label><input type="radio" name="an-cesto" value="svaki dan"><span>svaki dan</span></label>
+      <label><input type="radio" name="an-cesto" value="nedeljno"><span>nedeljno</span></label>
+      <label><input type="radio" name="an-cesto" value="mesečno"><span>mesečno</span></label>
+      <label><input type="radio" name="an-cesto" value="ređe"><span>ređe</span></label>
+    </div>
+    <p class="natpis-polja">Šta najviše koristiš? <span class="jed">(može više)</span></p>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Proračun i crtež zahvata"><span>Proračun i crtež zahvata</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Tablica za radionički crtež"><span>Tablica za radionički crtež</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Čvrstoća zuba"><span>Čvrstoća zuba</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Savetnik"><span>Savetnik</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Korak 0 (od vratila)"><span>Korak 0 (od vratila)</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Uvoz / SolidWorks"><span>Uvoz / SolidWorks</span></label>
+      <label class="potvrda-polje"><input type="checkbox" name="an-koristi" value="Varijante i poređenje"><span>Varijante i poređenje</span></label>
+    <label class="natpis-polja" for="an-zelje">Šta ti nedostaje, šta bi još voleo?</label>
+    <textarea id="an-zelje" rows="4" maxlength="5000" placeholder="npr. unutrašnje ozubljenje, konusni zupčanici, PDF crteža…"></textarea>
+    <p class="natpis-polja" id="an-natpis-preporuka">Da li bi ZORAN preporučio kolegi?</p>
+    <div class="prekidac izbor-vrste" role="radiogroup" aria-labelledby="an-natpis-preporuka">
+      <label><input type="radio" name="an-preporuka" value="da"><span>da</span></label>
+      <label><input type="radio" name="an-preporuka" value="možda"><span>možda</span></label>
+      <label><input type="radio" name="an-preporuka" value="ne"><span>ne</span></label>
+    </div>
+    <label class="natpis-polja" for="an-mejl">Mejl <span class="jed">(neobavezno — ako želiš odgovor)</span></label>
+    <input id="an-mejl" type="email" inputmode="email" autocomplete="email" aria-describedby="an-mejl-greska">
+    <div class="poruka-polja" id="an-mejl-greska" role="alert"></div>
+    <p class="sitno">Odgovori idu autoru ZORAN-a (Google tabela), uz anonimni broj korisnika, verziju i uređaj. <a href="./privatnost.html#povratne" target="_blank" rel="noopener">Privatnost</a></p>
+    <div class="dugmad dugmad-prozor">
+      <button type="submit" class="pecat" id="anketa-posalji">Pošalji</button>
+      <button type="button" class="dugme" id="anketa-odustani">Odustani</button>
+    </div>
+  </form>
 </dialog>
 
 <!-- Prozor: poruka autora, sa koracima -->

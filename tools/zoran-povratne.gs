@@ -15,6 +15,8 @@ var JEZICI = { en: 'English', sr: 'Srpski' };
 var ZAGLAVLJE_POVRATNE = ['Time', 'Type', 'Text', 'Email', 'User ID', 'Screen', 'Version', 'Device', 'Tech data'];
 var ZAGLAVLJE_DIJAG = ['Time', 'Email', 'User ID', 'Version', 'Language', 'Device', 'Note', 'Report'];
 var LIST_DIJAG = 'Diagnostics';
+var LIST_ANKETA = 'Survey';
+var ZAGLAVLJE_ANKETA = ['Time', 'Email', 'User ID', 'Version', 'Helps (1-5)', 'How often', 'Uses most', 'Wishes', 'Would recommend', 'Device'];
 var MAX_CELIJA = 45000; // Google tabela prima najviše 50 000 znakova u ćeliji
 var VRSTE = { bug: 'Something is wrong', idea: 'Idea', like: 'I like it', dislike: 'I don\'t like it' };
 
@@ -46,6 +48,7 @@ function setup() {
   var tabela = SpreadsheetApp.getActiveSpreadsheet();
   Object.keys(JEZICI).forEach(function (j) { napraviList(tabela, imeListaPovratne(j), ZAGLAVLJE_POVRATNE); });
   napraviList(tabela, LIST_DIJAG, ZAGLAVLJE_DIJAG);
+  napraviList(tabela, LIST_ANKETA, ZAGLAVLJE_ANKETA);
 }
 
 function doGet() {
@@ -61,7 +64,14 @@ function doPost(e) {
   try {
     var tabela = SpreadsheetApp.getActiveSpreadsheet();
     var vreme = new Date();
-    if (p.kind === 'diag') {
+    if (p.kind === 'anketa') {
+      var o = p.answers && typeof p.answers === 'object' ? p.answers : {};
+      napraviList(tabela, LIST_ANKETA, ZAGLAVLJE_ANKETA).appendRow([
+        vreme, ocistiCeliju(p.email, 320), ocistiCeliju(p.uid, 80), ocistiCeliju(p.version, 40),
+        ocistiCeliju(o.pomaze, 4), ocistiCeliju(o.cesto, 40), ocistiCeliju(Array.isArray(o.koristi) ? o.koristi.join(', ') : o.koristi, 400),
+        ocistiCeliju(o.zelje, 5000), ocistiCeliju(o.preporuka, 20), ocistiCeliju(p.device, 600)
+      ]);
+    } else if (p.kind === 'diag') {
       napraviList(tabela, LIST_DIJAG, ZAGLAVLJE_DIJAG).appendRow([
         vreme, ocistiCeliju(p.email, 320), ocistiCeliju(p.uid, 80), ocistiCeliju(p.version, 40), ocistiCeliju(p.lang, 10),
         ocistiCeliju(p.device, 600), ocistiCeliju(p.note, 5000), ocistiCeliju(p.report)

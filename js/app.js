@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.15.1';
+  var APP_VERSION = '1.16.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -1892,7 +1892,7 @@
     if (k.otvaranja < 5 || sada - k.prvi < 2 * DAN) return;
     if (k.pitano && sada - k.pitano < 30 * DAN) return;
     setTimeout(function () {
-      if (!$('#obavestenje-verzija').hidden || !$('#poruka-autora').hidden) return;
+      if (!$('#obavestenje-verzija').hidden || !$('#poruka-autora').hidden || !$('#molba-anketa').hidden) return;
       var m = $('#molba-podeli');
       m.hidden = false;
       function zapamti(polje) { var x = citaj('zoran.koriscenje', {}) || {}; x[polje] = polje === 'pitano' ? Date.now() : true; x.pitano = Date.now(); pisi('zoran.koriscenje', x); m.hidden = true; }
@@ -1976,6 +1976,60 @@
       $('#zatvori-obavestenje').addEventListener('click', function () { setTimeout(prikazi, 300); });
       $('#link-novosti-baner').addEventListener('click', function () { setTimeout(prikazi, 300); });
     } else prikazi();
+  })();
+
+  // ------------------------------------------------------------------
+  // Anketa za korisnike (ponudi se jednom posle nekoliko otvaranja; uvek u Podešavanjima)
+  // ------------------------------------------------------------------
+  (function anketa() {
+    var KLJUC = 'zoran.anketa';
+    var pr = $('#prozor-anketa'), baner = $('#molba-anketa');
+    function stanje() { var s = citaj(KLJUC, null); return s && typeof s === 'object' ? s : {}; }
+    function zapamti(izmena) { pisi(KLJUC, Object.assign(stanje(), izmena)); }
+    function otvori() {
+      baner.hidden = true;
+      $('#forma-anketa').reset();
+      $('#an-mejl').value = predloziMejl();
+      $('#an-pomaze-greska').textContent = ''; $('#an-mejl-greska').textContent = '';
+      if (typeof pr.showModal === 'function') pr.showModal(); else pr.setAttribute('open', '');
+      document.documentElement.classList.add('prozor-otvoren');
+      var prvi = $('input[name="an-pomaze"]', pr); if (prvi) prvi.focus();
+    }
+    function zatvori() {
+      if (typeof pr.close === 'function' && pr.open) pr.close(); else { pr.removeAttribute('open'); document.documentElement.classList.remove('prozor-otvoren'); }
+    }
+    pr.addEventListener('close', function () { document.documentElement.classList.remove('prozor-otvoren'); });
+    pr.addEventListener('click', function (e) { if (e.target === pr && e.detail !== 0) zatvori(); });
+    $('#anketa-odustani').addEventListener('click', zatvori);
+    $('#dugme-anketa').addEventListener('click', otvori);
+    $('#forma-anketa').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var izbor = function (ime) { var r = $('input[name="' + ime + '"]:checked', pr); return r ? r.value : ''; };
+      var pomaze = izbor('an-pomaze'), mejl = $('#an-mejl').value.trim();
+      $('#an-pomaze-greska').textContent = pomaze ? '' : 'Izaberi ocenu od 1 do 5.';
+      $('#an-mejl-greska').textContent = mejl && !F.ispravanMejl(mejl) ? 'Mejl nije ispravan — proveri ga ili ostavi polje prazno.' : '';
+      if (!pomaze) { $('input[name="an-pomaze"]', pr).focus(); return; }
+      if (mejl && !F.ispravanMejl(mejl)) { $('#an-mejl').focus(); return; }
+      if (mejl) pisi(F.KLJUC.mejl, mejl);
+      var poruka = F.napraviAnketu({
+        pomaze: Number(pomaze), cesto: izbor('an-cesto'), preporuka: izbor('an-preporuka'), zelje: $('#an-zelje').value,
+        koristi: $$('input[name="an-koristi"]:checked', pr).map(function (c) { return c.value; }),
+        mejl: mejl, uid: F.korisnikId(localStorage), verzija: APP_VERSION, ekran: trenutni, uredjaj: uredjaj()
+      });
+      zapamti({ poslato: Date.now() });
+      zatvori();
+      posaljiPoruku(poruka);
+    });
+    $('#anketa-da').addEventListener('click', otvori);
+    $('#anketa-kasnije').addEventListener('click', function () { zapamti({ kasnije: Date.now() }); baner.hidden = true; });
+    $('#anketa-ne').addEventListener('click', function () { zapamti({ ne: true }); baner.hidden = true; });
+    var k = citaj('zoran.koriscenje', null) || {};
+    if (!F.ponuditiAnketu(stanje(), k.otvaranja, Date.now())) return;
+    setTimeout(function () {
+      if (!$('#obavestenje-verzija').hidden || !$('#poruka-autora').hidden || !$('#molba-podeli').hidden || $('dialog[open]')) return;
+      baner.hidden = false;
+      zapamti({ ponudjeno: (stanje().ponudjeno || 0) + 1 });
+    }, 4000);
   })();
 
   // ------------------------------------------------------------------

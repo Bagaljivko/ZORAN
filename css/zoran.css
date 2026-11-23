@@ -601,3 +601,13 @@ main.radni .ekran.aktivan { animation: none; }
 .prozor-poruka h2 { text-align: center; }
 .prozor-poruka ol { padding-left: 1.3rem; margin: 0.4rem 0; }
 .prozor-poruka li { margin: 0.3rem 0; }
+
+/* ---------- 1.16.0: anketa ---------- */
+.prozor-anketa .potvrda-polje { margin-top: 0.1rem; }
+.prozor-anketa .izbor-vrste { margin-bottom: 0.3rem; }
+
+.prekidac.mreza-2 { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+.prekidac.mreza-2 label { display: flex; }
+.prekidac.mreza-2 label span { flex: 1 1 auto; }
+.prekidac.mreza-2 label:nth-child(odd) span { border-left: 0; }
+.prekidac.mreza-2 label:nth-child(n+3) span { border-top: 1px solid var(--mastilo); }
