@@ -584,3 +584,12 @@ main.radni .ekran.aktivan { animation: none; }
 #cvrstoca-status:empty { display: none; }
 #cvrstoca-status.u-redu { border-left-color: var(--mastilo); color: var(--mastilo); font-style: italic; }
 @media print { #forma-cvrstoca, .cvrstoca-sekcija > .sitno { display: none !important; } }
+
+/* ---------- 1.15.0: raspodela u četiri polja (2 × 2) ---------- */
+.izbor-raspodele .prekidac { display: grid; grid-template-columns: 1fr 1fr; }
+.izbor-raspodele .prekidac label:nth-child(odd) span { border-left: 0; }
+.izbor-raspodele .prekidac label:nth-child(n+3) span { border-top: 1px solid var(--mastilo); }
+.izbor-raspodele .prekidac span { padding: 0 0.5rem; text-align: center; }
+.izbor-raspodele .prekidac { width: 100%; max-width: 30rem; }
+.izbor-raspodele .prekidac label { display: flex; }
+.izbor-raspodele .prekidac label span { flex: 1 1 auto; }

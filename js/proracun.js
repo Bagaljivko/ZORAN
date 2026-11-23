@@ -252,6 +252,42 @@
     return d;
   }
 
+  /**
+   * Specifično klizanje u podnožju oba zupčanika (početak zahvata A za z₁, kraj E za z₂):
+   * ζ₁ = 1 − ρ₂/(u·ρ₁) u tački A, ζ₂ = 1 − u·ρ₁/ρ₂ u tački E (ρ — rastojanje od T₁ odnosno T₂ po zahvatnoj liniji).
+   */
+  function specificnoKlizanje(rez) {
+    var p = rez.par, g = p.a * Math.sin(p.alfaWt), u = p.u;
+    var r1A = p.tA, r2A = g - p.tA, r1E = g - p.tE, r2E = p.tE;
+    var z1 = r1A > 1e-9 ? 1 - r2A / (u * r1A) : -Infinity;
+    var z2 = r2E > 1e-9 ? 1 - u * r1E / r2E : -Infinity;
+    return { zeta1: z1, zeta2: z2 };
+  }
+
+  /** Raspodela zbira Σx tako da specifično klizanje u podnožju bude jednako na oba zupčanika (bisekcija po x₁). */
+  function raspodelaKlizanje(sumaX, z1, z2, mn, betaDeg, alfaNDeg, b) {
+    function razlika(x1) {
+      var r = proracunaj({ z1: z1, z2: z2, mn: mn, beta: betaDeg, alfaN: alfaNDeg, b: b || 10 * mn, pom1: x1 * mn, pom2: (sumaX - x1) * mn });
+      if (!r.ok) return NaN;
+      var k = specificnoKlizanje(r);
+      var a1 = isFinite(k.zeta1) ? k.zeta1 : -1e9, a2 = isFinite(k.zeta2) ? k.zeta2 : -1e9;
+      return a1 - a2; // raste sa x₁
+    }
+    var lo = sumaX / 2 - 1.5, hi = sumaX / 2 + 1.5, flo = razlika(lo), fhi = razlika(hi), j;
+    // suzi granice na oblast gde proračun važi (vrh zuba nije zašiljen do nule)
+    for (j = 0; j < 40 && !isFinite(flo); j++) { lo += 0.05; flo = razlika(lo); }
+    for (j = 0; j < 40 && !isFinite(fhi); j++) { hi -= 0.05; fhi = razlika(hi); }
+    if (!(isFinite(flo) && isFinite(fhi)) || flo > 0 || fhi < 0) return null;
+    for (j = 0; j < 80; j++) {
+      var m = (lo + hi) / 2, fm = razlika(m);
+      if (!isFinite(fm)) return null;
+      if (fm < 0) lo = m; else hi = m;
+      if (hi - lo < 1e-9) break;
+    }
+    var x1 = (lo + hi) / 2;
+    return { x1: x1, x2: sumaX - x1 };
+  }
+
   /** Ocena jedne kombinacije za zadato osno rastojanje. */
   function oceniKombinaciju(a, z1, z2, mn, betaDeg, alfaNDeg, b, rasp) {
     var beta = betaDeg * DEG, alfaN = alfaNDeg * DEG;
@@ -264,7 +300,12 @@
     }
     var alfaWt = Math.acos(odnos);
     var sumaX = (inv(alfaWt) - inv(alfaT)) * (z1 + z2) / (2 * Math.tan(alfaN));
-    var r = raspodeliPomeranje(sumaX, z1, z2, betaDeg, alfaNDeg, rasp);
+    var r;
+    if (rasp && rasp.nacin === 'klizanje') {
+      var kl = raspodelaKlizanje(sumaX, z1, z2, mn, betaDeg, alfaNDeg, b);
+      r = kl ? { x1: kl.x1, x2: kl.x2, pomereno: false, nacin: 'klizanje' } : raspodeliPomeranje(sumaX, z1, z2, betaDeg, alfaNDeg, null);
+      if (!kl) r.klizanjeNijeNadjeno = true;
+    } else r = raspodeliPomeranje(sumaX, z1, z2, betaDeg, alfaNDeg, rasp);
     var rez = proracunaj({ z1: z1, z2: z2, mn: mn, beta: betaDeg, alfaN: alfaNDeg, pom1: r.x1 * mn, pom2: r.x2 * mn, b: b || 10 * mn });
     var upozorenja = rez.ok ? rez.upozorenja.slice() : [{ kod: 'greska', poruka: rez.greske.map(function (g) { return g.poruka; }).join(' ') }];
     if (sumaX > 1.2) upozorenja.push({ kod: 'sumaX', poruka: 'Zbir koeficijenata pomeranja Σx = ' + formatBroja(sumaX.toFixed(3)) + ' je veći od 1,2.' });
@@ -276,7 +317,7 @@
     return {
       ostvarivo: true,
       a: a, a0: a0, razlika: a - a0, alfaWt: alfaWt, sumaX: sumaX,
-      x1: r.x1, x2: r.x2, pom1: r.x1 * mn, pom2: r.x2 * mn, pomereno: r.pomereno, nacin: r.nacin,
+      x1: r.x1, x2: r.x2, pom1: r.x1 * mn, pom2: r.x2 * mn, pomereno: r.pomereno, nacin: r.nacin, klizanjeNijeNadjeno: !!r.klizanjeNijeNadjeno,
       epsA: rez.ok ? rez.par.epsA : NaN,
       rez: rez, upozorenja: upozorenja, ocena: ocena,
       z1: z1, z2: z2, mn: mn
@@ -295,8 +336,8 @@
       var g = proveriPolje(k, u[k]);
       if (g) greske.push({ polje: k, poruka: g });
     });
-    var nacin = u.raspodela === 'x1' || u.raspodela === 'x2' ? u.raspodela : 'din';
-    if (nacin !== 'din') {
+    var nacin = u.raspodela === 'x1' || u.raspodela === 'x2' || u.raspodela === 'klizanje' ? u.raspodela : 'din';
+    if (nacin === 'x1' || nacin === 'x2') {
       // 0 je ispravna vrednost (bez pomeranja), a prazno polje nije
       var gx = typeof u.xz === 'number' && isFinite(u.xz) ? proveriPolje('xz', u.xz) : 'Zadati koeficijent pomeranja: upiši broj — za zupčanik bez pomeranja upiši 0.';
       if (gx) greske.push({ polje: 'xz', poruka: gx });
@@ -322,7 +363,7 @@
     rez.ulaz.a = u.a;
     rez.raspodela = {
       a: u.a, sumaX: k.sumaX, x1: k.x1, x2: k.x2, pom1: k.pom1, pom2: k.pom2,
-      pomereno: k.pomereno, nacin: k.nacin, razlika: rez.par.a - u.a
+      pomereno: k.pomereno, nacin: k.nacin, klizanjeNijeNadjeno: k.klizanjeNijeNadjeno, razlika: rez.par.a - u.a
     };
     return rez;
   }
@@ -553,6 +594,66 @@
       Fn: Ft / (Math.cos(p.alfaWt) * Math.cos(Math.atan(Math.tan(betaW) * Math.cos(p.alfaWt)))),
       betaW: betaW
     };
+  }
+
+  // ------------------------------------------------------------------
+  // Izvoz u SolidWorks: VBA makro koji upisuje parametre u Custom Properties dela
+  // ------------------------------------------------------------------
+
+  /**
+   * Tekst VBA makroa (.bas) za zupčanik i (0 mali, 1 veliki). Samo ASCII znakovi (VBA editor ne čita UTF-8),
+   * redovi odvojeni sa CRLF. Imena ZORAN_Modul … ZORAN_PomeranjeProfila čita i ZORAN-ov Uvoz.
+   */
+  function makroZaSolidWorks(rez, i, verzija) {
+    var u = rez.ulaz, g = rez.zupcanici[i], drugi = rez.zupcanici[1 - i], p = rez.par;
+    var km = kontrolneMere(rez, i);
+    function br(v, dec) { var s = (Math.round(v * Math.pow(10, dec)) / Math.pow(10, dec)).toString(); return s.indexOf('e') >= 0 ? v.toFixed(dec) : s; }
+    var svojstva = [
+      ['ZORAN_Modul', br(u.mn, 6)],
+      ['ZORAN_BrojZuba', String(g.z)],
+      ['ZORAN_UgaoNagiba', br(u.beta, 6)],
+      ['ZORAN_UgaoProfila', br(u.alfaN, 6)],
+      ['ZORAN_Sirina', br(u.b, 6)],
+      ['ZORAN_PomeranjeProfila', br(g.pomeranje, 6)],
+      ['ZORAN_KoefPomeranja', br(g.x, 6)],
+      ['ZORAN_PodeoniPrecnik', br(g.d, 6)],
+      ['ZORAN_TemeniPrecnik', br(g.da, 6)],
+      ['ZORAN_PodnozniPrecnik', br(g.df, 6)],
+      ['ZORAN_OsnovniPrecnik', br(g.db, 6)],
+      ['ZORAN_OsnoRastojanje', br(p.a, 6)],
+      ['ZORAN_SpregnutiZubi', String(drugi.z)],
+      ['ZORAN_MeraPrekoZubaW', br(km.W, 6)],
+      ['ZORAN_MeraPrekoZubaK', String(km.k)]
+    ];
+    var L = [];
+    L.push('Attribute VB_Name = "ZoranUpis' + (i + 1) + '"');
+    L.push("' ZORAN " + verzija + ' - upis parametara zupcanika z' + (i + 1) + ' = ' + g.z + ' u Custom Properties (SolidWorks)');
+    L.push("' Par: z1 = " + rez.zupcanici[0].z + ', z2 = ' + rez.zupcanici[1].z + ', mn = ' + br(u.mn, 6) + ' mm, a = ' + br(p.a, 6) + ' mm');
+    L.push("' Upotreba: otvori deo zupcanika, Tools > Macro > New (sacuvaj kao .swp), u VBA editoru File > Import File i izaberi");
+    L.push("' ovaj .bas fajl, pa pokreni Sub main (F5). Na kraju sacuvaj deo (Ctrl+S).");
+    L.push("' U dimenzijama i jednacinama vrednost se koristi preko svojstva (Link to Property), npr. ZORAN_Modul.");
+    L.push('Option Explicit');
+    L.push('Private Const swDocPART As Long = 1');
+    L.push('Private Const swCustomInfoText As Long = 30');
+    L.push('Private Const swCustomPropertyReplaceValue As Long = 2');
+    L.push('');
+    L.push('Sub main()');
+    L.push('    Dim swApp As Object, swModel As Object, cpm As Object');
+    L.push('    Set swApp = Application.SldWorks');
+    L.push('    Set swModel = swApp.ActiveDoc');
+    L.push('    If swModel Is Nothing Then');
+    L.push('        MsgBox "Nijedan dokument nije otvoren. Otvori deo zupcanika i pokreni makro ponovo.", vbExclamation, "ZORAN"');
+    L.push('        Exit Sub');
+    L.push('    End If');
+    L.push('    If swModel.GetType <> swDocPART Then');
+    L.push('        MsgBox "Aktivni dokument nije deo (.SLDPRT).", vbExclamation, "ZORAN"');
+    L.push('        Exit Sub');
+    L.push('    End If');
+    L.push('    Set cpm = swModel.Extension.CustomPropertyManager("")');
+    svojstva.forEach(function (s) { L.push('    cpm.Add3 "' + s[0] + '", swCustomInfoText, "' + s[1] + '", swCustomPropertyReplaceValue'); });
+    L.push('    MsgBox "Upisano ' + svojstva.length + ' svojstava za zupcanik z = ' + g.z + ' (ZORAN ' + verzija + '). Sacuvaj deo (Ctrl+S).", vbInformation, "ZORAN"');
+    L.push('End Sub');
+    return L.join('\r\n') + '\r\n';
   }
 
   // ------------------------------------------------------------------
@@ -808,6 +909,8 @@
     rastojanjeIzPomeranja: rastojanjeIzPomeranja,
     raspodelaDIN3992: raspodelaDIN3992,
     raspodeliPomeranje: raspodeliPomeranje,
+    specificnoKlizanje: specificnoKlizanje,
+    raspodelaKlizanje: raspodelaKlizanje,
     iso286IT: iso286IT,
     iso286Odstupanja: iso286Odstupanja,
     granicneMere: granicneMere,
@@ -815,6 +918,7 @@
     MATERIJALI: MATERIJALI,
     faktoriKorena: faktoriKorena,
     cvrstocaZuba: cvrstocaZuba,
+    makroZaSolidWorks: makroZaSolidWorks,
     oceniKombinaciju: oceniKombinaciju,
     savetnik: savetnik,
     DIN780_RED1: DIN780_RED1,

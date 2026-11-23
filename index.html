@@ -152,6 +152,7 @@
               <label><input type="radio" name="raspodela" value="din" checked><span>DIN 3992</span></label>
               <label><input type="radio" name="raspodela" value="x1"><span>zadajem&nbsp;<i>x</i>₁</span></label>
               <label><input type="radio" name="raspodela" value="x2"><span>zadajem&nbsp;<i>x</i>₂</span></label>
+              <label><input type="radio" name="raspodela" value="klizanje"><span>jednako klizanje</span></label>
             </div>
           </div>
           <div class="polje" id="polje-xz" hidden>
@@ -397,6 +398,8 @@
         <div class="dugmad">
           <button type="button" class="pecat" id="dugme-kopiraj-crtez">Kopiraj obe tablice</button>
           <button type="button" class="dugme" id="dugme-csv">Preuzmi za Excel (CSV)</button>
+          <button type="button" class="dugme" data-sw="0">Makro za SolidWorks — <i>z</i>₁</button>
+          <button type="button" class="dugme" data-sw="1">Makro za SolidWorks — <i>z</i>₂</button>
         </div>
         <p class="poruka-akcenat" id="poruka-crtez" aria-live="polite"></p>
         <p class="sitno">Tolerancije temenog prečnika i osnog rastojanja su po ISO 286 (do 1000 mm). Gornja i donja mera preko zuba: <i>W</i> + <i>A</i>sn·cos <i>α</i>ₙ; preko kuglica: za koeficijent <i>x</i> + <i>A</i>sn/(2·<i>m</i>ₙ·tg <i>α</i>ₙ), istom kuglicom (DIN 3960).</p>
