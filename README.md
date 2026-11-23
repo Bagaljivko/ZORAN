@@ -11,7 +11,8 @@ Adresa: **https://bagaljivko.github.io/ZORAN/**
 - **Proračun** — unosiš z₁, z₂, mₙ, β, αₙ, širinu ozubljenja b i **osno rastojanje a koje zadaješ**; Zoran iz njega računa pomeranje profila (Σx, raspodela po DIN 3992), prikazuje ga ispod crteža i proverava da zaokružena pomeranja daju zadato a. Računa odmah, dok kucaš: prečnike (d, d_b, d_w, dₐ, d_f), debljine zuba, skraćenje temena, stepene sprezanja εα, εβ, εγ i upozorava na podsecanje, zašiljen vrh, εα < 1,1 i **prodiranje zuba** (vrh jednog zupčanika u nogu drugog — crveno na crtežu, a u animaciji crveni par zuba dok mu je dodir van T₁T₂).
 - **Čvrstoća zuba** — pojednostavljeno po ISO 6336: površinski pritisak i savijanje u korenu, sigurnosti SH i SF za moment, broj obrtaja i materijal.
 - **Tablica za radionički crtež** — za svaki zupčanik posebno, sa tolerancijama (Asne/Asni iz DIN 3967 → gornja/donja mera preko zuba i kuglica; dₐ i osno rastojanje po ISO 286), kopiranje i izvoz u Excel (CSV).
-- **Raspodela pomeranja** — po DIN 3992, ili zadaješ koeficijent jednog zupčanika (0 = bez pomeranja) a drugi dobija ostatak Σx.
+- **Raspodela pomeranja** — po DIN 3992, po jednakom specifičnom klizanju, ili zadaješ koeficijent jednog zupčanika (0 = bez pomeranja) a drugi dobija ostatak Σx.
+- **Makro za SolidWorks** — VBA makro koji upiše izračunate parametre u Custom Properties dela (iz Tablice za crtež).
 - **Crtež zahvata** — pravi evolventni profili, kotrljajne i osnovne kružnice, zahvatna linija T₁T₂ i aktivni deo AE; prikazi „Ceo par“, „Pregled“ i „Zona zahvata“, uz animaciju na dugme „Pokreni“.
 - **Tablica** — svi rezultati, uz kopiranje svake vrednosti i „Kopiraj sve“.
 - **Savetnik** — za zadato osno rastojanje računa Σx, raspodelu po DIN 3992 i predlaže bolje kombinacije modula (DIN 780) i broja zuba.

@@ -399,6 +399,15 @@ async function proveriRaspodelu(b) {
   await pg.goto(URL + '#proracun'); await cekaj(3400);
   var posle = await pg.evaluate(function () { return { nacin: document.querySelector('input[name="raspodela"]:checked').value, xz: document.querySelector('#u-xz').value, vidljivo: !document.querySelector('#polje-xz').hidden }; });
   stavka('Proračun', 'Prazno polje daje poruku „upiši 0“; izbor raspodele ostaje sačuvan posle ponovnog otvaranja', /upiši 0/.test(poruka) && posle.nacin === 'x1' && posle.xz === '0' && posle.vidljivo, JSON.stringify({ poruka: poruka, posle: posle }));
+  // jednako klizanje: polje za koeficijent se skriva, ζ₁ = ζ₂
+  await pg.click('label:has(input[name="raspodela"][value="klizanje"])'); await cekaj(500);
+  var kl = await pg.evaluate(function () {
+    var o = {};
+    Array.prototype.slice.call(document.querySelectorAll('#tablica-pomeranje .red')).forEach(function (r) { o[r.querySelector('.naziv').textContent.trim()] = r.querySelector('.vrednost').textContent.trim(); });
+    var x = document.querySelector('#polje-xz');
+    return { z1: o['Specifično klizanje u podnožju ζ₁'], z2: o['Specifično klizanje u podnožju ζ₂'], xz: !x.offsetParent, nap: (document.querySelector('#tablica-pomeranje .sitno:last-of-type') || {}).textContent || '' };
+  });
+  stavka('Proračun', 'Raspodela „jednako klizanje“: ζ₁ = ζ₂ u tablici, polje za koeficijent skriveno, napomena', kl.z1 && kl.z1 === kl.z2 && kl.xz && /jednako na oba/.test(kl.nap), JSON.stringify(kl));
   stavka('Proračun', 'Raspodela: konzola čista', !konzola.length, konzola.slice(0, 3).join(' | '));
   await ctx.close();
 }
@@ -468,6 +477,11 @@ async function proveriCrtez(b) {
   if (dl[0]) { var put = await dl[0].path(); csv = fs.readFileSync(put, 'utf8'); }
   stavka('Proračun', 'Pogrešan redosled odstupanja daje poruku; „Preuzmi za Excel“ daje CSV sa obe tablice', /mora biti veće/.test(poruka) && /^\ufeff/.test(csv) && /Mera preko zuba Wk gornja;34,949;mm/.test(csv) && /velikog zupčanika/.test(csv) && dl[0] && /zoran-crtez-z40-z40\.csv/.test(dl[0].suggestedFilename()),
     JSON.stringify({ poruka: poruka, ime: dl[0] && dl[0].suggestedFilename(), csv: csv.slice(0, 80) }));
+  var sw = await Promise.all([pg.waitForEvent('download', { timeout: 5000 }).catch(function () { return null; }), pg.click('[data-sw="1"]')]);
+  var bas = '';
+  if (sw[0]) bas = fs.readFileSync(await sw[0].path(), 'latin1');
+  stavka('Proračun', '„Makro za SolidWorks — z₂“ preuzima .bas sa ZORAN_ svojstvima (samo ASCII)', sw[0] && /zoran-z40-solidworks\.bas/.test(sw[0].suggestedFilename()) && /ZORAN_PomeranjeProfila/.test(bas) && /^[\x00-\x7F]*$/.test(bas),
+    JSON.stringify({ ime: sw[0] && sw[0].suggestedFilename(), duzina: bas.length }));
   await pg.reload(); await cekaj(3400);
   var sacuvano = await pg.evaluate(function () { return document.querySelector('#c-asne1').value + '|' + document.querySelector('#c-kval1').value; });
   stavka('Proračun', 'Unos za tablicu crteža ostaje posle ponovnog otvaranja; konzola čista', sacuvano === '-0,019|7f25 DIN 3967' && !konzola.length, sacuvano + ' ' + konzola.slice(0, 2).join(' | '));

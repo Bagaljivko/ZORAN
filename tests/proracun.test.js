@@ -438,6 +438,43 @@ test('kosi zubi: Z_β = √cos β, Y_β < 1; preopterećen par daje S < minimum'
   tacno(c.ok, 'podrazumevani par sa 300 N·m i cementiranim čelikom je u redu');
 });
 
+console.log('Raspodela po jednakom klizanju, makro za SolidWorks');
+
+test('jednako klizanje: ζ₁ = ζ₂ u podnožju, Σx i zadato a ostaju', function () {
+  [P.PODRAZUMEVANO, { z1: 12, z2: 60, mn: 3, beta: 0, alfaN: 20, b: 30, a: 110 }, { z1: 17, z2: 41, mn: 3, beta: 12, alfaN: 20, b: 40, a: 90 }].forEach(function (u) {
+    var r = P.proracunajIzRastojanja(Object.assign({}, u, { raspodela: 'klizanje' }));
+    tacno(r.ok && r.raspodela.nacin === 'klizanje' && !r.raspodela.klizanjeNijeNadjeno, 'z1 = ' + u.z1);
+    var k = P.specificnoKlizanje(r);
+    jednako(k.zeta1, k.zeta2, 1e-6, 'z1 = ' + u.z1 + ' ζ:');
+    jednako(r.raspodela.x1 + r.raspodela.x2, r.raspodela.sumaX, 1e-12);
+    jednako(r.par.a, u.a, 1e-9);
+  });
+});
+test('jednako klizanje: simetričan par (z₁ = z₂) daje x₁ = x₂ kao DIN 3992; za mali z₁ više pomeranja na z₁', function () {
+  var u = { z1: 40, z2: 40, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 101 };
+  var k = P.proracunajIzRastojanja(Object.assign({}, u, { raspodela: 'klizanje' })), d = P.proracunajIzRastojanja(u);
+  jednako(k.raspodela.x1, d.raspodela.x1, 1e-6);
+  var m = { z1: 12, z2: 60, mn: 3, beta: 0, alfaN: 20, b: 30, a: 110 };
+  tacno(P.proracunajIzRastojanja(Object.assign({}, m, { raspodela: 'klizanje' })).raspodela.x1 > P.proracunajIzRastojanja(m).raspodela.x1);
+});
+test('specifično klizanje po definiciji: ζ₁ = 1 − ρ₂/(u·ρ₁) u tački A', function () {
+  var r = P.proracunajIzRastojanja(P.PODRAZUMEVANO), p = r.par, g = p.a * Math.sin(p.alfaWt);
+  jednako(P.specificnoKlizanje(r).zeta1, 1 - (g - p.tA) / (p.u * p.tA), 1e-12);
+  jednako(P.specificnoKlizanje(r).zeta2, 1 - p.u * (g - p.tE) / p.tE, 1e-12);
+});
+test('makro za SolidWorks: samo ASCII, CRLF, sva ZORAN_ svojstva sa vrednostima tog zupčanika', function () {
+  var r = P.proracunajIzRastojanja({ z1: 40, z2: 41, mn: 2.5, beta: 0, alfaN: 20, b: 40, a: 102 });
+  var m = P.makroZaSolidWorks(r, 1, '9.9.9');
+  tacno(/^[\x00-\x7F]*$/.test(m), 'samo ASCII');
+  tacno(m.indexOf('\r\n') > 0 && m.replace(/\r\n/g, '').indexOf('\n') < 0, 'CRLF');
+  tacno(/Attribute VB_Name = "ZoranUpis2"/.test(m) && /Sub main\(\)/.test(m) && /End Sub/.test(m));
+  tacno(/cpm\.Add3 "ZORAN_BrojZuba", swCustomInfoText, "41"/.test(m), 'broj zuba z₂');
+  tacno(/cpm\.Add3 "ZORAN_Modul", swCustomInfoText, "2\.5"/.test(m) && /"ZORAN_SpregnutiZubi", swCustomInfoText, "40"/.test(m));
+  var pom = /"ZORAN_PomeranjeProfila", swCustomInfoText, "(-?[\d.]+)"/.exec(m);
+  jednako(Number(pom[1]), r.zupcanici[1].pomeranje, 1e-6, 'pomeranje:');
+  tacno(!/,\d/.test(m.split('\r\n').filter(function (l) { return /Add3/.test(l); }).join('')), 'decimalna tačka, ne zarez');
+});
+
 console.log('Korak 0: od vratila');
 
 test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {

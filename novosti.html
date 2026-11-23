@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-15-0"><span>Jednako klizanje, makro za SolidWorks</span><span>1.15.0</span></a></li>
     <li><a href="#v1-14-0"><span>Provera čvrstoće zuba</span><span>1.14.0</span></a></li>
     <li><a href="#v1-13-0"><span>Tablica za radionički crtež, tolerancije, Excel</span><span>1.13.0</span></a></li>
     <li><a href="#v1-12-1"><span>Kao prava aplikacija: Nazad, bez zumiranja, instalacija</span><span>1.12.1</span></a></li>
@@ -68,6 +69,24 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.15.0 ================= -->
+  <h2 id="v1-15-0">Verzija 1.15.0 — jednako klizanje i SolidWorks<span class="datum">23. novembar 2026.</span></h2>
+
+  <h3>Raspodela po jednakom klizanju</h3>
+  <p>Literatura preporučuje dva kriterijuma za raspodelu zbira pomeranja: izjednačenu debljinu zuba u korenu (DIN 3992, kao do sada) i <b>izjednačeno specifično klizanje</b>. Drugi je sada četvrta opcija kod <b>Raspodela pomeranja</b> — „jednako klizanje“: ZORAN bira <i>x</i>₁ i <i>x</i>₂ tako da specifično klizanje u podnožju bude jednako na oba zupčanika, uz isto zadato osno rastojanje.</p>
+  <p>Ispod izračunatog pomeranja sada se uvek vide i <b>specifična klizanja <i>ζ</i>₁ i <i>ζ</i>₂</b>, pa možeš da uporediš raspodele.</p>
+  <figure class="usko">
+    <img src="./novosti/v1150-klizanje.jpg" width="585" height="550" loading="lazy" alt="Pomeranje profila za par 12/60 sa raspodelom po jednakom klizanju: x1 = 0,5521, x2 = 0,1584, specifična klizanja −1,699 i −1,699">
+    <figcaption><span class="sl">Sl. 29.</span> Par 12/60: jednako klizanje daje više pomeranja malom zupčaniku nego DIN 3992.</figcaption>
+  </figure>
+
+  <h3>Makro za SolidWorks</h3>
+  <p>U Tablici za radionički crtež su nova dugmad <b>Makro za SolidWorks — <i>z</i>₁ / <i>z</i>₂</b>. Preuzimaš mali VBA makro sa izračunatim vrednostima tog zupčanika; u SolidWorks-u ga uvezeš (Tools › Macro › New, pa u VBA editoru File › Import File) i pokreneš — u svojstva dela (Custom Properties) upiše modul, broj zuba, uglove, širinu, pomeranje, prečnike, osno rastojanje i meru preko zuba. Ta svojstva ZORAN-ov Uvoz posle ponovo čita, pa podaci idu u oba smera.</p>
+  <figure class="usko">
+    <img src="./novosti/v1150-solidworks.jpg" width="585" height="330" loading="lazy" alt="Dugmad Kopiraj obe tablice, Preuzmi za Excel i Makro za SolidWorks za z1 i z2">
+    <figcaption><span class="sl">Sl. 30.</span> Izvoz iz tablice za crtež.</figcaption>
+  </figure>
 
   <!-- ================= 1.14.0 ================= -->
   <h2 id="v1-14-0">Verzija 1.14.0 — provera čvrstoće zuba<span class="datum">23. novembar 2026.</span></h2>

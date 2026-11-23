@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.14.0';
+  var APP_VERSION = '1.15.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -228,11 +228,11 @@
     return r ? r.value : 'din';
   }
   function postaviRaspodelu(nacin) {
-    if (nacin !== 'x1' && nacin !== 'x2') nacin = 'din';
+    if (nacin !== 'x1' && nacin !== 'x2' && nacin !== 'klizanje') nacin = 'din';
     $$('input[name="raspodela"]').forEach(function (r) { r.checked = r.value === nacin; });
-    $('#polje-xz').hidden = nacin === 'din';
+    $('#polje-xz').hidden = nacin !== 'x1' && nacin !== 'x2';
     $('#xz-indeks').textContent = nacin === 'x2' ? '₂' : '₁';
-    if (nacin !== 'din' && $('#u-xz').value.trim() === '') $('#u-xz').value = '0';
+    if ((nacin === 'x1' || nacin === 'x2') && $('#u-xz').value.trim() === '') $('#u-xz').value = '0';
   }
   function upisiUnos(vrednostiMm) {
     if (vrednostiMm.raspodela !== undefined) postaviRaspodelu(vrednostiMm.raspodela);
@@ -344,6 +344,11 @@
       { naziv: 'Pomeranje profila <i>x</i>₂·<i>m</i>ₙ', v: duz(rs.pom2), dec: Math.max(3, pod.decimale), jed: J, tekst: 'Pomeranje profila 2' }
     ].forEach(function (sp) { t.appendChild(redTablice(sp)); });
     if (rs.pomereno) t.appendChild(el('p', { class: 'sitno', text: 'Raspodela je pomerena da oba koeficijenta budu najmanje x_min (bez podsecanja).' }));
+    var kl = P.specificnoKlizanje(rez);
+    [kl.zeta1, kl.zeta2].forEach(function (z, i) {
+      if (isFinite(z)) t.appendChild(redTablice({ naziv: 'Specifično klizanje u podnožju <i>ζ</i>' + (i ? '₂' : '₁'), v: z, dec: 3, tekst: 'Specifično klizanje u podnožju ζ' + (i + 1) }));
+    });
+    if (rs.nacin === 'klizanje') t.appendChild(el('p', { class: 'sitno', html: rs.klizanjeNijeNadjeno ? 'Raspodela sa jednakim klizanjem nije nađena za ove zupčanike — prikazana je raspodela po DIN 3992.' : 'Raspodela je izabrana tako da specifično klizanje u podnožju bude jednako na oba zupčanika (<i>ζ</i>₁ = <i>ζ</i>₂).' }));
     if (rs.nacin === 'x1' || rs.nacin === 'x2') {
       var zad = rs.nacin === 'x1' ? 1 : 2, ost = zad === 1 ? 2 : 1;
       t.appendChild(el('p', { class: 'sitno', html: 'Koeficijent <i>x</i>' + (zad === 1 ? '₁' : '₂') + ' je zadat' + (Math.abs(zad === 1 ? rs.x1 : rs.x2) < 1e-12 ? ' (bez pomeranja)' : '') +
@@ -717,6 +722,25 @@
     } catch (e) { $('#poruka-crtez').textContent = 'Preuzimanje nije uspelo.'; }
   });
   upisiCrtez(citaj(CRTEZ_KLJUC, null));
+  function preuzmiFajl(ime, sadrzaj, tip) {
+    var blob = new Blob([sadrzaj], { type: tip });
+    var url = URL.createObjectURL(blob);
+    var a = el('a', { href: url, download: ime, style: 'display:none' });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  $$('[data-sw]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var rez = poslednjiRez;
+      if (!rez) return;
+      var i = +b.getAttribute('data-sw');
+      var ime = 'zoran-z' + rez.zupcanici[i].z + '-solidworks.bas';
+      try {
+        preuzmiFajl(ime, P.makroZaSolidWorks(rez, i, APP_VERSION), 'text/plain;charset=us-ascii');
+        $('#poruka-crtez').textContent = 'Preuzet je makro ' + ime + ' — u SolidWorks-u: Tools › Macro › New, pa u VBA editoru File › Import File i pokreni (F5).';
+      } catch (e) { $('#poruka-crtez').textContent = 'Preuzimanje nije uspelo.'; }
+    });
+  });
 
   // ------------------------------------------------------------------
   // Sile u zahvatu
@@ -1507,6 +1531,7 @@
     var rsv = r.raspodela || {};
     var ulazV = { z1: u.z1, z2: u.z2, mn: u.mn, beta: u.beta, alfaN: u.alfaN, b: u.b, a: u.a };
     if (rsv.nacin === 'x1' || rsv.nacin === 'x2') { ulazV.raspodela = rsv.nacin; ulazV.xz = rsv.nacin === 'x1' ? rsv.x1 : rsv.x2; }
+    else if (rsv.nacin === 'klizanje') ulazV.raspodela = 'klizanje';
     l.push({ ime: 'Varijanta ' + br, ulaz: ulazV });
     pisi(VARIJANTE_KLJUC, l);
     prikaziVarijante();
@@ -1543,7 +1568,8 @@
     var u = r.ulaz, q = [];
     ['z1', 'z2', 'mn', 'beta', 'alfaN', 'b', 'a'].forEach(function (k) { q.push(k + '=' + encodeURIComponent(String(Math.round(u[k] * 1e6) / 1e6))); });
     var rs = r.raspodela;
-    if (rs && rs.nacin && rs.nacin !== 'din') q.push('rasp=' + rs.nacin, 'xz=' + encodeURIComponent(String(Math.round((rs.nacin === 'x1' ? rs.x1 : rs.x2) * 1e6) / 1e6)));
+    if (rs && (rs.nacin === 'x1' || rs.nacin === 'x2')) q.push('rasp=' + rs.nacin, 'xz=' + encodeURIComponent(String(Math.round((rs.nacin === 'x1' ? rs.x1 : rs.x2) * 1e6) / 1e6)));
+    else if (rs && rs.nacin === 'klizanje' && !rs.klizanjeNijeNadjeno) q.push('rasp=klizanje');
     return LINK_APLIKACIJE + '?' + q.join('&');
   }
   $('#dugme-link-proracuna').addEventListener('click', function () {
@@ -1567,7 +1593,7 @@
       var kv = d.split('=');
       var k = decodeURIComponent(kv[0] || ''), v = P.parsirajBroj(decodeURIComponent(kv[1] || ''));
       if (POLJA.indexOf(k) >= 0 && isFinite(v)) { par[k] = v; ima = true; }
-      if (k === 'rasp' && /^(din|x1|x2)$/.test(kv[1] || '')) par.raspodela = kv[1];
+      if (k === 'rasp' && /^(din|x1|x2|klizanje)$/.test(kv[1] || '')) par.raspodela = kv[1];
     });
     if (ima && !par.raspodela) par.raspodela = 'din';
     return ima ? par : null;
