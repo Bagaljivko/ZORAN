@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.13.0';
+  var APP_VERSION = '1.14.0';
   var P = window.Proracun, C = window.Crtez;
   var LINK_APLIKACIJE = 'https://bagaljivko.github.io/ZORAN/';
 
@@ -436,6 +436,7 @@
     prikaziSile();
     prikaziVarijante();
     prikaziCrtez();
+    prikaziCvrstocu();
     var puna = $('#tablica-puna');
     puna.innerHTML = '';
     if (!rez) {
@@ -521,6 +522,80 @@
     if (nap.length) { linije.push('', 'Napomene za konstrukciju'); nap.forEach(function (w) { linije.push(w.poruka); }); }
     return linije.join('\n');
   }
+
+  // ------------------------------------------------------------------
+  // Čvrstoća zuba (pojednostavljeno, ISO 6336)
+  // ------------------------------------------------------------------
+  var CVRSTOCA_KLJUC = 'zoran.cvrstoca';
+  (function napuniMaterijale() {
+    $$('[data-kmat]').forEach(function (s, i) {
+      P.MATERIJALI.forEach(function (m) { s.appendChild(el('option', { value: m.kljuc, text: m.naziv + ' (' + m.sHlim + ' / ' + m.sFlim + ' MPa)' })); });
+      s.appendChild(el('option', { value: 'rucno', text: 'ručno — upiši σHlim i σFlim' }));
+      s.value = '16mncr5';
+    });
+  })();
+  function procitajCvrstocu() {
+    var o = { KA: ($('input[name="k-KA"]:checked') || {}).value || '1', Q: ($('input[name="k-Q"]:checked') || {}).value || '7', mat: $$('[data-kmat]').map(function (s) { return s.value; }) };
+    $$('[data-kpolje]').forEach(function (inp) { o[inp.getAttribute('data-kpolje')] = inp.value; });
+    return o;
+  }
+  function upisiCvrstocu(o) {
+    if (!o || typeof o !== 'object') return;
+    if (typeof o.KA === 'string') $$('input[name="k-KA"]').forEach(function (r) { r.checked = r.value === o.KA; });
+    if (typeof o.Q === 'string') $$('input[name="k-Q"]').forEach(function (r) { r.checked = r.value === o.Q; });
+    if (Array.isArray(o.mat)) $$('[data-kmat]').forEach(function (s, i) { if (typeof o.mat[i] === 'string' && s.querySelector('option[value="' + o.mat[i] + '"]')) s.value = o.mat[i]; });
+    $$('[data-kpolje]').forEach(function (inp) { var v = o[inp.getAttribute('data-kpolje')]; if (typeof v === 'string') inp.value = v; });
+  }
+  function prikaziCvrstocu() {
+    var t = $('#tablica-cvrstoca'), st = $('#cvrstoca-status');
+    t.innerHTML = ''; st.innerHTML = ''; $('#kp-n1').textContent = ''; $('#kp-khb').textContent = '';
+    var s = procitajCvrstocu();
+    $$('[data-rucno]').forEach(function (d) { d.hidden = s.mat[+d.getAttribute('data-rucno')] !== 'rucno'; });
+    var rez = poslednjiRez, sile = trenutneSile();
+    if (!rez) return;
+    st.classList.remove('u-redu');
+    if (!sile) { st.appendChild(el('p', { text: 'Upiši obrtni moment T₁ u delu „Sile u zahvatu“ iznad — iz njega se računa opterećenje zuba.' })); st.classList.add('u-redu'); return; }
+    var n1 = s.n1.trim() ? P.parsirajBroj(s.n1) : NaN;
+    if (s.n1.trim() && !(n1 > 0 && n1 <= 100000)) { $('#kp-n1').textContent = 'Broj obrtaja: unesi broj veći od 0 (npr. 1450).'; n1 = NaN; }
+    var khb = s.khb.trim() ? P.parsirajBroj(s.khb) : 1.2;
+    if (!(khb >= 1 && khb <= 3)) { $('#kp-khb').textContent = 'KHβ: unesi broj od 1 do 3 (obično 1,1–1,5).'; khb = 1.2; }
+    var mat = [0, 1].map(function (i) {
+      if (s.mat[i] !== 'rucno') return P.MATERIJALI.filter(function (m) { return m.kljuc === s.mat[i]; })[0] || P.MATERIJALI[4];
+      return { sHlim: P.parsirajBroj(s['shlim' + (i + 1)]), sFlim: P.parsirajBroj(s['sflim' + (i + 1)]) };
+    });
+    if (mat.some(function (m) { return !(m.sHlim > 0) || !(m.sFlim > 0); })) {
+      st.appendChild(el('p', { text: 'Za materijal „ručno“ upiši σHlim i σFlim u MPa.' })); return;
+    }
+    var c = P.cvrstocaZuba(rez, { T1: sile.T1, n1: n1, KA: Number(s.KA), Q: Number(s.Q), KHb: khb, mat: mat });
+    var redovi = [
+      { naziv: 'Obimna sila na podeonom prečniku <i>F</i>t', v: c.Ft, dec: 0, jed: 'N', tekst: 'Obimna sila Ft' },
+      isFinite(c.v) ? { naziv: 'Obimna brzina <i>v</i>', v: c.v, dec: 2, jed: 'm/s', tekst: 'Obimna brzina v' } : null,
+      { naziv: 'Dinamički faktor <i>K</i>v', v: c.Kv, dec: 3, tekst: 'Dinamički faktor Kv' },
+      { naziv: 'Raspodela po širini <i>K</i>Hβ / <i>K</i>Fβ', v: fmt(c.KHb, 3) + ' / ' + fmt(c.KFb, 3), tekst: 'KHβ / KFβ' },
+      { naziv: 'Površinski pritisak <i>σ</i>H', v: c.sH, dec: 0, jed: 'MPa', tekst: 'Površinski pritisak σH' }
+    ].filter(Boolean);
+    [0, 1].forEach(function (i) {
+      var z = c.zupcanici[i], ix = i === 0 ? '₁' : '₂', ixa = i === 0 ? '1' : '2';
+      redovi.push({ naziv: 'Sigurnost boka <i>S</i>H <i>z</i>' + ix, v: z.SH, dec: 2, upozorenje: !z.okH, tekst: 'Sigurnost boka SH z' + ixa });
+      redovi.push({ naziv: 'Napon u korenu <i>σ</i>F <i>z</i>' + ix + ' (<i>Y</i>Fa = ' + fmt(z.YFa, 2) + ', <i>Y</i>Sa = ' + fmt(z.YSa, 2) + ')', v: z.sF, dec: 0, jed: 'MPa', tekst: 'Napon u korenu σF z' + ixa });
+      redovi.push({ naziv: 'Sigurnost korena <i>S</i>F <i>z</i>' + ix, v: z.SF, dec: 2, upozorenje: !z.okF, tekst: 'Sigurnost korena SF z' + ixa });
+    });
+    redovi.forEach(function (sp) { t.appendChild(redTablice(sp)); });
+    if (c.ok) st.classList.add('u-redu');
+    if (c.ok) st.appendChild(el('p', { class: 'ok', text: 'Sigurnost je dovoljna na oba zupčanika (SH ≥ 1,0, SF ≥ 1,4)' + (isFinite(c.v) ? '.' : ' — bez broja obrtaja Kv = 1; upiši n₁ za tačniju proveru.') }));
+    else {
+      st.appendChild(el('p', { class: 'naslov', text: 'Nedovoljna sigurnost' }));
+      c.zupcanici.forEach(function (z, i) {
+        var o = i === 0 ? 'z₁' : 'z₂';
+        if (!z.okH) st.appendChild(el('p', { text: 'Bok zuba ' + o + ': SH = ' + fmt(z.SH, 2) + ' < 1,0 — povećaj širinu, modul ili osno rastojanje, ili izaberi tvrđi materijal.' }));
+        if (!z.okF) st.appendChild(el('p', { text: 'Koren zuba ' + o + ': SF = ' + fmt(z.SF, 2) + ' < 1,4 — povećaj modul ili širinu, ili izaberi jači materijal.' }));
+      });
+    }
+    if (!c.podkriticno) st.appendChild(el('p', { class: 'sitno', text: 'Brzina je visoka (iznad podkritične oblasti) — Kv je samo orijentacioni.' }));
+  }
+  $('#forma-cvrstoca').addEventListener('input', function () { pisi(CVRSTOCA_KLJUC, procitajCvrstocu()); prikaziCvrstocu(); });
+  $('#forma-cvrstoca').addEventListener('change', function () { pisi(CVRSTOCA_KLJUC, procitajCvrstocu()); prikaziCvrstocu(); });
+  upisiCvrstocu(citaj(CVRSTOCA_KLJUC, null));
 
   // ------------------------------------------------------------------
   // Tablica za radionički crtež (tolerancije, granične mere, izvoz)
@@ -1446,7 +1521,7 @@
   });
 
   $('#u-T1').value = citaj('zoran.sile', '') || '';
-  $('#u-T1').addEventListener('input', function () { pisi('zoran.sile', this.value); prikaziSile(); });
+  $('#u-T1').addEventListener('input', function () { pisi('zoran.sile', this.value); prikaziSile(); prikaziCvrstocu(); });
 
   function popuniZaglavljeStampe() {
     var r = poslednjiRez;

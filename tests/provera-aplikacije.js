@@ -108,7 +108,7 @@ async function proveriUredjaj(b, ime, opcije, dodir) {
       JSON.stringify(dva));
     await pg.evaluate(function () { location.hash = 'proracun'; });
     await cekaj(200);
-    var poslednje = await pg.evaluate(function () { var p = document.querySelectorAll('#forma-proracun input'); return '#' + p[p.length - 1].id; });
+    var poslednje = await pg.evaluate(function () { var p = Array.prototype.slice.call(document.querySelectorAll('#forma-proracun input')).filter(function (x) { return x.offsetParent && x.type !== 'radio'; }); return '#' + p[p.length - 1].id; });
     await pg.tap(poslednje); await cekaj(700);
     var tast = await pg.evaluate(function (sel) {
       var r = document.querySelector(sel).getBoundingClientRect();
@@ -383,7 +383,7 @@ async function proveriRaspodelu(b) {
   pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
   pg.on('pageerror', function (e) { konzola.push(e.message); });
   await pg.goto(URL + '?z1=40&z2=40&mn=2.5&beta=0&alfaN=20&b=40&a=101#proracun'); await cekaj(3400);
-  var pre = await pg.evaluate(function () { return { skriveno: document.querySelector('#polje-xz').hidden, din: document.querySelector('input[name="raspodela"]:checked').value }; });
+  var pre = await pg.evaluate(function () { var x = document.querySelector('#polje-xz'); return { skriveno: x.hidden && !x.offsetParent, din: document.querySelector('input[name="raspodela"]:checked').value }; });
   await pg.click('label:has(input[name="raspodela"][value="x1"])'); await cekaj(400);
   var x1 = await pg.evaluate(function () {
     var redovi = Array.prototype.slice.call(document.querySelectorAll('#tablica-pomeranje .red')).map(function (r) { return r.querySelector('.naziv').textContent + '=' + r.querySelector('.vrednost').textContent; });
@@ -474,6 +474,41 @@ async function proveriCrtez(b) {
   await ctx.close();
 }
 
+// Čvrstoća zuba: bez momenta poruka, sa momentom sigurnosti, preopterećenje upozorava
+async function proveriCvrstocu(b) {
+  var ctx = await b.newContext(Object.assign({}, devices['Pixel 7']));
+  var pg = await ctx.newPage();
+  var konzola = [];
+  pg.on('console', function (m) { if (m.type() === 'error' || m.type() === 'warning') konzola.push(m.text()); });
+  pg.on('pageerror', function (e) { konzola.push(e.message); });
+  await pg.goto(URL + '#tablica'); await cekaj(3400);
+  var bez = await pg.textContent('#cvrstoca-status');
+  await pg.fill('#u-T1', '300'); await pg.fill('#k-n1', '1450'); await cekaj(400);
+  function stanje() {
+    return pg.evaluate(function () {
+      var o = {};
+      Array.prototype.slice.call(document.querySelectorAll('#tablica-cvrstoca .red')).forEach(function (r) { o[r.querySelector('.naziv').textContent.trim()] = { v: r.querySelector('.vrednost').textContent.trim(), up: r.classList.contains('upozorenje') }; });
+      return { o: o, status: document.querySelector('#cvrstoca-status').textContent };
+    });
+  }
+  var s1 = await stanje();
+  var imena = Object.keys(s1.o);
+  var ok1 = /Upiši obrtni moment/.test(bez) && imena.some(function (k) { return /^Sigurnost boka SH z₁/.test(k); }) && imena.some(function (k) { return /^Sigurnost korena SF z₂/.test(k); }) &&
+    imena.some(function (k) { return /Dinamički faktor Kv/.test(k); }) && /dovoljna/.test(s1.status);
+  stavka('Proračun', 'Čvrstoća zuba: bez momenta jasna poruka; sa T₁ = 300 N·m i n₁ = 1450 sigurnosti boka i korena, „dovoljna“', ok1, JSON.stringify({ bez: bez.slice(0, 40), status: s1.status.slice(0, 60), redova: imena.length }));
+  await pg.selectOption('#k-mat1', 'c45n'); await pg.fill('#u-T1', '20000'); await cekaj(400);
+  var s2 = await stanje();
+  var crveno = Object.keys(s2.o).filter(function (k) { return s2.o[k].up; });
+  await pg.selectOption('#k-mat2', 'rucno'); await cekaj(300);
+  var rucno = await pg.evaluate(function () { return { vidljivo: !document.querySelector('[data-rucno="1"]').hidden, status: document.querySelector('#cvrstoca-status').textContent }; });
+  stavka('Proračun', 'Čvrstoća zuba: preopterećenje daje „Nedovoljna sigurnost“ i crvene redove; „ručno“ traži σHlim i σFlim', /Nedovoljna sigurnost/.test(s2.status) && crveno.length > 0 && rucno.vidljivo && /ručno/.test(rucno.status),
+    JSON.stringify({ crveno: crveno.length, rucno: rucno }));
+  await pg.reload(); await cekaj(3400);
+  var sac = await pg.evaluate(function () { return document.querySelector('#k-n1').value + '|' + document.querySelector('#k-mat1').value; });
+  stavka('Proračun', 'Čvrstoća zuba: unos ostaje posle ponovnog otvaranja; konzola čista', sac === '1450|c45n' && !konzola.length, sac + ' ' + konzola.slice(0, 2).join(' | '));
+  await ctx.close();
+}
+
 function proveriStatiku() {
   // testovi proračuna
   var t = cp.spawnSync(process.execPath, [path.join(KOREN, 'tests', 'proracun.test.js')], { encoding: 'utf8' });
@@ -538,6 +573,7 @@ function proveriStatiku() {
     await proveriRaspodelu(b);
     await proveriNazad(b);
     await proveriCrtez(b);
+    await proveriCvrstocu(b);
     await proveriDrive(b);
   } catch (e) {
     stavka('Greška', 'Provera je prekinuta', false, e.message.split('\n')[0]);

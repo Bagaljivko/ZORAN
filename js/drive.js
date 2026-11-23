@@ -18,7 +18,7 @@
   var UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 
   /** Ključevi koji se čuvaju na Drive-u (sve ostalo ostaje samo na uređaju). */
-  var SINHRONIZUJ = ['zoran.unos', 'zoran.podesavanja', 'zoran.varijante', 'zoran.savetnik', 'zoran.vratilo', 'zoran.sile', 'zoran.aRucno', 'zoran.povratne-mejl', 'zoran.crtez'];
+  var SINHRONIZUJ = ['zoran.unos', 'zoran.podesavanja', 'zoran.varijante', 'zoran.savetnik', 'zoran.vratilo', 'zoran.sile', 'zoran.aRucno', 'zoran.povratne-mejl', 'zoran.crtez', 'zoran.cvrstoca'];
   var KLJUC = {
     stanje: 'zoran.drive',        // povezano, mejl, ID fajla, vreme poslednje sinhronizacije…
     token: 'zoran.drive-token'    // sessionStorage: pristup važi najviše sat vremena i briše se kad se zatvori aplikacija

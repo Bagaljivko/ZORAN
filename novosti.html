@@ -50,6 +50,7 @@
 
   <h3>Sadržaj</h3>
   <ul class="sadrzaj-lista">
+    <li><a href="#v1-14-0"><span>Provera čvrstoće zuba</span><span>1.14.0</span></a></li>
     <li><a href="#v1-13-0"><span>Tablica za radionički crtež, tolerancije, Excel</span><span>1.13.0</span></a></li>
     <li><a href="#v1-12-1"><span>Kao prava aplikacija: Nazad, bez zumiranja, instalacija</span><span>1.12.1</span></a></li>
     <li><a href="#v1-12-0"><span>Pomeranje samo na jednom zupčaniku (x = 0 na drugom)</span><span>1.12.0</span></a></li>
@@ -67,6 +68,22 @@
     <li><a href="#v1-2-0"><span>Podeli Zorana, ZORAN velikim slovima, animacija</span><span>1.2.0</span></a></li>
     <li><a href="#v1-0-0"><span>Prva verzija</span><span>1.0.0</span></a></li>
   </ul>
+
+  <!-- ================= 1.14.0 ================= -->
+  <h2 id="v1-14-0">Verzija 1.14.0 — provera čvrstoće zuba<span class="datum">23. novembar 2026.</span></h2>
+  <p>ZORAN sada proverava i da li zupčanici <b>izdržavaju opterećenje</b> — ne samo da li se dobro sprežu.</p>
+
+  <h3>Čvrstoća zuba u Tablici</h3>
+  <p>Upišeš obrtni moment <i>T</i>₁ (u delu „Sile u zahvatu“), broj obrtaja, pogonski faktor (udari), kvalitet ozubljenja, faktor raspodele po širini i materijal svakog zupčanika. ZORAN računa <b>površinski pritisak na boku</b> i <b>napon savijanja u korenu</b> i pokazuje sigurnosti <i>S</i>H (treba najmanje 1,0) i <i>S</i>F (najmanje 1,4). Ako sigurnost nije dovoljna, red je crven i piše šta da promeniš — širinu, modul, osno rastojanje ili materijal.</p>
+  <figure class="usko">
+    <img src="./novosti/v1140-cvrstoca.jpg" width="585" height="900" loading="lazy" alt="Rezultat provere čvrstoće: obimna sila, brzina, dinamički faktor, površinski pritisak, sigurnosti boka i korena za oba zupčanika">
+    <figcaption><span class="sl">Sl. 28.</span> Čvrstoća za podrazumevani par sa <i>T</i>₁ = 500 N·m i <i>n</i>₁ = 1450 o/min.</figcaption>
+  </figure>
+  <p>Materijali su ponuđeni sa orijentacionim vrednostima (C45, 42CrMo4, 16MnCr5, 18CrNiMo7-6); za svoj materijal izaberi „ručno“ i upiši <i>σ</i>Hlim i <i>σ</i>Flim. Unos se pamti i prenosi preko Google Drive-a.</p>
+  <p class="tehnicki">Proračun je pojednostavljen po ISO 6336 (DIN 3990), čelik na čelik, za trajnu čvrstoću: <i>Z</i>H, <i>Z</i>E, <i>Z</i>ε, <i>Z</i>β; <i>Y</i>Fa i <i>Y</i>Sa iz geometrije zuba (ISO 6336-3, opterećenje na vrhu — slažu se sa tablicama DIN 3990), <i>Y</i>ε, <i>Y</i>β; <i>K</i>v po metodi B (pojednostavljeno), <i>K</i>Fβ = <i>K</i>Hβ<sup><i>N</i></sup>, <i>K</i>Hα = <i>K</i>Fα = 1. Za izbor modula i brzu proveru — za konačan proračun koristi puni ISO 6336.</p>
+
+  <h3>Ispravka</h3>
+  <p>Polje „Zadati koeficijent“ se od verzije 1.12.0 videlo i kad je izabrana raspodela DIN 3992 (tada se nije koristilo). Sada se prikazuje samo uz „zadajem <i>x</i>₁“ ili „zadajem <i>x</i>₂“.</p>
 
   <!-- ================= 1.13.0 ================= -->
   <h2 id="v1-13-0">Verzija 1.13.0 — tablica za radionički crtež<span class="datum">23. novembar 2026.</span></h2>

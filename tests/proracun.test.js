@@ -391,6 +391,53 @@ test('obrnuta odstupanja (Asne < Asni) se ne koriste', function () {
   tacno(!t.some(function (x) { return x.tekst === 'Mera preko zuba Wk gornja'; }));
 });
 
+console.log('Čvrstoća zuba (ISO 6336, pojednostavljeno)');
+
+test('faktori korena Y_Fa i Y_Sa se slažu sa tablicama DIN 3990 (x = 0)', function () {
+  var an = 20 * P.DEG;
+  [[20, 2.80, 1.55], [40, 2.40, 1.67], [100, 2.18, 1.79]].forEach(function (t) {
+    var f = P.faktoriKorena(t[0], 0, an, 1);
+    jednako(f.YFa, t[1], 0.03, 'Y_Fa z = ' + t[0] + ':'); jednako(f.YSa, t[2], 0.02, 'Y_Sa z = ' + t[0] + ':');
+  });
+  var plus = P.faktoriKorena(20, 0.5, an, 1.5), minus = P.faktoriKorena(20, -0.2, an, 0.8);
+  tacno(plus.YFa < 2.8 && minus.YFa > 2.8, 'pozitivno pomeranje smanjuje Y_Fa');
+});
+var C_OSNOVA = { T1: 300, n1: 1450, KA: 1.25, KHb: 1.2, Q: 7, mat: [{ sHlim: 1450, sFlim: 430 }, { sHlim: 1450, sFlim: 430 }] };
+test('površinski pritisak: Z_H = 2,495 (α = 20°, bez pomeranja), σH po formuli ISO 6336-2', function () {
+  var r = P.proracunaj({ z1: 20, z2: 60, mn: 4, beta: 0, alfaN: 20, b: 40, pom1: 0, pom2: 0 });
+  var c = P.cvrstocaZuba(r, C_OSNOVA);
+  jednako(c.ZH, 2.495, 0.001); jednako(c.Ft, 7500, 1e-9);
+  var ea = r.par.epsA;
+  jednako(c.Ze, Math.sqrt((4 - ea) / 3), 1e-12);
+  var sH0 = 2.4946 * 189.8 * c.Ze * Math.sqrt(7500 / (80 * 40) * 4 / 3);
+  jednako(c.sH0, sH0, 0.5); jednako(c.sH, c.sH0 * Math.sqrt(1.25 * c.Kv * 1.2), 1e-9);
+  jednako(c.zupcanici[0].SH, 1450 / c.sH, 1e-12);
+});
+test('savijanje u korenu: σF = Ft/(b·mₙ)·Y_Fa·Y_Sa·Y_ε·Y_β·K, S_F = 2·σFlim/σF', function () {
+  var r = P.proracunaj({ z1: 20, z2: 60, mn: 4, beta: 0, alfaN: 20, b: 40, pom1: 0, pom2: 0 });
+  var c = P.cvrstocaZuba(r, C_OSNOVA);
+  var z = c.zupcanici[0];
+  jednako(c.Ye, 0.25 + 0.75 / r.par.epsA, 1e-12); jednako(c.Yb, 1, 0);
+  jednako(z.sF, 7500 / 160 * z.YFa * z.YSa * c.Ye * 1.25 * c.Kv * c.KFb, 1e-9);
+  jednako(z.SF, 860 / z.sF, 1e-12);
+  var bh = 40 / 9; jednako(c.KFb, Math.pow(1.2, bh * bh / (1 + bh + bh * bh)), 1e-12);
+});
+test('dinamički faktor: bez broja obrtaja Kv = 1; veća brzina i lošiji kvalitet → veći Kv', function () {
+  var r = P.proracunaj({ z1: 20, z2: 60, mn: 4, beta: 0, alfaN: 20, b: 40, pom1: 0, pom2: 0 });
+  var bez = P.cvrstocaZuba(r, Object.assign({}, C_OSNOVA, { n1: NaN }));
+  jednako(bez.Kv, 1, 0); tacno(!isFinite(bez.v));
+  var k7 = P.cvrstocaZuba(r, C_OSNOVA).Kv, k9 = P.cvrstocaZuba(r, Object.assign({}, C_OSNOVA, { Q: 9 })).Kv, brzo = P.cvrstocaZuba(r, Object.assign({}, C_OSNOVA, { n1: 3000 })).Kv;
+  tacno(k7 > 1 && k9 > k7 && brzo > k7, [k7, k9, brzo].join(' '));
+});
+test('kosi zubi: Z_β = √cos β, Y_β < 1; preopterećen par daje S < minimum', function () {
+  var r = P.proracunajIzRastojanja(P.PODRAZUMEVANO);
+  var c = P.cvrstocaZuba(r, C_OSNOVA);
+  jednako(c.Zb, Math.sqrt(Math.cos(9 * P.DEG)), 1e-12); tacno(c.Yb < 1 && c.Yb >= 0.75);
+  var jako = P.cvrstocaZuba(r, Object.assign({}, C_OSNOVA, { T1: 60000, mat: [P.MATERIJALI[0], P.MATERIJALI[0]] }));
+  tacno(!jako.ok && jako.zupcanici.some(function (z) { return !z.okH || !z.okF; }), 'preopterećenje mora biti prijavljeno');
+  tacno(c.ok, 'podrazumevani par sa 300 N·m i cementiranim čelikom je u redu');
+});
+
 console.log('Korak 0: od vratila');
 
 test('dubina žleba za klin (DIN 6885) raste sa prečnikom; vratilo Ø40 → t₂ = 3,3 mm', function () {
